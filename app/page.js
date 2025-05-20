@@ -35,7 +35,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-8">
           <h3 className="text-lg font-bold mb-6 text-gray-800">Shop by Category</h3>
           <Categories />
-          <CategoryForm />  {/* <=== Placed here, inside the same section */}
+          {/* <CategoryForm />   */}
+          {/* <=== Placed here, inside the same section */}
         </div>
       </section>
 
