@@ -1,11 +1,8 @@
-// components/Categories.js
 "use client";
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-// import { db } from "../firebase"; // adjust path as needed
-import { db } from "@/lib/firebase"; // ✅ correct path using alias
-
+import { db } from "@/lib/firebase";
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
@@ -28,19 +25,26 @@ export default function Categories() {
   }, []);
 
   return (
-    <div id="categories-grid" className="grid grid-cols-4 gap-6 justify-items-center">
+    <div
+      id="categories-grid"
+      className="max-w-7xl mx-auto px-8 grid grid-cols-3 gap-3 justify-items-center"
+    >
       {categories.map(cat => (
         <div
           key={cat.id}
-          className="text-center cursor-pointer hover:scale-105 transition-transform"
+          className="w-full max-w-[160px] cursor-pointer"
           onClick={() => console.log("Clicked category:", cat.name)}
         >
-          <img
-            src={cat.imageUrl}
-            alt={cat.name}
-            className="w-24 h-24 object-cover mx-auto rounded-full mb-2"
-          />
-          <p className="text-sm font-medium text-gray-700">{cat.name}</p>
+          <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden">
+            <img
+              src={cat.imageUrl}
+              alt={cat.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <p className="mt-2 text-sm font-normal text-gray-700 text-center">
+            {cat.name}
+          </p>
         </div>
       ))}
     </div>

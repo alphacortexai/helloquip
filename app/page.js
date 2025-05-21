@@ -32,11 +32,8 @@ export default function Home() {
 
       {/* Categories (Firebase) */}
       <section className="bg-white py-12">
-        <div className="max-w-7xl mx-auto px-8">
-          <h3 className="text-lg font-bold mb-6 text-gray-800">Shop by Category</h3>
+        <div className="max-w-7xl mx-auto px-2">
           <Categories />
-          {/* <CategoryForm />   */}
-          {/* <=== Placed here, inside the same section */}
         </div>
       </section>
 
