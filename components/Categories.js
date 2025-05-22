@@ -51,8 +51,6 @@
 //   );
 // }
 
-
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -61,7 +59,6 @@ import { db } from "@/lib/firebase";
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
-  const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -82,7 +79,7 @@ export default function Categories() {
   }, []);
 
   const visibleCards = 4;
-  const cardSpacing = 12; // Tailwind's space-x-3 = 0.75rem = 12px
+  const cardSpacing = 12;
 
   const scroll = (direction) => {
     if (!containerRef.current) return;
@@ -94,24 +91,10 @@ export default function Categories() {
     });
   };
 
-  const handleScroll = () => {
-    if (!containerRef.current) return;
-    const scrollLeft = containerRef.current.scrollLeft;
-    const card = containerRef.current.querySelector("div");
-    const cardWidth = card.offsetWidth + cardSpacing;
-    const index = Math.round(scrollLeft / cardWidth);
-    setActiveIndex(index);
-  };
-
-  const totalSteps = Math.max(
-    1,
-    Math.ceil(categories.length / visibleCards)
-  );
-
   return (
-    <div className="max-w-7xl mx-auto px-8 relative">
+    <div className="max-w-7xl mx-auto px-8 relative py-2">
       {/* Title */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800">Categories</h2>
         <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
       </div>
@@ -154,7 +137,6 @@ export default function Categories() {
       {/* Mobile: Horizontal scroll */}
       <div
         ref={containerRef}
-        onScroll={handleScroll}
         className="flex overflow-x-auto no-scrollbar space-x-3 scroll-smooth md:hidden"
         style={{ scrollSnapType: "x mandatory" }}
       >
@@ -179,22 +161,8 @@ export default function Categories() {
         ))}
       </div>
 
-      {/* Dots (mobile only) */}
-      {totalSteps > 1 && (
-        <div className="flex justify-center mt-3 space-x-2 md:hidden">
-          {Array.from({ length: totalSteps }).map((_, idx) => (
-            <div
-              key={idx}
-              className={`w-2 h-2 rounded-full transition-all ${
-                idx === activeIndex ? "bg-gray-800" : "bg-gray-400"
-              }`}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Desktop: Grid layout */}
-      <div className="hidden md:grid md:grid-cols-3 gap-3 justify-items-center mt-6">
+      <div className="hidden md:grid md:grid-cols-3 gap-3 justify-items-center mt-4">
         {categories.map((cat) => (
           <div
             key={cat.id}

@@ -204,8 +204,8 @@ export default function Home() {
       <TrendingProducts />
 
       {/* Categories */}
-      <section className="bg-white py-10">
-        <div className="max-w-7xl mx-auto px-2">
+      <section className="bg-white py-2">
+        <div className="max-w-7xl mx-auto px-1">
           <Categories />
         </div>
       </section>
