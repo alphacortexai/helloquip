@@ -61,9 +61,9 @@ export default function TrendingProducts() {
   };
 
   return (
-    <section className="bg-gray-50 py-1">
+    <section className="bg-gray-50 py-2">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="overflow-hidden relative w-full mt-10">
+        <div className="overflow-hidden relative w-full mt-4 mb-4">
           <div
             className="flex transition-transform duration-700 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -84,20 +84,18 @@ export default function TrendingProducts() {
                   />
                   {/* Fade at bottom */}
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent z-10 rounded-b-lg"></div>
-                  {/* Fade at top */}
-                  <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/70 to-transparent z-20 rounded-t-lg pointer-events-none"></div>
                 </div>
 
-                <div className="absolute bottom-8 left-8 text-white z-30 transform group-hover:-translate-y-4 transition duration-300 max-w-xs">
-                  <h3 className="font-semibold text-base lg:text-lg text-white truncate">
+                <div className="absolute bottom-4 left-4 text-white z-30 transform group-hover:-translate-y-3 transition duration-300 max-w-xs">
+                  <h3 className="font-semibold text-sm lg:text-base text-white truncate">
                     {product.name}
                   </h3>
                   <p className="text-xs lg:text-sm leading-4 max-w-xs text-white truncate">
                     {product.description}
                   </p>
 
-                  <div className="mt-1 flex items-center gap-2">
-                    <p className="font-bold text-black bg-white/80 px-1.5 py-0.5 rounded whitespace-nowrap text-sm">
+                  <div className="mt-1 flex items-center gap-1">
+                    <p className="font-bold text-black bg-white/80 px-1 py-0.5 rounded whitespace-nowrap text-xs">
                       {typeof product.price === "number"
                         ? product.price.toLocaleString("en-UG", {
                             style: "currency",
@@ -105,11 +103,11 @@ export default function TrendingProducts() {
                           })
                         : product.price}
                     </p>
-                    <button className="flex items-center gap-1 bg-blue-600 px-3 py-1 rounded text-sm">
+                    <button className="flex items-center gap-1 bg-blue-600 px-2 py-0.5 rounded text-xs">
                       Buy now
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
+                        className="h-3 w-3"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -128,12 +126,12 @@ export default function TrendingProducts() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2 mt-6">
+          <div className="flex items-center justify-center gap-1 mt-4">
             {products.map((_, index) => (
               <div
                 key={index}
                 onClick={() => handleSlideChange(index)}
-                className={`h-2 w-2 rounded-full cursor-pointer ${
+                className={`h-1.5 w-1.5 rounded-full cursor-pointer ${
                   currentSlide === index ? "bg-blue-600" : "bg-gray-400"
                 }`}
               ></div>
