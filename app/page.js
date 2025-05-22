@@ -145,10 +145,10 @@ export default function Home() {
   return (
     <main className="bg-gray-50 text-gray-900 font-sans">
       {/* Header with title and search bar */}
-      <header className="bg-white shadow sticky top-0 z-50">
+      <header className="bg-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center mb-2">
-            <h1 className="text-2xl font-extrabold text-blue-700">HelloQuip</h1>
+            <h1 className="text-2xl font-extrabold text-blue-500">HELLOQUIP</h1>
             <button className="text-gray-700 hover:text-blue-600">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
