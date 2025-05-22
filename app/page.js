@@ -115,6 +115,11 @@ export default function Home() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searching, setSearching] = useState(false);
 
+   // const [selectedCategory, setSelectedCategory] = useState("all");
+   const [selectedCategory, setSelectedCategory] = useState("All Products");
+
+
+
   useEffect(() => {
     const fetchProducts = async () => {
       const snapshot = await getDocs(collection(db, "products"));
@@ -202,15 +207,21 @@ export default function Home() {
       )}
 
 
+     
+    
+
       {/* Categories */}
       <section className="bg-white py-2">
         <div className="max-w-7xl mx-auto px-1">
-          <Categories />
+          {/* <Categories /> */}
+           <Categories onCategorySelect={setSelectedCategory} />
         </div>
       </section>
 
       {/* Featured */}
-      {!searching && <FeaturedProducts />}
+      {/* {!searching && <FeaturedProducts />} */}
+        <FeaturedProducts selectedCategory={selectedCategory} />
+
 
 
       {/* Trending */}
