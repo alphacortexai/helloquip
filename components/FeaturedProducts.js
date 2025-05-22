@@ -187,10 +187,10 @@ export default function FeaturedProducts({ onProductClick }) {
     <section className="bg-gray-50 py-3">
       <div className="max-w-7xl mx-auto px-4">
         {/* Title */}
-        <div className="text-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-800">Featured</h2>
-          <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
+        <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
+          All Products
         </div>
+
 
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map(({ id, name, description, price, imageUrl }) => (
@@ -208,7 +208,7 @@ export default function FeaturedProducts({ onProductClick }) {
               </div>
               <div className="pt-2 w-full">
                 <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{description}</p>
+                {/* <p className="text-xs text-gray-500 mt-0.5 truncate">{description}</p> */}
                 <p className="text-sm font-semibold text-gray-700 mt-1">
                   UGX {price?.toLocaleString?.()}
                 </p>
