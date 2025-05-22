@@ -108,6 +108,7 @@ import ProductCard from "@/components/ProductCard";
 import TrendingProducts from "@/components/TrendingProducts";
 import Categories from "@/components/Categories";
 import FeaturedProducts from "@/components/FeaturedProducts";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const [allProducts, setAllProducts] = useState([]);
@@ -214,6 +215,9 @@ export default function Home() {
 
       {/* Trending */}
       <TrendingProducts />
+
+      {/* Footer */}
+      <Footer />
 
     </main>
   );
