@@ -166,12 +166,11 @@ export default function Home() {
           <Categories />
         </div>
       </section>
+      {/* Featured */}
+      {!searching && <FeaturedProducts />}
 
       {/* Trending */}
       <TrendingProducts />
-
-      {/* Featured */}
-      {!searching && <FeaturedProducts />}
     </main>
   );
 }

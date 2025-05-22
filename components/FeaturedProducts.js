@@ -176,11 +176,13 @@ export default function FeaturedProducts({ onProductClick }) {
   };
 
   return (
-    <section className="bg-gray-50 py-12">
+    <section className="bg-gray-50 py-3">
       <div className="max-w-7xl mx-auto px-4">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-8 text-center">
-          Featured Products
-        </h3>
+      {/* Title */}
+      <div className="text-center mb-6">
+        <h2 className="text-lg font-semibold text-gray-800">Featured</h2>
+        <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
+      </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map(({ id, name, description, price, imageUrl }) => (

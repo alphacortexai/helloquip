@@ -61,6 +61,7 @@ import { db } from "@/lib/firebase";
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -80,22 +81,42 @@ export default function Categories() {
     fetchCategories();
   }, []);
 
-  // Scroll handler to move left or right by one card width
+  const visibleCards = 4;
+  const cardSpacing = 12; // Tailwind's space-x-3 = 0.75rem = 12px
+
   const scroll = (direction) => {
     if (!containerRef.current) return;
     const card = containerRef.current.querySelector("div");
-    if (!card) return;
-    const cardWidth = card.offsetWidth + 12; // card width + gap
-    if (direction === "left") {
-      containerRef.current.scrollBy({ left: -cardWidth, behavior: "smooth" });
-    } else {
-      containerRef.current.scrollBy({ left: cardWidth, behavior: "smooth" });
-    }
+    const cardWidth = card.offsetWidth + cardSpacing;
+    containerRef.current.scrollBy({
+      left: direction === "left" ? -cardWidth : cardWidth,
+      behavior: "smooth",
+    });
   };
+
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const scrollLeft = containerRef.current.scrollLeft;
+    const card = containerRef.current.querySelector("div");
+    const cardWidth = card.offsetWidth + cardSpacing;
+    const index = Math.round(scrollLeft / cardWidth);
+    setActiveIndex(index);
+  };
+
+  const totalSteps = Math.max(
+    1,
+    Math.ceil(categories.length / visibleCards)
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-8 relative">
-      {/* Arrows only visible on mobile */}
+      {/* Title */}
+      <div className="text-center mb-6">
+        <h2 className="text-lg font-semibold text-gray-800">Categories</h2>
+        <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
+      </div>
+
+      {/* Arrows (mobile only) */}
       <button
         aria-label="Scroll Left"
         onClick={() => scroll("left")}
@@ -130,16 +151,17 @@ export default function Categories() {
         </svg>
       </button>
 
-      {/* Scrollable container on mobile */}
+      {/* Mobile: Horizontal scroll */}
       <div
         ref={containerRef}
+        onScroll={handleScroll}
         className="flex overflow-x-auto no-scrollbar space-x-3 scroll-smooth md:hidden"
         style={{ scrollSnapType: "x mandatory" }}
       >
         {categories.map((cat) => (
           <div
             key={cat.id}
-            className="flex-shrink-0 w-[calc((100vw-64px)/3)] cursor-pointer scroll-snap-align-start"
+            className="flex-shrink-0 w-[calc((100vw-64px)/4)] cursor-pointer scroll-snap-align-start"
             onClick={() => console.log("Clicked category:", cat.name)}
           >
             <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden">
@@ -157,8 +179,22 @@ export default function Categories() {
         ))}
       </div>
 
-      {/* Grid layout on md and larger screens */}
-      <div className="hidden md:grid md:grid-cols-4 md:gap-3 md:justify-items-center">
+      {/* Dots (mobile only) */}
+      {totalSteps > 1 && (
+        <div className="flex justify-center mt-3 space-x-2 md:hidden">
+          {Array.from({ length: totalSteps }).map((_, idx) => (
+            <div
+              key={idx}
+              className={`w-2 h-2 rounded-full transition-all ${
+                idx === activeIndex ? "bg-gray-800" : "bg-gray-400"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Desktop: Grid layout */}
+      <div className="hidden md:grid md:grid-cols-3 gap-3 justify-items-center mt-6">
         {categories.map((cat) => (
           <div
             key={cat.id}
@@ -179,17 +215,6 @@ export default function Categories() {
           </div>
         ))}
       </div>
-
-      {/* Hide scrollbar styles */}
-      <style jsx>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 }
