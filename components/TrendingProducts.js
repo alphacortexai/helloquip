@@ -57,6 +57,10 @@ export default function TrendingProducts() {
   return (
     <section className="bg-gray-50 py-2">
       <div className="max-w-5xl mx-auto px-4">
+        {/* Title */}
+        <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
+          Trending Products
+        </div>
         <div className="overflow-hidden relative w-full mt-4 mb-4">
           <div
             className="flex transition-transform duration-700 ease-in-out"
