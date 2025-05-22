@@ -1,3 +1,9 @@
+// 
+
+
+
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -55,67 +61,67 @@ export default function TrendingProducts() {
   };
 
   return (
-    <section className="bg-gray-50 py-12">
+    <section className="bg-gray-50 py-1">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="flex flex-col items-center">
-          <p className="text-base font-semibold text-black">Trending Products</p>
-          <div className="w-24 h-0.5 bg-blue-600 mt-2"></div>
-        </div>
-
         <div className="overflow-hidden relative w-full mt-10">
           <div
             className="flex transition-transform duration-700 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
-            {products.map((product, index) => (
+            {products.map((product) => (
               <Link
                 key={product.id}
                 href={`/product/${product.id}`}
-                className="relative group rounded-lg overflow-hidden shadow-lg cursor-pointer block min-w-full"
+                className="relative group rounded-lg overflow-hidden cursor-pointer block min-w-full max-w-xs mx-auto shadow-none"
               >
-                <div className="relative w-full aspect-[4/5]">
+                {/* More rectangular image */}
+                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden">
                   <Image
                     src={product.imageUrl}
                     alt={product.name}
                     fill
-                    className="object-cover group-hover:brightness-75 transition duration-300"
+                    className="object-cover group-hover:brightness-75 transition duration-300 rounded-lg"
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
-                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent z-10 rounded-b-lg"></div>
                 </div>
 
-                <div className="absolute bottom-8 left-8 text-white space-y-2 z-20 transform group-hover:-translate-y-4 transition duration-300">
-                  <h3 className="font-semibold text-lg lg:text-xl text-white">
+                {/* Info overlay */}
+                <div className="absolute bottom-8 left-8 text-white z-20 transform group-hover:-translate-y-4 transition duration-300 max-w-xs">
+                  <h3 className="font-semibold text-lg lg:text-xl text-white truncate">
                     {product.name}
                   </h3>
-                  <p className="text-sm lg:text-base leading-5 max-w-xs text-white">
+                  <p className="text-sm lg:text-base leading-5 max-w-xs text-white truncate">
                     {product.description}
                   </p>
-                  <p className="font-bold text-black bg-white/80 px-2 py-1 rounded">
-                    {typeof product.price === "number"
-                      ? product.price.toLocaleString("en-UG", {
-                          style: "currency",
-                          currency: "UGX",
-                        })
-                      : product.price}
-                  </p>
-                  <button className="flex items-center gap-1.5 bg-blue-600 px-4 py-2 rounded">
-                    Buy now
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-3 w-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
-                    </svg>
-                  </button>
+
+                  <div className="mt-2 flex items-center gap-4">
+                    <p className="font-bold text-black bg-white/80 px-2 py-1 rounded whitespace-nowrap">
+                      {typeof product.price === "number"
+                        ? product.price.toLocaleString("en-UG", {
+                            style: "currency",
+                            currency: "UGX",
+                          })
+                        : product.price}
+                    </p>
+                    <button className="flex items-center gap-1.5 bg-blue-600 px-4 py-2 rounded whitespace-nowrap">
+                      Buy now
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17 8l4 4m0 0l-4 4m4-4H3"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -137,4 +143,3 @@ export default function TrendingProducts() {
     </section>
   );
 }
-

@@ -118,7 +118,7 @@ export default function Home() {
       </header>
 
       {/* Search */}
-      <section className="bg-blue-50 pt-16 pb-8">
+      <section className="bg-blue-50 pt-4 pb-8">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">What are you looking for?</h2>
           <SearchBar onSearch={handleSearch} />
@@ -160,8 +160,12 @@ export default function Home() {
         </section>
       )}
 
+      
+      {/* Trending */}
+      <TrendingProducts />
+      
       {/* Categories */}
-      <section className="bg-white py-12">
+      <section className="bg-white py-10">
         <div className="max-w-7xl mx-auto px-2">
           <Categories />
         </div>
@@ -169,8 +173,6 @@ export default function Home() {
       {/* Featured */}
       {!searching && <FeaturedProducts />}
 
-      {/* Trending */}
-      <TrendingProducts />
     </main>
   );
 }
