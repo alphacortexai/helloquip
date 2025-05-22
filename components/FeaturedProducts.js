@@ -3,7 +3,6 @@
 // import { useEffect, useState } from "react";
 // import { collection, getDocs, query, orderBy, limit, startAfter } from "firebase/firestore";
 // import { db } from "@/lib/firebase";
-// import ProductCard from "./ProductCard";
 
 // export default function FeaturedProducts({ onProductClick }) {
 //   const [products, setProducts] = useState([]);
@@ -13,15 +12,12 @@
 
 //   const PRODUCTS_PER_PAGE = 6;
 
-//   // Initial fetch
 //   useEffect(() => {
 //     fetchProducts();
 //   }, []);
 
-//   // Infinite scroll handler
 //   useEffect(() => {
 //     const handleScroll = () => {
-//       // Check if near bottom of the page (300px offset)
 //       if (
 //         window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 &&
 //         !loading &&
@@ -32,7 +28,6 @@
 //     };
 
 //     window.addEventListener("scroll", handleScroll);
-
 //     return () => window.removeEventListener("scroll", handleScroll);
 //   }, [loading, hasMore, lastDoc]);
 
@@ -73,30 +68,43 @@
 //   };
 
 //   return (
-//     <section className="bg-gray-50 py-12">
+//     <section className="bg-gray-50 py-3">
 //       <div className="max-w-7xl mx-auto px-4">
-//         <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Featured Products</h3>
+//       {/* Title */}
+//       <div className="text-center mb-6">
+//         <h2 className="text-lg font-semibold text-gray-800">Featured</h2>
+//         <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
+//       </div>
 
-//         <div className="grid grid-cols-2 gap-4">
-//           {products.map(({ id, name, price, imageUrl }) => (
+//         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+//           {products.map(({ id, name, description, price, imageUrl }) => (
 //             <div
 //               key={id}
-//               className="bg-white rounded-lg overflow-hidden cursor-pointer"
 //               onClick={() => onProductClick?.(id)}
+//               className="flex flex-col items-start cursor-pointer"
 //             >
-//               <div className="relative w-full h-48">
-//                 <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+//               <div className="relative w-full h-60 bg-gray-100 rounded-xl overflow-hidden group">
+//                 <img
+//                   src={imageUrl}
+//                   alt={name}
+//                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+//                 />
 //               </div>
-//               <div className="p-4 text-left">
-//                 <p className="text-sm text-gray-900 mt-2">{name}</p>
-//                 <p className="text-base font-bold text-blue-800">UGX {price?.toLocaleString?.()}</p>
+//               <div className="pt-2 w-full">
+//                 <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+//                 <p className="text-xs text-gray-500 mt-0.5 truncate">{description}</p>
+//                 <p className="text-base font-bold text-blue-800 mt-1">
+//                   UGX {price?.toLocaleString?.()}
+//                 </p>
 //               </div>
 //             </div>
 //           ))}
 //         </div>
 
 //         {loading && (
-//           <div className="flex justify-center mt-6 text-gray-600">Loading more products...</div>
+//           <div className="flex justify-center mt-6 text-gray-600">
+//             Loading more products...
+//           </div>
 //         )}
 //       </div>
 //     </section>
@@ -178,11 +186,11 @@ export default function FeaturedProducts({ onProductClick }) {
   return (
     <section className="bg-gray-50 py-3">
       <div className="max-w-7xl mx-auto px-4">
-      {/* Title */}
-      <div className="text-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Featured</h2>
-        <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
-      </div>
+        {/* Title */}
+        <div className="text-center mb-6">
+          <h2 className="text-lg font-semibold text-gray-800">Featured</h2>
+          <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map(({ id, name, description, price, imageUrl }) => (
@@ -191,7 +199,7 @@ export default function FeaturedProducts({ onProductClick }) {
               onClick={() => onProductClick?.(id)}
               className="flex flex-col items-start cursor-pointer"
             >
-              <div className="relative w-full h-60 bg-gray-100 rounded-xl overflow-hidden group">
+              <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden group">
                 <img
                   src={imageUrl}
                   alt={name}
@@ -201,7 +209,7 @@ export default function FeaturedProducts({ onProductClick }) {
               <div className="pt-2 w-full">
                 <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
                 <p className="text-xs text-gray-500 mt-0.5 truncate">{description}</p>
-                <p className="text-base font-bold text-blue-800 mt-1">
+                <p className="text-sm font-semibold text-gray-700 mt-1">
                   UGX {price?.toLocaleString?.()}
                 </p>
               </div>
