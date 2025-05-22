@@ -216,19 +216,16 @@ export default function Home() {
           {/* <Categories /> */}
            <Categories onCategorySelect={setSelectedCategory} />
         </div>
+
+              {/* Trending */}
+      <TrendingProducts />
+      
       </section>
 
       {/* Featured */}
       {/* {!searching && <FeaturedProducts />} */}
         <FeaturedProducts selectedCategory={selectedCategory} />
 
-
-
-      {/* Trending */}
-      <TrendingProducts />
-
-
-      
 
 
 {/* Bottom Navigation */}

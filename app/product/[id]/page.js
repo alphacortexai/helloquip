@@ -200,7 +200,7 @@ export default function ProductDetail() {
                 onClick={() => alert("Added to cart")}
                 className="w-full sm:w-auto bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition"
               >
-                Add to Cart
+                Add to Order
               </button>
 
               <button
@@ -214,7 +214,7 @@ export default function ProductDetail() {
                 onClick={() => alert("Messaging seller...")}
                 className="w-full sm:w-auto bg-green-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-green-700 transition"
               >
-                Chat Now
+                Talk to Seller
               </button>
             </div>
           </div>
