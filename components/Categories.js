@@ -95,10 +95,10 @@ export default function Categories() {
   return (
     <div className="max-w-7xl mx-auto px-8 relative py-2">
       {/* Title */}
-      <div className="text-center mb-4">
+      {/* <div className="text-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800">Categories</h2>
         <div className="w-12 h-1 bg-blue-500 mx-auto mt-1 rounded-full" />
-      </div>
+      </div> */}
 
       {/* Arrows (mobile only) */}
       <button

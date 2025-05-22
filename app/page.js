@@ -200,8 +200,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* Trending */}
-      <TrendingProducts />
 
       {/* Categories */}
       <section className="bg-white py-2">
@@ -212,6 +210,11 @@ export default function Home() {
 
       {/* Featured */}
       {!searching && <FeaturedProducts />}
+
+
+      {/* Trending */}
+      <TrendingProducts />
+
     </main>
   );
 }
