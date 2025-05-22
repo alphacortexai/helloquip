@@ -368,8 +368,9 @@ export default function Categories({ onCategorySelect }) {
   const allCategory = {
     id: "all",
     name: "All Products",
-    imageUrl: "https://cdn-icons-png.flaticon.com/512/616/616408.png",
+    imageUrl: "https://cdn-icons-png.flaticon.com/128/7466/7466065.png",
   };
+
 
   useEffect(() => {
     const fetchCategories = async () => {
