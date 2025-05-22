@@ -3,7 +3,7 @@ import React from 'react';
 
 const SearchBar = ({ onSearch }) => {
   return (
-    <div className="w-full max-w-md mx-auto mt-4">
+    <div className="w-full max-w-md mx-auto mt-2">
       <input
         type="text"
         placeholder="Search products..."
