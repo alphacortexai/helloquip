@@ -1,0 +1,20 @@
+{
+  "name": "HelloQuip",
+  "short_name": "HelloQuip",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f4a73",
+  "icons": [
+    {
+      "src": "icu.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icu.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
