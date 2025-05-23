@@ -152,11 +152,16 @@ export default function Home() {
   return (
 
           <><Head>
-      <title>My PWA App</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <link rel="manifest" href="/manifest.json" />
-      <meta name="theme-color" content="#0f4a73" />
-    </Head>
+  <title>HELLOQUIP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f4a73" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+</Head>
+
     
     <main className="pb-20 bg-gray-50 text-gray-900 font-sans">
         {/* Header with title and search bar */}
