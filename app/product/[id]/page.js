@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { toast } from "sonner";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export default function ProductDetail() {
     const alreadyAdded = existing.some((item) => item.id === product.id);
 
     if (alreadyAdded) {
-      alert("This product is already in your order.");
+      toast.info("This product is already in your order.");
       return;
     }
 
@@ -83,7 +84,7 @@ export default function ProductDetail() {
     const updated = [...existing, { ...product, quantity: 1 }];
 
     localStorage.setItem("orderItems", JSON.stringify(updated));
-    alert("Product added to your order!");
+     toast.info("Product added to your order!");
   };
 
 
@@ -161,7 +162,7 @@ export default function ProductDetail() {
               </button>
 
               <button
-                onClick={() => alert("Messaging seller...")}
+                onClick={() => toast("Messaging seller…")}
                 className="w-full sm:w-auto bg-green-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-green-700 transition"
               >
                 Talk to Seller

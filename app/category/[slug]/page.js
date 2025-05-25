@@ -1,69 +1,3 @@
-// // app/category/[categoryName]/page.js
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation";
-// import { collection, getDocs, query, where } from "firebase/firestore";
-// import { db } from "@/lib/firebase";
-// import Link from "next/link";
-
-// export default function CategoryPage({ params }) {
-//   const categoryName = decodeURIComponent(params.categoryName);
-//   const [products, setProducts] = useState([]);
-
-//   useEffect(() => {
-//     const fetchCategoryProducts = async () => {
-//       const q = query(
-//         collection(db, "products"),
-//         where("category", "==", categoryName)
-//       );
-//       const snapshot = await getDocs(q);
-//       const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//       setProducts(fetched);
-//     };
-
-//     fetchCategoryProducts();
-//   }, [categoryName]);
-
-//   return (
-//     <div className="max-w-7xl mx-auto px-4 py-4">
-//       <button onClick={() => history.back()} className="mb-4 text-blue-500">← Back</button>
-//       <h2 className="text-xl font-semibold mb-4">{categoryName}</h2>
-      
-//       {products.length === 0 ? (
-//         <p>No products found in this category.</p>
-//       ) : (
-//         <div className="grid grid-cols-2 gap-4">
-//           {products.map((product) => (
-//             <Link key={product.id} href={`/product/${product.id}`}>
-//               <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-//                 <img src={product.imageUrl} alt={product.name} className="w-full h-40 object-cover" />
-//                 <div className="p-2">
-//                   <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
-//                   <p className="text-sm font-semibold text-blue-600">UGX {product.price?.toLocaleString?.()}</p>
-//                 </div>
-//               </div>
-//             </Link>
-//           ))}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // "use client";
 
 // import { useEffect, useState } from "react";
@@ -73,38 +7,77 @@
 // import Link from "next/link";
 
 // export default function CategoryPage() {
-//   const { categoryName } = useParams();
+//   const { slug } = useParams();
 //   const router = useRouter();
 //   const [products, setProducts] = useState([]);
 //   const [loading, setLoading] = useState(true);
+//   const [categoryName, setCategoryName] = useState("");
+
+//   // Slug decoder helper (must match your slug creation logic)
+//   const decodeSlug = (slug) => slug.replace(/-/g, " ");
 
 //   useEffect(() => {
 //     const fetchCategoryProducts = async () => {
 //       setLoading(true);
+
 //       try {
-//         const q = query(
-//           collection(db, "products"),
-//           where("category", "==", categoryName)
-//         );
-//         const querySnapshot = await getDocs(q);
-//         const categoryProducts = [];
-//         querySnapshot.forEach((doc) => {
-//           categoryProducts.push({ id: doc.id, ...doc.data() });
+//         // 1. Fetch all categories
+//         const categorySnapshot = await getDocs(collection(db, "categories"));
+//         let actualCategoryName = "";
+
+//         categorySnapshot.forEach((doc) => {
+//           const name = doc.data().name;
+//           const generatedSlug = name
+//             .toLowerCase()
+//             .replace(/\s+/g, "-")
+//             .replace(/[^a-z0-9-]/g, "");
+
+//           if (generatedSlug === slug) {
+//             actualCategoryName = name;
+//           }
 //         });
-//         setProducts(categoryProducts);
+
+//         // If not found, treat it as "All Products"
+//         if (slug === "all") {
+//           setCategoryName("All Products");
+
+//           const allSnapshot = await getDocs(collection(db, "products"));
+//           const allProducts = allSnapshot.docs.map((doc) => ({
+//             id: doc.id,
+//             ...doc.data(),
+//           }));
+//           setProducts(allProducts);
+//         } else if (actualCategoryName) {
+//           setCategoryName(actualCategoryName);
+
+//           const q = query(
+//             collection(db, "products"),
+//             where("category", "==", actualCategoryName)
+//           );
+//           const querySnapshot = await getDocs(q);
+//           const categoryProducts = querySnapshot.docs.map((doc) => ({
+//             id: doc.id,
+//             ...doc.data(),
+//           }));
+//           setProducts(categoryProducts);
+//         } else {
+//           setProducts([]);
+//           setCategoryName("Unknown Category");
+//         }
 //       } catch (err) {
 //         console.error("Error fetching category products:", err);
 //         setProducts([]);
+//         setCategoryName("Error");
 //       }
+
 //       setLoading(false);
 //     };
 
 //     fetchCategoryProducts();
-//   }, [categoryName]);
+//   }, [slug]);
 
 //   return (
 //     <div className="max-w-7xl mx-auto px-4 py-4">
-//       {/* Back button */}
 //       <button onClick={() => router.back()} className="text-sm text-blue-600 mb-4 flex items-center">
 //         ← Back
 //       </button>
@@ -142,8 +115,6 @@
 
 
 
-
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -159,72 +130,75 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true);
   const [categoryName, setCategoryName] = useState("");
 
-  // Slug decoder helper (must match your slug creation logic)
-  const decodeSlug = (slug) => slug.replace(/-/g, " ");
+  const decodeSlug = (slug) => slug.replace(/-/g, " ").toLowerCase();
 
   useEffect(() => {
-    const fetchCategoryProducts = async () => {
+    const fetchProductsByCategory = async () => {
       setLoading(true);
 
       try {
-        // 1. Fetch all categories
-        const categorySnapshot = await getDocs(collection(db, "categories"));
-        let actualCategoryName = "";
-
-        categorySnapshot.forEach((doc) => {
-          const name = doc.data().name;
-          const generatedSlug = name
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, "");
-
-          if (generatedSlug === slug) {
-            actualCategoryName = name;
-          }
-        });
-
-        // If not found, treat it as "All Products"
-        if (slug === "all") {
+        if (slug === "all-products") {
+          // 🟢 Handle All Products (virtual category)
           setCategoryName("All Products");
-
           const allSnapshot = await getDocs(collection(db, "products"));
           const allProducts = allSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }));
           setProducts(allProducts);
-        } else if (actualCategoryName) {
-          setCategoryName(actualCategoryName);
-
-          const q = query(
-            collection(db, "products"),
-            where("category", "==", actualCategoryName)
-          );
-          const querySnapshot = await getDocs(q);
-          const categoryProducts = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setProducts(categoryProducts);
         } else {
-          setProducts([]);
-          setCategoryName("Unknown Category");
+          // 🔍 Fetch actual categories to resolve slug
+          const categorySnapshot = await getDocs(collection(db, "categories"));
+          let resolvedName = "";
+
+          categorySnapshot.forEach((doc) => {
+            const name = doc.data().name;
+            const generatedSlug = name
+              .toLowerCase()
+              .replace(/\s+/g, "-")
+              .replace(/[^a-z0-9-]/g, "");
+
+            if (generatedSlug === slug) {
+              resolvedName = name;
+            }
+          });
+
+          if (resolvedName) {
+            setCategoryName(resolvedName);
+
+            const q = query(
+              collection(db, "products"),
+              where("category", "==", resolvedName)
+            );
+            const querySnapshot = await getDocs(q);
+            const filteredProducts = querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setProducts(filteredProducts);
+          } else {
+            setCategoryName("Unknown Category");
+            setProducts([]);
+          }
         }
-      } catch (err) {
-        console.error("Error fetching category products:", err);
-        setProducts([]);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
         setCategoryName("Error");
+        setProducts([]);
       }
 
       setLoading(false);
     };
 
-    fetchCategoryProducts();
+    fetchProductsByCategory();
   }, [slug]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4">
-      <button onClick={() => router.back()} className="text-sm text-blue-600 mb-4 flex items-center">
+      <button
+        onClick={() => router.back()}
+        className="text-sm text-blue-600 mb-4 flex items-center"
+      >
         ← Back
       </button>
 
