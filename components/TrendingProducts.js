@@ -79,6 +79,7 @@ export default function TrendingProducts() {
                     fill
                     className="object-cover group-hover:brightness-75 transition duration-300 rounded-lg"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
                   />
                   {/* Fade at bottom */}
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent z-10 rounded-b-lg"></div>
