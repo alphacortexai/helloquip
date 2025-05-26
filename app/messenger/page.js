@@ -67,10 +67,11 @@ export default function UserMessenger() {
   if (!user) return <p>Please log in to see your messages.</p>;
 
   return (
-    <div className="max-w-md mx-auto flex flex-col h-[80vh] border rounded p-4 bg-white">
+    <div className="max-w-md mx-auto flex flex-col h-[80vh] border rounded p-4 bg-white relative">
         <h2 className="text-xl font-semibold mb-4">HelloQuip Chat</h2>
 
-        <div className="flex-1 overflow-y-auto mb-4 flex flex-col space-y-1">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto mb-20 flex flex-col space-y-1">
         {messages.length === 0 && (
             <p className="text-gray-500 text-center mt-4">No messages yet.</p>
         )}
@@ -95,7 +96,8 @@ export default function UserMessenger() {
         <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Input - stick to bottom */}
+        <div className="absolute bottom-4 left-4 right-4 bg-white flex items-center gap-2">
         <input
             type="text"
             placeholder="Type your message..."
@@ -117,6 +119,7 @@ export default function UserMessenger() {
         </button>
         </div>
     </div>
-    );
+);
+
 
 }
