@@ -37,7 +37,7 @@ export default function EditProducts({ currentAdminUid }) {
           setSelectedShopId(shopList[0].id);
         }
       } catch (error) {
-        console.error("Error fetching shops:", error);
+        console.error("Error fetching shops:...", error);
       } finally {
         setLoadingShops(false);
       }
