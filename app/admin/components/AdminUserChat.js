@@ -149,7 +149,7 @@ export default function AdminChatPanel() {
                 onClick={sendMessage}
                 className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition"
               >
-                Send
+                Send Msg
               </button>
             </div>
           </>

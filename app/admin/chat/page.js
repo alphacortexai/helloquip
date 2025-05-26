@@ -1,10 +1,11 @@
-import AdminChatPanel from "../components/AdminUserChat"; // Adjust the import path if needed
+// app/admin/chat/page.tsx
+import { Suspense } from "react";
+import ChatPage from "./ChatPage"; // your actual component that uses useSearchParams
 
-export default function AdminChatPage() {
+export default function Page() {
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Chat</h1>
-      <AdminChatPanel />
-    </div>
+    <Suspense fallback={<div>Loading chat...</div>}>
+      <ChatPage />
+    </Suspense>
   );
 }
