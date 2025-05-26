@@ -97,7 +97,7 @@ export default function UserMessenger() {
         </div>
 
         {/* Input - stick to bottom */}
-        <div className="absolute bottom-4 left-4 right-4 bg-white flex items-center gap-2">
+        <div className="absolute bottom-10 left-4 right-4 bg-white flex items-center gap-2">
         <input
             type="text"
             placeholder="Type your message..."
