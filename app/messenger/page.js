@@ -71,7 +71,7 @@ export default function UserMessenger() {
         <h2 className="text-xl font-semibold mb-4">HelloQuip Chat</h2>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto mb-20 flex flex-col space-y-1">
+        <div className="flex-1 overflow-y-auto mb-28 flex flex-col space-y-1">
         {messages.length === 0 && (
             <p className="text-gray-500 text-center mt-4">No messages yet.</p>
         )}
