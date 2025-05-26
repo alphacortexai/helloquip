@@ -72,7 +72,7 @@ export default function ClientLayoutWrapper({ children }) {
   const router = useRouter();
 
   const hideNavbarOn = ["/register", "/login"];
-  const hideFooterOn = ["/order", "/categories", "/register"];
+  const hideFooterOn = ["/order", "/categories", "/register", "/messenger"]; 
 
   const showNavbar = !hideNavbarOn.includes(pathname);
   const showFooter = !hideFooterOn.includes(pathname);
