@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Footer from "@/components/Footer";
 import FeaturedProducts from "@/components/FeaturedProducts";
 
@@ -68,6 +69,51 @@ export default function ProductDetail() {
       router.push(`/order?productId=${product.id}`);
     }
   };
+
+
+  // Talk to hello quip Handler
+  const handleTalkToSeller = async () => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      // Redirect to login with redirect back to chat page later
+      router.push(`/register?redirect=/messenger`);
+      return;
+    }
+
+    try {
+      const chatId = `admin_${currentUser.uid}`;
+
+      // Compose product card message
+      const productMessage = {
+        from: currentUser.uid,
+        to: "admin",
+        timestamp: serverTimestamp(),
+        chatId,
+        type: "product_card",  // custom type
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          imageUrl: product.imageUrl,
+        },
+      };
+
+      // Add product card message as first message
+      await addDoc(collection(db, "messages"), productMessage);
+
+      // Redirect to chat page
+      router.push("/messenger");
+
+    } catch (error) {
+      console.error("Failed to send product card message:", error);
+      toast.error("Failed to start chat. Please try again.");
+    }
+  };
+
+
 
   const handleAddToOrder = () => {
     const existing = JSON.parse(localStorage.getItem("orderItems") || "[]");
@@ -161,12 +207,22 @@ export default function ProductDetail() {
                 Buy Now
               </button>
 
-              <button
+              {/* <button
                 onClick={() => toast("Messaging seller…")}
                 className="w-full sm:w-auto bg-green-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-green-700 transition"
               >
                 Talk to Seller
+              </button> */}
+
+              <button
+                onClick={handleTalkToSeller}
+                className="w-full sm:w-auto bg-green-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-green-700 transition"
+              >
+                Talk to Seller
               </button>
+
+
+
             </div>
           </div>
         </div>
