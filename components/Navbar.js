@@ -100,6 +100,8 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 
+import SearchBar from "@/components/SearchBar";
+
 export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -124,9 +126,12 @@ export default function Navbar() {
   return (
     <>
       {/* Navbar */}
-      <header className="bg-white shadow sticky top-0 z-50">
+      {/* <header className="bg-white shadow sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-extrabold text-blue-700">HelloQuip</h1>
+          <div>
+               <SearchBar />
+          </div>
 
           {user ? (
             <div className="flex items-center gap-3">
@@ -152,7 +157,53 @@ export default function Navbar() {
             </button>
           )}
         </div>
-      </header>
+      </header> */}
+
+      <header className="bg-white shadow sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-blue-700">HelloQuip</h1>
+          </div>
+
+          {/* Search Bar - Visible on sm and up */}
+          <div className="flex-1 hidden sm:block">
+            <SearchBar />
+          </div>
+
+          {/* User Actions */}
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <img
+                  src={user.photoURL || "/default-avatar.png"}
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full cursor-pointer"
+                  onClick={() => setMenuOpen(true)}
+                />
+                <button
+                  onClick={() => setMenuOpen(true)}
+                  className="text-gray-700 text-2xl focus:outline-none"
+                >
+                  ⋮
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => router.push("/register")}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        </div>
+      {/* Search bar on small screens */}
+      <div className="block sm:hidden px-4 pb-2">
+        <SearchBar />
+      </div>
+    </header>
+
 
       {/* Overlay */}
       {menuOpen && (
