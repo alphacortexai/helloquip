@@ -177,7 +177,7 @@ export default function Navbar() {
   
   const showSearchOnPaths = ["/", "/category", "/shop"];
 
-  const showSearch = ["/category", "/shop", "/product", "/search"].some((path) =>
+  const showSearch = ["/category", "/shop", "/search"].some((path) =>
   pathname.startsWith(path)
 ) || pathname === "/";
 
