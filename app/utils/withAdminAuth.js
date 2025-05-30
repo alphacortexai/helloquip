@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 // 👇 Replace with actual admin emails
 const adminEmails = [
-  "edrine.eminence@gmail.com","edrine.mutebi@gmail.com"
+  "edrine.eminence@gmail.com","edrine.mutebi@gmail.com","mulebekisharif@gmail.com"
 ];
 
 export default function withAdminAuth(Component) {
