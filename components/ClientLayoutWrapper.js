@@ -1,3 +1,4 @@
+
 // "use client";
 
 // import Navbar from "@/components/Navbar";
@@ -12,7 +13,7 @@
 //   const router = useRouter();
 
 //   const hideNavbarOn = ["/register", "/login"];
-//   const hideFooterOn = ["/order", "/categories", "/register", "/messenger"];
+//   const hideFooterOn = ["/order", "/categories", "/register", "/messenger","/account", "/admin"];
 
 //   const showNavbar = !hideNavbarOn.includes(pathname);
 //   const showFooter = !hideFooterOn.includes(pathname);
@@ -107,15 +108,19 @@ export default function ClientLayoutWrapper({ children }) {
   const router = useRouter();
 
   const hideNavbarOn = ["/register", "/login"];
-  const hideFooterOn = ["/order", "/categories", "/register", "/messenger","/account"];
+  const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin"];
+
+  // Define paths where the mobile nav should be hidden
+  const hideMobileNavOn = ["/admin", "/login", "/register"];
 
   const showNavbar = !hideNavbarOn.includes(pathname);
   const showFooter = !hideFooterOn.includes(pathname);
+  const auth = getAuth();
 
   const [user, setUser] = useState(null);
   const [orderCount, setOrderCount] = useState(0);
 
-  const auth = getAuth();
+  const showMobileNav = user && !hideMobileNavOn.includes(pathname);
 
   const navItems = [
     { label: "Home", href: "/", icon: "M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0v6H5v-6h6z" },
@@ -144,7 +149,7 @@ export default function ClientLayoutWrapper({ children }) {
       <Toaster richColors position="top-center" />
 
       {/* Mobile Bottom Navigation */}
-      {user && (
+      {showMobileNav && (
         <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t border-gray-200 z-50">
           <div className="flex justify-between items-center px-4 py-2 text-xs text-gray-600">
             {navItems.map((item, idx) => (

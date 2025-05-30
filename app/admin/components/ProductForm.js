@@ -568,13 +568,105 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 bg-white shadow-md rounded-md space-y-4">
-      <h2 className="text-lg font-semibold">{existingProduct ? "Edit Product" : "Create New Product"}</h2>
+    // <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 bg-white shadow-md rounded-md space-y-4">
+    //   <h2 className="text-lg font-semibold">{existingProduct ? "Edit Product" : "Create New Product"}</h2>
+
+    //   <select
+    //     value={selectedShop}
+    //     onChange={(e) => setSelectedShop(e.target.value)}
+    //     className="w-full p-2 border rounded"
+    //     required
+    //   >
+    //     <option value="">Select shop</option>
+    //     {shops.map(shop => (
+    //       <option key={shop.id} value={shop.id}>{shop.name}</option>
+    //     ))}
+    //   </select>
+
+    //   <input
+    //     type="text"
+    //     placeholder="Product name"
+    //     value={name}
+    //     onChange={(e) => setName(e.target.value)}
+    //     className="w-full p-2 border rounded"
+    //     required
+    //   />
+
+    //   <textarea
+    //     placeholder="Description"
+    //     value={description}
+    //     onChange={(e) => setDescription(e.target.value)}
+    //     className="w-full p-2 border rounded"
+    //     required
+    //   />
+
+    //   <input
+    //     type="number"
+    //     placeholder="Price"
+    //     value={price}
+    //     onChange={(e) => setPrice(e.target.value)}
+    //     className="w-full p-2 border rounded"
+    //     required
+    //   />
+
+    //   <select
+    //     value={category}
+    //     onChange={(e) => setCategory(e.target.value)}
+    //     className="w-full p-2 border rounded"
+    //     required
+    //   >
+    //     <option value="">Select category</option>
+    //     {categories.map(cat => (
+    //       <option key={cat.id} value={cat.name}>{cat.name}</option>
+    //     ))}
+    //   </select>
+
+    //   {/* Main image input */}
+    //   <label className="block font-medium">Main Image</label>
+    //   <input
+    //     type="file"
+    //     onChange={(e) => setImage(e.target.files[0])}
+    //     className="w-full p-2 border rounded"
+    //     accept="image/*"
+    //   />
+    //   {existingProduct && imageUrl && (
+    //     <img
+    //       src={imageUrl}
+    //       alt="Main"
+    //       className="w-24 h-24 object-cover rounded"
+    //     />
+    //   )}
+
+    //   {/* Additional images input */}
+    //   <label className="block font-medium">Extra Images (up to 5)</label>
+    //   <input
+    //     type="file"
+    //     onChange={handleExtraImagesChange}
+    //     multiple
+    //     className="w-full p-2 border rounded"
+    //     accept="image/*"
+    //   />
+    //   {extraImageUrls.length > 0 && (
+    //     <div className="flex gap-2 flex-wrap">
+    //       {extraImageUrls.map((url, index) => (
+    //         <img key={index} src={url} alt={`Extra ${index}`} className="w-20 h-20 object-cover rounded" />
+    //       ))}
+    //     </div>
+    //   )}
+
+    //   <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+    //     {existingProduct ? "Update Product" : "Add Product"}
+    //   </button>
+    // </form>
+    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 bg-white shadow-lg rounded-2xl space-y-5">
+      <h2 className="text-xl font-bold text-gray-800 text-center">
+        {existingProduct ? "Edit Product" : "Create New Product"}
+      </h2>
 
       <select
         value={selectedShop}
         onChange={(e) => setSelectedShop(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       >
         <option value="">Select shop</option>
@@ -588,7 +680,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         placeholder="Product name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       />
 
@@ -596,7 +688,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       />
 
@@ -605,14 +697,14 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         placeholder="Price"
         value={price}
         onChange={(e) => setPrice(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       />
 
       <select
         value={category}
         onChange={(e) => setCategory(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       >
         <option value="">Select category</option>
@@ -621,42 +713,48 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         ))}
       </select>
 
-      {/* Main image input */}
-      <label className="block font-medium">Main Image</label>
-      <input
-        type="file"
-        onChange={(e) => setImage(e.target.files[0])}
-        className="w-full p-2 border rounded"
-        accept="image/*"
-      />
-      {existingProduct && imageUrl && (
-        <img
-          src={imageUrl}
-          alt="Main"
-          className="w-24 h-24 object-cover rounded"
+      <div>
+        <label className="block font-medium text-gray-700 mb-1">Main Image</label>
+        <input
+          type="file"
+          onChange={(e) => setImage(e.target.files[0])}
+          className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none"
+          accept="image/*"
         />
-      )}
+        {existingProduct && imageUrl && (
+          <img
+            src={imageUrl}
+            alt="Main"
+            className="w-24 h-24 mt-2 object-cover rounded-xl"
+          />
+        )}
+      </div>
 
-      {/* Additional images input */}
-      <label className="block font-medium">Extra Images (up to 5)</label>
-      <input
-        type="file"
-        onChange={handleExtraImagesChange}
-        multiple
-        className="w-full p-2 border rounded"
-        accept="image/*"
-      />
-      {extraImageUrls.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          {extraImageUrls.map((url, index) => (
-            <img key={index} src={url} alt={`Extra ${index}`} className="w-20 h-20 object-cover rounded" />
-          ))}
-        </div>
-      )}
+      <div>
+        <label className="block font-medium text-gray-700 mb-1">Extra Images (up to 5)</label>
+        <input
+          type="file"
+          onChange={handleExtraImagesChange}
+          multiple
+          className="w-full p-3 bg-gray-100 rounded-xl focus:outline-none"
+          accept="image/*"
+        />
+        {extraImageUrls.length > 0 && (
+          <div className="flex gap-2 flex-wrap mt-2">
+            {extraImageUrls.map((url, index) => (
+              <img key={index} src={url} alt={`Extra ${index}`} className="w-20 h-20 object-cover rounded-xl" />
+            ))}
+          </div>
+        )}
+      </div>
 
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white text-center py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+      >
         {existingProduct ? "Update Product" : "Add Product"}
       </button>
     </form>
+
   );
 }
