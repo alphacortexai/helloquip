@@ -21,12 +21,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
 
-  // Scroll to top if needed
-  // const pathname = usePathname();
-  // useEffect(() => {
-  //   window.scrollTo(0, 0);
-  // }, [pathname]);
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
