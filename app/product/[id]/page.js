@@ -107,13 +107,13 @@ export default function ProductDetail() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto px-4 py-1">
-              <button
+      <div className="mt-2 max-w-6xl mx-auto px-4 py-1">
+      {/* <button
         onClick={() => router.back()}
         className="mb-1  ml-2 mt-2 mb-2  top-[100px] left-14 z-1 px-8 py-2 bg-blue-100 text-blue-700 text-sm  rounded-md shadow-sm hover:bg-blue-200 transition-all"
       >
         ← Back
-      </button>
+      </button> */}
         <div className="flex flex-col md:flex-row gap-3 md:gap-5">
           {/* LEFT: Image Gallery */}
           <div className="md:w-[40%] flex flex-col gap-4">
