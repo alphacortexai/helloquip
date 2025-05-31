@@ -1,4 +1,3 @@
-
 // "use client";
 
 // import Navbar from "@/components/Navbar";
@@ -13,15 +12,19 @@
 //   const router = useRouter();
 
 //   const hideNavbarOn = ["/register", "/login"];
-//   const hideFooterOn = ["/order", "/categories", "/register", "/messenger","/account", "/admin"];
+//   const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin"];
+
+//   // Define paths where the mobile nav should be hidden
+//   const hideMobileNavOn = ["/admin", "/login", "/register"];
 
 //   const showNavbar = !hideNavbarOn.includes(pathname);
 //   const showFooter = !hideFooterOn.includes(pathname);
+//   const auth = getAuth();
 
 //   const [user, setUser] = useState(null);
 //   const [orderCount, setOrderCount] = useState(0);
 
-//   const auth = getAuth();
+//   const showMobileNav = user && !hideMobileNavOn.includes(pathname);
 
 //   const navItems = [
 //     { label: "Home", href: "/", icon: "M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0v6H5v-6h6z" },
@@ -50,7 +53,7 @@
 //       <Toaster richColors position="top-center" />
 
 //       {/* Mobile Bottom Navigation */}
-//       {user && (
+//       {showMobileNav && (
 //         <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t border-gray-200 z-50">
 //           <div className="flex justify-between items-center px-4 py-2 text-xs text-gray-600">
 //             {navItems.map((item, idx) => (
@@ -102,6 +105,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+// import { db } from "@/firebase";  // Make sure you import your Firestore db instance
+import { db } from "@/lib/firebase";
 
 export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
@@ -109,8 +115,6 @@ export default function ClientLayoutWrapper({ children }) {
 
   const hideNavbarOn = ["/register", "/login"];
   const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin"];
-
-  // Define paths where the mobile nav should be hidden
   const hideMobileNavOn = ["/admin", "/login", "/register"];
 
   const showNavbar = !hideNavbarOn.includes(pathname);
@@ -130,6 +134,7 @@ export default function ClientLayoutWrapper({ children }) {
     { label: "My Account", href: "/account", icon: "M5.121 17.804A8.002 8.002 0 0112 15a8.002 8.002 0 016.879 2.804M12 7a4 4 0 100 8 4 4 0 000-8z" },
   ];
 
+  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -137,10 +142,41 @@ export default function ClientLayoutWrapper({ children }) {
     return () => unsubscribe();
   }, [auth]);
 
+  // Listen for real-time updates on orders for the current user
+  // useEffect(() => {
+  //   if (!user) {
+  //     setOrderCount(0);
+  //     return;
+  //   }
+
+  //   // Reference to the user's orders collection (adjust this to your Firestore structure)
+  //   // For example, if your orders are in a collection "orders" and each order has a userId field:
+  //   const ordersRef = collection(db, "orders");
+  //   const q = query(ordersRef, where("userId", "==", user.uid));
+
+  //   const unsubscribe = onSnapshot(q, (snapshot) => {
+  //     setOrderCount(snapshot.size);
+  //   });
+
+  //   return () => unsubscribe();
+  // }, [user]);
+  // Listen for real-time updates on cart items for the current user
   useEffect(() => {
-    const storedItems = JSON.parse(localStorage.getItem("orderItems") || "[]");
-    setOrderCount(storedItems.length);
-  }, []);
+    if (!user) {
+      setOrderCount(0);
+      return;
+    }
+
+    // Reference to the user's cart items subcollection
+    const itemsRef = collection(db, "carts", user.uid, "items");
+
+    const unsubscribe = onSnapshot(itemsRef, (snapshot) => {
+      setOrderCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
 
   return (
     <>
@@ -167,12 +203,7 @@ export default function ClientLayoutWrapper({ children }) {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d={item.icon}
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                 </svg>
                 {item.label}
                 {item.label === "Orders" && orderCount > 0 && (
