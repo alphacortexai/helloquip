@@ -72,12 +72,6 @@ export default function Navbar() {
                   className="w-8 h-8 rounded-full cursor-pointer"
                   onClick={() => setMenuOpen(true)}
                 />
-                <button
-                  onClick={() => setMenuOpen(true)}
-                  className="text-gray-700 text-2xl focus:outline-none"
-                >
-                  ⋮
-                </button>
               </>
             ) : (
               <button
