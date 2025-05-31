@@ -315,9 +315,12 @@ export default function OrderPage() {
     <div className="flex flex-col px-6 md:px-16 lg:px-32 py-6 min-h-screen">
       <div className="mb-4">
         <Link href="/" className="flex items-center text-blue-600 hover:underline">
-          <ArrowLeft size={18} />
-          <span className="ml-2">Back to Home</span>
+          <span className="mb-4 top-[130px] right-2  px-4 py-2 bg-blue-100 text-blue-700 text-sm  shadow-sm hover:bg-blue-200 transition-all">Back to Home</span>
         </Link>
+
+
+
+
       </div>
 
       {/* Tabs */}
@@ -328,7 +331,7 @@ export default function OrderPage() {
             activeTab === "orders" ? "border-b-2 border-blue-600" : "text-gray-600"
           }`}
         >
-          Your Cart & Orders
+          Orders
         </button>
         <button
           onClick={() => setActiveTab("shipments")}
@@ -346,14 +349,14 @@ export default function OrderPage() {
         >
           Delivered
         </button>
-        <button
+        {/* <button
           onClick={() => setActiveTab("canceled")}
           className={`py-2 px-4 font-semibold ${
             activeTab === "canceled" ? "border-b-2 border-blue-600" : "text-gray-600"
           }`}
         >
           Canceled
-        </button>
+        </button> */}
       </div>
 
       {activeTab === "orders" && (
