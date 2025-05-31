@@ -107,25 +107,24 @@ export default function ProductDetail() {
 
   return (
     <>
-      <button
+      <div className="max-w-6xl mx-auto px-4 py-1">
+              <button
         onClick={() => router.back()}
-        className="fixed mb-4 top-[100px] left-8 z-50 px-4 py-2 bg-blue-100 text-blue-700 text-sm  rounded-md shadow-sm hover:bg-blue-200 transition-all"
+        className="mb-1  ml-2 mt-2 mb-2  top-[100px] left-14 z-1 px-8 py-2 bg-blue-100 text-blue-700 text-sm  rounded-md shadow-sm hover:bg-blue-200 transition-all"
       >
         ← Back
       </button>
-
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-5">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-5">
           {/* LEFT: Image Gallery */}
-          <div className="md:w-[45%] flex flex-col gap-4">
+          <div className="md:w-[40%] flex flex-col gap-4">
             {/* Main Image Preview */}
-            <div className="rounded-xl w-full h-80 md:h-[320px] flex items-center justify-center overflow-hidden">
+            <div className="rounded-xl w-full h-55 md:h-[120px] flex items-center justify-center overflow-hidden">
               {activeImage ? (
                 <Image
                   src={activeImage}
                   alt="Main preview"
                   width={400}
-                  height={600}
+                  height={300}
                   className="object-contain rounded-xl"
                   priority
                 />
@@ -141,7 +140,7 @@ export default function ProductDetail() {
                 return thumb ? (
                   <div
                     key={index}
-                    className={`w-14 h-14 relative rounded-lg overflow-hidden border-2 cursor-pointer ${
+                    className={`w-10 h-10 relative rounded-lg overflow-hidden border-1 cursor-pointer ${
                       activeImage === thumb ? "border-blue-500" : "border-gray-200"
                     }`}
                     onClick={() => setActiveImage(thumb)}
@@ -156,7 +155,7 @@ export default function ProductDetail() {
                 ) : (
                   <div
                     key={index}
-                    className="w-14 h-14 bg-gray-200 rounded-lg border border-gray-300"
+                    className="w-10 h-10 bg-gray-200 rounded-lg border border-gray-300"
                   />
                 );
               })}
@@ -166,12 +165,13 @@ export default function ProductDetail() {
           {/* RIGHT: Product Info */}
           <div className="flex-1 flex flex-col gap-2">
             <div className="space-y-2">
-              <h2 className="text-xl md:text-1xl font-semibold text-gray-900">
+              <h2 className="text-base md:text-lg font-medium text-gray-800">
                 {product.name}
-              <span className="text-blue-600 font-semibold text-lg">
-                -- UGX {parseInt(product.price).toLocaleString()}
-              </span>
+                <span className="text-blue-600 font-normal text-sm ml-1">
+                  – UGX {parseInt(product.price).toLocaleString()}
+                </span>
               </h2>
+
               <p className="text-sm text-gray-600 ">
                 {product.description}
               </p>
@@ -181,19 +181,19 @@ export default function ProductDetail() {
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 onClick={handleAddToOrder}
-                className="flex-1 min-w-[100px] bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition"
+                className="flex-1 min-w-[90px] bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition"
               >
-                Add to Order
+                Add
               </button>
               <button
                 onClick={handleBuyNow}
-                className="flex-1 min-w-[100px] border border-gray-300 text-gray-700 px-5 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition"
+                className="flex-1 min-w-[90px] border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 transition"
               >
-                View Orders
+                Orders
               </button>
               <button
                 onClick={handleTalkToSeller}
-                className="flex-1 min-w-[20px] bg-green-600 text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition"
+                className="flex-1 min-w-[60px] bg-green-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition"
               >
                 Chat
               </button>
@@ -205,9 +205,9 @@ export default function ProductDetail() {
       {/* Similar Products */}
       {product?.category && (
         <div className="pt-2 pb-8">
-          <h2 className="text-lg  text-center mb-2">
+          <h3 className="text-sm  text-center mb-2">
             Related products in <span className="font-semibold"> {product.category} </span> 
-          </h2>
+          </h3>
           <FeaturedProducts selectedCategory={product.category} />
         </div>
       )}
