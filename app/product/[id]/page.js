@@ -183,20 +183,20 @@ export default function ProductDetail() {
                 onClick={handleAddToOrder}
                 className="flex-1 min-w-[90px] bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition"
               >
-                Add
+                Add to Order
               </button>
               <button
                 onClick={handleBuyNow}
                 className="flex-1 min-w-[90px] border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 transition"
               >
-                Orders
+               View Orders
               </button>
-              <button
+              {/* <button
                 onClick={handleTalkToSeller}
                 className="flex-1 min-w-[60px] bg-green-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition"
               >
                 Chat
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
