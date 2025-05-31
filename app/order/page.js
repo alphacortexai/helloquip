@@ -359,85 +359,172 @@ export default function OrderPage() {
         </button> */}
       </div>
 
-      {activeTab === "orders" && (
-        <div className="flex flex-col max-h-[400px] overflow-y-auto">
-          <h2 className="text-2xl font-bold mb-4">Your Selected Orders</h2>
-          {cartItems.length === 0 ? (
-            <div className="text-center text-gray-500 mb-4">
-              You have no orders!
-              <br />
-              <Link href="/" className="text-blue-600 underline">
-                Continue Shopping
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4 mb-6">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex border rounded-md p-3 items-center justify-between"
-                >
-                  <Image
-                    src={item.imageUrl || "/no-image.png"}
-                    alt={item.name}
-                    width={80}
-                    height={80}
-                    className="object-cover rounded"
-                  />
-                  <div className="flex-1 ml-4">
-                    <h2 className="font-semibold">{item.name}</h2>
-                    <p className="text-gray-600">UGX {item.price.toLocaleString()}</p>
-                    <div className="flex items-center mt-2">
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        className="px-2 py-1 border rounded-l hover:bg-gray-100"
-                      >
-                        <ChevronDown size={16} />
-                      </button>
-                      <span className="px-4">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        className="px-2 py-1 border rounded-r hover:bg-gray-100"
-                      >
-                        <ChevronUp size={16} />
-                      </button>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="ml-4 text-red-600 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+{activeTab === "orders" && (
+  <div className="flex flex-col max-h-[400px] overflow-y-auto">
+    <h2 className="text-2xl font-bold mb-4">Your Selected Orders</h2>
 
-          {/* Address section stays the same */}
-
-          {/* Total Amount */}
-          {cartItems.length > 0 && (
-            <div className="text-right font-semibold text-lg mb-4">
-              Total: UGX{" "}
-              {cartItems
-                .reduce((total, item) => total + item.price * item.quantity, 0)
-                .toLocaleString()}
-            </div>
-          )}
-
-          {/* Place Order Button */}
-          <button
-            onClick={placeOrder}
-            disabled={cartItems.length === 0}
-            className={`w-full py-3 text-white font-semibold rounded ${
-              cartItems.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600"
-            }`}
+    {cartItems.length === 0 ? (
+      <div className="text-center text-gray-500 mb-4">
+        You have no orders!
+        <br />
+        <Link href="/" className="text-blue-600 underline">
+          Continue Shopping
+        </Link>
+      </div>
+    ) : (
+      <div className="space-y-4 mb-6">
+        {cartItems.map((item) => (
+          <div
+            key={item.id}
+            className="flex border rounded-md p-2 items-center justify-between"
           >
-            Place Order
+            <Image
+              src={item.imageUrl || "/no-image.png"}
+              alt={item.name}
+              width={80}
+              height={80}
+              className="object-cover rounded"
+            />
+            <div className="flex-1 ml-4">
+              <h2 className="font-semibold">{item.name}</h2>
+              <p className="text-gray-600">UGX {item.price.toLocaleString()}</p>
+              <div className="flex items-center mt-2">
+                <button
+                  onClick={() => updateQuantity(item.id, -1)}
+                  className="px-2 py-1 border rounded-l hover:bg-gray-100"
+                >
+                  <ChevronDown size={16} />
+                </button>
+                <span className="px-4">{item.quantity}</span>
+                <button
+                  onClick={() => updateQuantity(item.id, 1)}
+                  className="px-2 py-1 border rounded-r hover:bg-gray-100"
+                >
+                  <ChevronUp size={16} />
+                </button>
+                <button
+                  onClick={() => removeItem(item.id)}
+                  className="ml-4 text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Total Amount */}
+    {cartItems.length > 0 && (
+      <div className="text-right font-semibold text-lg mb-4">
+        Total: UGX{" "}
+        {cartItems
+          .reduce((total, item) => total + item.price * item.quantity, 0)
+          .toLocaleString()}
+      </div>
+    )}
+
+    {/* Address Card with Edit Functionality */}
+    <div className="border rounded-md p-4 mb-6">
+      <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
+      {!editing ? (
+        <div className="space-y-2">
+          <p>
+            <span className="font-semibold">Full Name:</span> {address.fullName || "N/A"}
+          </p>
+          <p>
+            <span className="font-semibold">Area:</span> {address.area || "N/A"}
+          </p>
+          <p>
+            <span className="font-semibold">City:</span> {address.city || "N/A"}
+          </p>
+          <p>
+            <span className="font-semibold">State:</span> {address.state || "N/A"}
+          </p>
+          <p>
+            <span className="font-semibold">Phone Number:</span> {address.phoneNumber || "N/A"}
+          </p>
+          <button
+            onClick={() => setEditing(true)}
+            className="mt-2 text-blue-600 hover:underline"
+          >
+            Edit Address
           </button>
         </div>
+      ) : (
+        <div className="space-y-2">
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Full Name"
+            value={address.fullName}
+            onChange={handleAddressChange}
+            className="border p-2 w-full rounded"
+          />
+          <input
+            type="text"
+            name="area"
+            placeholder="Area"
+            value={address.area}
+            onChange={handleAddressChange}
+            className="border p-2 w-full rounded"
+          />
+          <input
+            type="text"
+            name="city"
+            placeholder="City"
+            value={address.city}
+            onChange={handleAddressChange}
+            className="border p-2 w-full rounded"
+          />
+          <input
+            type="text"
+            name="state"
+            placeholder="State"
+            value={address.state}
+            onChange={handleAddressChange}
+            className="border p-2 w-full rounded"
+          />
+          <input
+            type="text"
+            name="phoneNumber"
+            placeholder="Phone Number"
+            value={address.phoneNumber}
+            onChange={handleAddressChange}
+            className="border p-2 w-full rounded"
+          />
+          <div className="flex space-x-2 mt-2">
+            <button
+              onClick={saveAddress}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="bg-gray-300 px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
+    </div>
+
+    {/* Place Order Button */}
+    <button
+      onClick={placeOrder}
+      disabled={cartItems.length === 0}
+      className={`w-full mb-18 py-3 text-white font-semibold rounded ${
+        cartItems.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600"
+      }`}
+    >
+      Place Order
+    </button>
+  </div>
+)}
+
 
 
       {activeTab === "shipments" && (
