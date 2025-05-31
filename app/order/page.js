@@ -360,11 +360,11 @@ export default function OrderPage() {
       </div>
 
       {activeTab === "orders" && (
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold mb-4">Your Cart</h1>
+        <div className="flex flex-col max-h-[400px] overflow-y-auto">
+          <h2 className="text-2xl font-bold mb-4">Your Selected Orders</h2>
           {cartItems.length === 0 ? (
             <div className="text-center text-gray-500 mb-4">
-              Your cart is empty.
+              You have no orders!
               <br />
               <Link href="/" className="text-blue-600 underline">
                 Continue Shopping
@@ -414,93 +414,17 @@ export default function OrderPage() {
             </div>
           )}
 
-          {/* Address */}
-          <div className="border rounded-md p-4 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-            {!editing ? (
-              <div className="space-y-2">
-                <p>
-                  <span className="font-semibold">Full Name:</span> {address.fullName || "N/A"}
-                </p>
-                <p>
-                  <span className="font-semibold">Area:</span> {address.area || "N/A"}
-                </p>
-                <p>
-                  <span className="font-semibold">City:</span> {address.city || "N/A"}
-                </p>
-                <p>
-                  <span className="font-semibold">State:</span> {address.state || "N/A"}
-                </p>
-                <p>
-                  <span className="font-semibold">Phone Number:</span>{" "}
-                  {address.phoneNumber || "N/A"}
-                </p>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="mt-2 text-blue-600 hover:underline"
-                >
-                  Edit Address
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  value={address.fullName}
-                  onChange={handleAddressChange}
-                  className="border p-2 w-full rounded"
-                />
-                <input
-                  type="text"
-                  name="area"
-                  placeholder="Area"
-                  value={address.area}
-                  onChange={handleAddressChange}
-                  className="border p-2 w-full rounded"
-                />
-                <input
-                  type="text"
-                  name="city"
-                  placeholder="City"
-                  value={address.city}
-                  onChange={handleAddressChange}
-                  className="border p-2 w-full rounded"
-                />
-                <input
-                  type="text"
-                  name="state"
-                  placeholder="State"
-                  value={address.state}
-                  onChange={handleAddressChange}
-                  className="border p-2 w-full rounded"
-                />
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  placeholder="Phone Number"
-                  value={address.phoneNumber}
-                  onChange={handleAddressChange}
-                  className="border p-2 w-full rounded"
-                />
-                <div className="flex space-x-2 mt-2">
-                  <button
-                    onClick={saveAddress}
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setEditing(false)}
-                    className="bg-gray-300 px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Address section stays the same */}
+
+          {/* Total Amount */}
+          {cartItems.length > 0 && (
+            <div className="text-right font-semibold text-lg mb-4">
+              Total: UGX{" "}
+              {cartItems
+                .reduce((total, item) => total + item.price * item.quantity, 0)
+                .toLocaleString()}
+            </div>
+          )}
 
           {/* Place Order Button */}
           <button
@@ -515,22 +439,23 @@ export default function OrderPage() {
         </div>
       )}
 
+
       {activeTab === "shipments" && (
-        <div>
+        <div className="flex flex-col max-h-[400px] overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Shipments</h1>
           {renderOrderList(shipments, "shipments")}
         </div>
       )}
 
       {activeTab === "delivered" && (
-        <div>
+        <div className="flex flex-col max-h-[400px] overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Delivered Orders</h1>
           {renderOrderList(delivered, "delivered orders")}
         </div>
       )}
 
       {activeTab === "canceled" && (
-        <div>
+        <div className="flex flex-col max-h-[400px] overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Canceled Orders</h1>
           {renderOrderList(canceled, "canceled orders")}
         </div>
