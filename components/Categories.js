@@ -43,60 +43,32 @@ export default function Categories({ onCategorySelect }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-2">
-      {/* <div className="w-full bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
-        Browse Categories
-      </div> */}
-
       {/* Grid layout with smaller cards */}
       <div className="grid grid-cols-4 gap-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4">
 
-      {categories.map((cat) => (
-        
-        // <Link href={`/category/${encodeURIComponent(cat.name)}`} key={cat.id}>
-          <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
+        {categories.map((cat) => (
+          
+            <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
 
-
-          <div
-            className={`cursor-pointer text-center max-w-[100px] mx-auto
-              ${selectedCategoryId === cat.id ? "border border-teal-400 rounded-xl" : ""}
-            `}
-            onClick={() => setSelectedCategoryId(cat.id)}
-          >
-            <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden">
-              <img
-                src={cat.imageUrl}
-                alt={cat.name}
-                className="w-full h-full object-cover"
-                draggable={false}
-              />
+            <div
+              className={`cursor-pointer text-center max-w-[100px] mx-auto
+                ${selectedCategoryId === cat.id ? "border border-teal-400 rounded-xl" : ""}
+              `}
+              onClick={() => setSelectedCategoryId(cat.id)}
+            >
+              <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden">
+                <img
+                  src={cat.imageUrl}
+                  alt={cat.name}
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </div>
+              <p className="mt-2 text-xs font-medium text-gray-700">{cat.name}</p>
             </div>
-            <p className="mt-2 text-xs font-medium text-gray-700">{cat.name}</p>
-          </div>
-        </Link>
-      ))}
+          </Link>
+        ))}
 
-
-
-
-        {/* {categories.map((cat) => (
-          <div
-            key={cat.id}
-            className={`cursor-pointer text-center max-w-[100px] mx-auto
-              ${selectedCategoryId === cat.id ? "border border-teal-400 rounded-xl" : ""}
-            `}
-            onClick={() => handleCategoryClick(cat)}
-          >
-            <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden">
-              <img
-                src={cat.imageUrl}
-                alt={cat.name}
-                className="w-full h-full object-cover"
-                draggable={false}
-              />
-            </div>
-            <p className="mt-2 text-xs font-medium text-gray-700">{cat.name}</p>
-          </div>
-        ))} */}
       </div>
     </div>
   );
