@@ -243,7 +243,7 @@ export default function Navbar() {
                 />
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-50 w-70 bg-white rounded-xl z-50 p-4">
+                  <div className="absolute right-0 mt-52 w-50 bg-gray-100 rounded-xl z-50 p-4">
                     <div className="flex items-center space-x-3 mb-3">
                       <img
                         src={user.photoURL || "/default-avatar.png"}
@@ -255,7 +255,7 @@ export default function Navbar() {
                           {user.displayName || "User"}
                         </p>
                         {/* <p className="text-sm text-gray-500">{user.email}</p> */}
-                        <p className="text-sm text-gray-500 truncate overflow-hidden whitespace-nowrap max-w-[180px]">
+                        <p className="text-sm text-gray-500 truncate overflow-hidden whitespace-nowrap max-w-[100px]">
                           {user.email}
                         </p>
                       </div>
