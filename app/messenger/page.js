@@ -617,11 +617,12 @@ export default function UserMessenger() {
 
       {/* Smooth WhatsApp-style input */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-3 py-2 bg-transparent">
-        <div className="flex items-center gap-2 bg-white border border-gray-200 shadow-md rounded-full px-4 py-2">
+       <div className="flex items-center gap-3 bg-white border border-gray-200 shadow-md rounded-full px-5 py-3">
+
           <input
             type="text"
             placeholder="Type a message..."
-            className="flex-1 text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400"
+            className="flex-1 text-base bg-transparent outline-none text-gray-800 placeholder-gray-400"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
