@@ -35,7 +35,6 @@ export default function OrderPage() {
     fullName: "",
     area: "",
     city: "",
-    state: "",
     phoneNumber: "",
   });
   const [editing, setEditing] = useState(false);
@@ -201,7 +200,6 @@ export default function OrderPage() {
         fullName: address.fullName || userData.fullName || "N/A",
         area: address.area || "N/A",
         city: address.city || "N/A",
-        state: address.state || "N/A",
         phoneNumber: address.phoneNumber || user.phoneNumber || "N/A",
       };
 
@@ -431,16 +429,13 @@ export default function OrderPage() {
       {!editing ? (
         <div className="space-y-2">
           <p>
-            <span className="font-semibold">Full Name:</span> {address.fullName || "N/A"}
+            <span className="font-semibold">Name:</span> {address.fullName || "N/A"}
           </p>
           <p>
             <span className="font-semibold">Area:</span> {address.area || "N/A"}
           </p>
           <p>
             <span className="font-semibold">City:</span> {address.city || "N/A"}
-          </p>
-          <p>
-            <span className="font-semibold">State:</span> {address.state || "N/A"}
           </p>
           <p>
             <span className="font-semibold">Phone Number:</span> {address.phoneNumber || "N/A"}
@@ -478,14 +473,14 @@ export default function OrderPage() {
             onChange={handleAddressChange}
             className="border p-2 w-full rounded"
           />
-          <input
+          {/* <input
             type="text"
             name="state"
             placeholder="State"
             value={address.state}
             onChange={handleAddressChange}
             className="border p-2 w-full rounded"
-          />
+          /> */}
           <input
             type="text"
             name="phoneNumber"
@@ -528,7 +523,7 @@ export default function OrderPage() {
 
 
       {activeTab === "shipments" && (
-        <div className="flex flex-col max-h-[400px] overflow-y-auto">
+        <div className="flex flex-col max-h-[800px] overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Shipments</h1>
           {renderOrderList(shipments, "shipments")}
         </div>

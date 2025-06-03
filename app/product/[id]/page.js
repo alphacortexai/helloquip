@@ -361,21 +361,58 @@ export default function ProductDetail() {
 
             <div className="flex flex-col gap-2 pt-1">
               <div className="flex items-center gap-2">
-                <span>Qty :</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (!isNaN(val) && val > 0) setQuantity(val);
-                    else setQuantity(1);
-                  }}
-                  className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-sm"
-                  aria-label="Quantity"
-                />
+                <span>Quantity :</span>
+                <div className="flex items-center border border-gray-300 rounded overflow-hidden">
+                  {/* Down Arrow */}
+                  <button
+                    onClick={() => setQuantity((prev) => Math.max(1, parseInt(prev || 1) - 1))}
+                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                    type="button"
+                  >
+                    &#8722;
+                  </button>
+
+                  {/* Input */}
+                  <input
+                    type="number"
+                    min={1}
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setQuantity('');
+                        return;
+                      }
+                      const num = parseInt(val);
+                      if (!isNaN(num) && num > 0) {
+                        setQuantity(num);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!quantity || quantity < 1) {
+                        setQuantity(1);
+                      }
+                    }}
+                    className="w-12 text-center text-sm py-1 border-l border-r border-gray-300 appearance-none"
+                    aria-label="Quantity"
+                  />
+
+                  {/* Up Arrow */}
+                  <button
+                    onClick={() => setQuantity((prev) => parseInt(prev || 1) + 1)}
+                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                    type="button"
+                  >
+                    &#43;
+                  </button>
+                </div>
               </div>
+          
+
               
+
+
+
               <div className="flex gap-2">
                 <button
                   onClick={handleAddToOrder}

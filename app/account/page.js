@@ -43,11 +43,12 @@
 
 //   const saveAddress = async () => {
 //     if (!user) return;
-
 //     const docRef = doc(db, "users", user.uid);
 //     await setDoc(docRef, { address }, { merge: true });
 //     setEditing(false);
 //   };
+
+//   const isAddressIncomplete = Object.values(address).some((v) => !v.trim());
 
 //   if (loading) return <p className="p-4">Loading...</p>;
 
@@ -113,10 +114,21 @@
 //           <div className="text-sm text-gray-700 space-y-1">
 //             <p>{address.fullName}</p>
 //             <p>{address.area}</p>
-//             <p>
-//               {address.city}, {address.state}
-//             </p>
+//             <p>{address.city && address.state ? `${address.city}, ${address.state}` : ""}</p>
 //             <p>{address.phoneNumber}</p>
+
+//             {isAddressIncomplete && (
+//               <p className="mt-2 text-red-600 text-sm">
+//                 Your delivery address is incomplete. Please{" "}
+//                 <button
+//                   onClick={() => setEditing(true)}
+//                   className="text-blue-600 underline hover:text-blue-800"
+//                 >
+//                   add your full name, area, city, state, and phone number
+//                 </button>{" "}
+//                 to complete it.
+//               </p>
+//             )}
 //           </div>
 //         )}
 //       </div>
@@ -125,6 +137,8 @@
 // };
 
 // export default AccountDetailsPage;
+
+
 
 
 
@@ -143,7 +157,6 @@ const AccountDetailsPage = () => {
     fullName: "",
     area: "",
     city: "",
-    state: "",
     phoneNumber: "",
   });
   const [editing, setEditing] = useState(false);
@@ -179,7 +192,10 @@ const AccountDetailsPage = () => {
     setEditing(false);
   };
 
-  const isAddressIncomplete = Object.values(address).some((v) => !v.trim());
+  // Check only the visible fields for completeness
+  const isAddressIncomplete = ["fullName", "area", "city", "phoneNumber"].some(
+    (key) => !address[key]?.trim()
+  );
 
   if (loading) return <p className="p-4">Loading...</p>;
 
@@ -189,15 +205,15 @@ const AccountDetailsPage = () => {
 
       <div className="flex items-center gap-4">
         <Image
-          src={user.photoURL || "/assets/user.png"}
+          src={user?.photoURL || "/assets/user.png"}
           alt="Profile Picture"
           width={60}
           height={60}
           className="rounded-full object-cover"
         />
         <div>
-          <p className="font-medium">{user.displayName || "Unnamed User"}</p>
-          <p className="text-gray-600 text-sm">{user.email}</p>
+          <p className="font-medium">{user?.displayName || "Unnamed User"}</p>
+          <p className="text-gray-600 text-sm">{user?.email}</p>
         </div>
       </div>
 
@@ -216,7 +232,7 @@ const AccountDetailsPage = () => {
 
         {editing ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {["fullName", "area", "city", "state", "phoneNumber"].map((field) => (
+            {["fullName", "city", "area", "phoneNumber"].map((field) => (
               <input
                 key={field}
                 name={field}
@@ -245,7 +261,7 @@ const AccountDetailsPage = () => {
           <div className="text-sm text-gray-700 space-y-1">
             <p>{address.fullName}</p>
             <p>{address.area}</p>
-            <p>{address.city && address.state ? `${address.city}, ${address.state}` : ""}</p>
+            <p>{address.city}</p>
             <p>{address.phoneNumber}</p>
 
             {isAddressIncomplete && (
@@ -255,7 +271,7 @@ const AccountDetailsPage = () => {
                   onClick={() => setEditing(true)}
                   className="text-blue-600 underline hover:text-blue-800"
                 >
-                  add your full name, area, city, state, and phone number
+                  add your full name, area, city, and phone number
                 </button>{" "}
                 to complete it.
               </p>
