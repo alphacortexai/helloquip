@@ -358,7 +358,7 @@ export default function OrderPage() {
       </div>
 
 {activeTab === "orders" && (
-  <div className="flex flex-col max-h-[400px] overflow-y-auto">
+  <div className="flex flex-col max-h-[800px] overflow-y-auto">
     <h2 className="text-2xl font-bold mb-4">Your Selected Orders</h2>
 
     {cartItems.length === 0 ? (
@@ -414,14 +414,16 @@ export default function OrderPage() {
     )}
 
     {/* Total Amount */}
+    {/* Total Amount */}
     {cartItems.length > 0 && (
-      <div className="text-right font-semibold text-lg mb-4">
+      <div className="text-right font-semibold text-lg mb-4 text-green-600">
         Total: UGX{" "}
         {cartItems
           .reduce((total, item) => total + item.price * item.quantity, 0)
           .toLocaleString()}
       </div>
     )}
+
 
     {/* Address Card with Edit Functionality */}
     <div className="border rounded-md p-4 mb-6">
@@ -530,14 +532,14 @@ export default function OrderPage() {
       )}
 
       {activeTab === "delivered" && (
-        <div className="flex flex-col max-h-[400px] overflow-y-auto">
+        <div className="flex flex-col max-h-[800px] overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Delivered Orders</h1>
           {renderOrderList(delivered, "delivered orders")}
         </div>
       )}
 
       {activeTab === "canceled" && (
-        <div className="flex flex-col max-h-[400px] overflow-y-auto">
+        <div className="flex flex-col max-h-[800px] overflow-y-auto">
           <h1 className="text-2xl font-bold mb-4">Canceled Orders</h1>
           {renderOrderList(canceled, "canceled orders")}
         </div>
