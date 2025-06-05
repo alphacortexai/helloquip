@@ -42,34 +42,39 @@ export default function Categories({ onCategorySelect }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-2">
-      {/* Grid layout with smaller cards */}
-      <div className="grid grid-cols-4 gap-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4">
+    <div className="mx-4 sm:mx-8 md:mx-16">
+      <div className="max-w-7xl mx-auto px-4 py-2">
+        {/* Grid layout with smaller cards */}
+        <div className="grid grid-cols-4 gap-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4">
 
-        {categories.map((cat) => (
-          
-            <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
+          {categories.map((cat) => (
+            
+              <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
 
-            <div
-              className={`cursor-pointer text-center max-w-[100px] mx-auto
-                ${selectedCategoryId === cat.id ? "border border-teal-400 rounded-xl" : ""}
-              `}
-              onClick={() => setSelectedCategoryId(cat.id)}
-            >
-              <div className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden">
-                <img
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                  <div
+                    className="cursor-pointer text-center max-w-[80px] mx-auto"
+                    onClick={() => handleCategoryClick(cat)}
+                  >
+                  <div
+                    className={`w-full aspect-square bg-gray-100 rounded-lg p-2 overflow-hidden
+                      ${selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""}
+                    `}
+                  >
+                  <img
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    className="w-full h-full object-cover object-contain"
+                    draggable={false}
+                  />
+                </div>
+                <p className="mt-2 text-xs font-regular text-gray-00">{cat.name}</p>
               </div>
-              <p className="mt-2 text-xs font-medium text-gray-700">{cat.name}</p>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))}
 
+        </div>
       </div>
     </div>
+
   );
 }

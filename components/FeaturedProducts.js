@@ -1,57 +1,128 @@
 
 
-// "use client";
 
-// import { useEffect, useState } from "react";
+// import { useEffect, useState, useRef, useCallback } from "react";
 // import Link from "next/link";
-// import { collection, getDocs, query, where } from "firebase/firestore";
+// import {
+//   collection,
+//   getDocs,
+//   query,
+//   where,
+//   orderBy,
+//   limit,
+//   startAfter,
+// } from "firebase/firestore";
 // import { db } from "@/lib/firebase";
+// import ProductCard from "./ProductCard";
 
-// export default function FeaturedProducts({ selectedCategory }) {
+// export default function FeaturedProducts({ selectedCategory, keyword }) {
 //   const [products, setProducts] = useState([]);
-//   const [loading, setLoading] = useState(true);
+//   const [loading, setLoading] = useState(false);
+//   const [lastVisible, setLastVisible] = useState(null); // for pagination
+//   const [hasMore, setHasMore] = useState(true); // to track if more products exist
+//   const batchSize = 6; // how many products to fetch per batch
 
-//   useEffect(() => {
-//     const fetchProducts = async () => {
-//       setLoading(true);
-//       try {
-//         let q;
+//   // Ref for the scroll container (if any) or window
+//   const scrollListenerAdded = useRef(false);
 
-//         if (selectedCategory && selectedCategory !== "All Products") {
-//           q = query(
-//             collection(db, "products"),
-//             where("category", "==", selectedCategory)
-//           );
-//         } else {
-//           q = collection(db, "products");
-//         }
+//   // Function to fetch a batch of products, optionally starting after lastVisible
+// const fetchProducts = useCallback(
+//   async (startAfterDoc = null, reset = false) => {
+//     setLoading(true);
 
-//         const querySnapshot = await getDocs(q);
-//         const fetchedProducts = [];
-//         querySnapshot.forEach((doc) => {
-//           fetchedProducts.push({ id: doc.id, ...doc.data() });
-//         });
-//         setProducts(fetchedProducts);
-//       } catch (err) {
-//         console.error("Error fetching products:", err);
-//         setProducts([]);
+//     try {
+//       const constraints = [];
+
+//       if (selectedCategory && selectedCategory !== "All Products") {
+//         constraints.push(where("category", "==", selectedCategory));
 //       }
 
-//       setLoading(false);
+//       constraints.push(orderBy("name"));
+
+//       if (startAfterDoc) {
+//         constraints.push(startAfter(startAfterDoc));
+//       }
+
+//       constraints.push(limit(batchSize));
+
+//       const q = query(collection(db, "products"), ...constraints);
+
+//       const querySnapshot = await getDocs(q);
+
+//       const fetchedProducts = [];
+//       querySnapshot.forEach((doc) => {
+//         fetchedProducts.push({ id: doc.id, ...doc.data() });
+//       });
+
+//       // Keyword filtering remains the same
+//       let filteredProducts = fetchedProducts;
+//       if (keyword && keyword.trim()) {
+//         const lowerKeyword = keyword.trim().toLowerCase();
+//         filteredProducts = fetchedProducts.filter(
+//           (product) =>
+//             product.name?.toLowerCase().includes(lowerKeyword) ||
+//             product.description?.toLowerCase().includes(lowerKeyword)
+//         );
+//       }
+
+//       if (reset) {
+//         setProducts(filteredProducts);
+//       } else {
+//         setProducts((prev) => [...prev, ...filteredProducts]);
+//       }
+
+//       const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+//       setLastVisible(lastVisibleDoc);
+
+//       setHasMore(filteredProducts.length === batchSize);
+//     } catch (err) {
+//       console.error("Error fetching products:", err);
+//     }
+
+//     setLoading(false);
+//   },
+//   [selectedCategory, keyword]
+// );
+
+
+//   // Initial load or reload on category/keyword change
+//   useEffect(() => {
+//     setProducts([]);
+//     setLastVisible(null);
+//     setHasMore(true);
+//     fetchProducts(null, true);
+//   }, [selectedCategory, keyword, fetchProducts]);
+
+//   // Scroll event handler: load more when near bottom
+//   useEffect(() => {
+//     if (loading || !hasMore) return;
+
+//     const handleScroll = () => {
+//       // Calculate scroll position from window (you can adjust if your products are inside a container)
+//       if (
+//         window.innerHeight + window.scrollY >=
+//         document.body.offsetHeight - 500 // 500px from bottom triggers load
+//       ) {
+//         fetchProducts(lastVisible);
+//       }
 //     };
 
-//     fetchProducts();
-//   }, [selectedCategory]);
+//     if (!scrollListenerAdded.current) {
+//       window.addEventListener("scroll", handleScroll);
+//       scrollListenerAdded.current = true;
+//     }
 
-//   if (loading) {
-//     return <p className="text-center py-4">Loading products...</p>;
-//   }
+//     return () => {
+//       window.removeEventListener("scroll", handleScroll);
+//       scrollListenerAdded.current = false;
+//     };
+//   }, [fetchProducts, lastVisible, loading, hasMore]);
 
-//   if (products.length === 0) {
+//   if (products.length === 0 && !loading) {
 //     return (
 //       <div>
 //         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
-//           {selectedCategory}
+//           {selectedCategory || "Products"}
 //         </div>
 //         <p className="text-center py-4">No products found.</p>
 //       </div>
@@ -63,32 +134,34 @@
 //       <div className="max-w-7xl mx-auto px-4">
 //         {/* Title */}
 //         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
-//           {selectedCategory}
+//           {selectedCategory || "Featured Products"}
+//           {keyword && (
+//             <span className="block text-xs text-gray-600 mt-1">
+//               Filtered by keyword: <strong>{keyword}</strong>
+//             </span>
+//           )}
 //         </div>
 
 //         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
 //           {products.map(({ id, name, description, price, imageUrl }) => (
-//             <Link
-//               key={id}
-//               href={`/product/${id}`}
-//               className="flex flex-col items-start cursor-pointer group"
-//             >
-//               <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden">
-//                 <img
-//                   src={imageUrl}
-//                   alt={name}
-//                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-//                 />
-//               </div>
-//               <div className="pt-2 w-full">
-//                 <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-//                 <p className="text-sm font-semibold text-gray-700 mt-1">
-//                   UGX {price?.toLocaleString?.()}
-//                 </p>
-//               </div>
+//             <Link key={id} href={`/product/${id}`} className="cursor-pointer group">
+//               <ProductCard
+//                 variant="compact"
+//                 product={{
+//                   id,
+//                   name,
+//                   description,
+//                   price,
+//                   image: imageUrl,
+//                 }}
+//               />
 //             </Link>
 //           ))}
 //         </div>
+
+//         {loading && (
+//           <p className="text-center py-4 text-gray-600">Loading more products...</p>
+//         )}
 //       </div>
 //     </section>
 //   );
@@ -96,67 +169,128 @@
 
 
 
-"use client";
 
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import ProductCard from './ProductCard'; // Adjust the import path if needed
+import ProductCard from "./ProductCard";
 
 export default function FeaturedProducts({ selectedCategory, keyword }) {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [lastVisible, setLastVisible] = useState(null); // for pagination
+  const [hasMore, setHasMore] = useState(true); // to track if more products exist
+  const batchSize = 6; // how many products to fetch per batch
 
-  useEffect(() => {
-    const fetchProducts = async () => {
+  // Ref for the scroll container (if any) or window
+  const scrollListenerAdded = useRef(false);
+
+  // Function to fetch a batch of products, optionally starting after lastVisible
+  const fetchProducts = useCallback(
+    async (startAfterDoc = null, reset = false) => {
       setLoading(true);
-      try {
-        let q;
 
-        // Firestore query: by category or all products
+      try {
+        const constraints = [];
+
         if (selectedCategory && selectedCategory !== "All Products") {
-          q = query(
-            collection(db, "products"),
-            where("category", "==", selectedCategory)
-          );
-        } else {
-          q = collection(db, "products");
+          constraints.push(where("category", "==", selectedCategory));
         }
 
+        constraints.push(orderBy("name"));
+
+        if (startAfterDoc) {
+          constraints.push(startAfter(startAfterDoc));
+        }
+
+        constraints.push(limit(batchSize));
+
+        const q = query(collection(db, "products"), ...constraints);
+
         const querySnapshot = await getDocs(q);
-        let fetchedProducts = [];
+
+        const fetchedProducts = [];
         querySnapshot.forEach((doc) => {
           fetchedProducts.push({ id: doc.id, ...doc.data() });
         });
 
-        // Optional keyword filter
+        // Save original fetched count before filtering keyword
+        const fetchedProductsCount = querySnapshot.docs.length;
+
+        // Keyword filtering
+        let filteredProducts = fetchedProducts;
         if (keyword && keyword.trim()) {
           const lowerKeyword = keyword.trim().toLowerCase();
-          fetchedProducts = fetchedProducts.filter(
+          filteredProducts = fetchedProducts.filter(
             (product) =>
               product.name?.toLowerCase().includes(lowerKeyword) ||
               product.description?.toLowerCase().includes(lowerKeyword)
           );
         }
 
-        setProducts(fetchedProducts);
+        if (reset) {
+          setProducts(filteredProducts);
+        } else {
+          setProducts((prev) => [...prev, ...filteredProducts]);
+        }
+
+        const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+        setLastVisible(lastVisibleDoc);
+
+        // Use original fetched count to determine if more products exist
+        setHasMore(fetchedProductsCount === batchSize);
       } catch (err) {
         console.error("Error fetching products:", err);
-        setProducts([]);
       }
 
       setLoading(false);
+    },
+    [selectedCategory, keyword]
+  );
+
+  // Initial load or reload on category/keyword change
+  useEffect(() => {
+    setProducts([]);
+    setLastVisible(null);
+    setHasMore(true);
+    fetchProducts(null, true);
+  }, [selectedCategory, keyword, fetchProducts]);
+
+  // Scroll event handler: load more when near bottom
+  useEffect(() => {
+    if (loading || !hasMore) return;
+
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 500 // 500px from bottom triggers load
+      ) {
+        fetchProducts(lastVisible);
+      }
     };
 
-    fetchProducts();
-  }, [selectedCategory, keyword]);
+    if (!scrollListenerAdded.current) {
+      window.addEventListener("scroll", handleScroll);
+      scrollListenerAdded.current = true;
+    }
 
-  if (loading) {
-    return <p className="text-center py-4">Loading products...</p>;
-  }
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      scrollListenerAdded.current = false;
+    };
+  }, [fetchProducts, lastVisible, loading, hasMore]);
 
-  if (products.length === 0) {
+  if (products.length === 0 && !loading) {
     return (
       <div>
         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
@@ -179,56 +313,28 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
             </span>
           )}
         </div>
-        
 
-        {/* <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map(({ id, name, description, price, imageUrl }) => (
-            <Link
-              key={id}
-              href={`/product/${id}`}
-              className="flex flex-col items-start cursor-pointer group"
-            >
-              <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden">
-                <img
-                  src={imageUrl}
-                  alt={name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <div className="pt-2 w-full">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {name}
-                </p>
-                <p className="text-sm font-semibold text-gray-700 mt-1">
-                  UGX {price?.toLocaleString?.()}
-                </p>
-              </div>
+            <Link key={id} href={`/product/${id}`} className="cursor-pointer group">
+              <ProductCard
+                variant="compact"
+                product={{
+                  id,
+                  name,
+                  description,
+                  price,
+                  image: imageUrl,
+                }}
+              />
             </Link>
           ))}
-        </div> */}
+        </div>
 
-<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
-  {products.map(({ id, name, description, price, imageUrl }) => (
-    <Link
-      key={id}
-      href={`/product/${id}`}
-      className="cursor-pointer group"
-    >
-      <ProductCard
-        variant="compact"
-        product={{
-          id,
-          name,
-          description,
-          price,
-          image: imageUrl, // map imageUrl to expected "image"
-        }}
-      />
-    </Link>
-  ))}
-</div>
-
-
+        {/* Show loading only if loading AND more products exist */}
+        {loading && hasMore && (
+          <p className="text-center py-4 text-gray-600">Loading more products...</p>
+        )}
       </div>
     </section>
   );

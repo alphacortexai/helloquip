@@ -1,139 +1,3 @@
-// "use client";
-
-// import { useEffect, useState, useRef } from "react";
-// import { onAuthStateChanged, signOut } from "firebase/auth";
-// import { useRouter, usePathname } from "next/navigation";
-// import { auth } from "@/lib/firebase";
-// import SearchBar from "@/components/SearchBar";
-
-// export default function Navbar() {
-//   const router = useRouter();
-//   const pathname = usePathname();
-//   const [user, setUser] = useState(null);
-//   const [menuOpen, setMenuOpen] = useState(false);
-//   const dropdownRef = useRef();
-
-//   const showSearch = ["/category", "/shop", "/search"].some((path) =>
-//     pathname.startsWith(path)
-//   ) || pathname === "/";
-
-//   useEffect(() => {
-//     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-//       setUser(currentUser);
-//     });
-//     return () => unsubscribe();
-//   }, []);
-
-//   // Close dropdown if clicked outside
-//   useEffect(() => {
-//     function handleClickOutside(event) {
-//       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-//         setMenuOpen(false);
-//       }
-//     }
-//     document.addEventListener("mousedown", handleClickOutside);
-//     return () => document.removeEventListener("mousedown", handleClickOutside);
-//   }, []);
-
-//   const handleLogout = async () => {
-//     try {
-//       await signOut(auth);
-//       router.push("/register");
-//     } catch (error) {
-//       console.error("Logout error", error.message);
-//     }
-//   };
-
-//   return (
-//     <>
-//       <header className="bg-white shadow sticky top-0 z-50">
-//         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-//           {/* Logo */}
-//           <div className="flex items-center gap-2">
-//             <h1 className="text-2xl font-extrabold text-blue-700">HelloQuip</h1>
-//           </div>
-
-//           {/* Search Bar - Visible on sm and up */}
-//           {showSearch && (
-//             <div className="flex-1 hidden sm:block">
-//               <SearchBar />
-//             </div>
-//           )}
-
-//           {/* User Actions */}
-//           <div className="flex items-center gap-3 relative" ref={dropdownRef}>
-//             {user ? (
-//               <>
-//                 <img
-//                   src={user.photoURL || "/default-avatar.png"}
-//                   alt="Avatar"
-//                   className="w-8 h-8 rounded-full cursor-pointer"
-//                   onClick={() => setMenuOpen(!menuOpen)}
-//                 />
-
-//                 {menuOpen && (
-//                   <div className="absolute right-0 mt-52 w-50 bg-gray-100 rounded-xl z-50 p-4 shadow-lg">
-//                     <div className="flex items-center space-x-3 mb-3">
-//                       <img
-//                         src={user.photoURL || "/default-avatar.png"}
-//                         alt="User"
-//                         className="w-10 h-10 rounded-full"
-//                       />
-//                       <div>
-//                         <p className="font-semibold text-gray-800">
-//                           {user.displayName || "User"}
-//                         </p>
-//                         <p className="text-sm text-gray-500 truncate overflow-hidden whitespace-nowrap max-w-[100px]">
-//                           {user.email}
-//                         </p>
-//                       </div>
-//                     </div>
-
-//                     <button
-//                       onClick={() => {
-//                         setMenuOpen(false);
-//                         router.push("/account");
-//                       }}
-//                       className="w-full text-left py-2 text-sm text-blue-600 hover:underline"
-//                     >
-//                       Account Details
-//                     </button>
-
-//                     <button
-//                       onClick={handleLogout}
-//                       className="w-full text-left py-2 mt-1 text-sm text-red-600 hover:underline"
-//                     >
-//                       Sign Out
-//                     </button>
-//                   </div>
-//                 )}
-
-//               </>
-//             ) : (
-//               <button
-//                 onClick={() => router.push("/register")}
-//                 className="text-blue-600 hover:underline text-sm"
-//               >
-//                 Sign In
-//               </button>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* Search Bar - Visible on small screens */}
-//         {showSearch && (
-//           <div className="block sm:hidden px-4 pb-2">
-//             <SearchBar />
-//           </div>
-//         )}
-//       </header>
-//     </>
-//   );
-// }
-
-
-
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -198,11 +62,11 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="bg-white shadow sticky top-0 z-50">
+      <header className="bg-white  sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold text-blue-700 cursor-pointer" onClick={() => router.push('/')}>HelloQuip</h1>
+            <h1 className="text-3xl font-extrabold text-blue-700 cursor-pointer" onClick={() => router.push('/')}>HelloQuip</h1>
           </div>
 
           {/* Search Bar - Visible on sm and up */}
@@ -291,12 +155,12 @@ export default function Navbar() {
                 )}
               </>
             ) : (
-              <button
-                onClick={() => router.push("/register")}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Sign In
-              </button>
+            <button
+              onClick={() => router.push("/register")}
+              className="bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors duration-200 px-4 py-1.5 text-sm rounded-full  font-medium"
+            >
+              Login In
+            </button>
             )}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
+import { Search } from "lucide-react"; // optional icon from Lucide
 
 export default function SearchBar() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,8 +37,8 @@ export default function SearchBar() {
     e.preventDefault();
     if (searchTerm.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSuggestions([]); // Clear suggestions after search
-      setIsFocused(false); // Remove focus
+      setSuggestions([]);
+      setIsFocused(false);
     }
   };
 
@@ -49,22 +50,19 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto mt-2">
-      <form onSubmit={handleSubmit} className="flex">
+    <div className="relative w-full max-w-md mx-auto mt-0">
+      <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
-          placeholder="Search products..."
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-l-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          placeholder="Search for medical equipments & products..."
+          className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 100)} // Delay to allow click
+          onBlur={() => setTimeout(() => setIsFocused(false), 100)}
         />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-r-full hover:bg-blue-700 text-sm"
-        >
-          Search
+        <button type="submit" className="absolute left-3 top-1.5 text-gray-500 hover:text-gray-700">
+          <Search className="w-4 h-4" />
         </button>
       </form>
 
@@ -74,7 +72,7 @@ export default function SearchBar() {
             <li
               key={i}
               className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-              onMouseDown={() => handleSuggestionClick(s)} // use onMouseDown to beat blur
+              onMouseDown={() => handleSuggestionClick(s)}
             >
               {s}
             </li>
