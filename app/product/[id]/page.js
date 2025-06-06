@@ -1,8 +1,4 @@
-
-
-
 "use client";
-
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -15,6 +11,9 @@ import {
 } from "firebase/firestore";
 import Footer from "@/components/Footer";
 import FeaturedProducts from "@/components/FeaturedProducts";
+import ContactButtons from "@/components/ContactButtons";
+import ImageGallery from "@/components/ImageGallery";
+import QuantityInput from "@/components/QuantityInput";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { toast } from "sonner";
 
@@ -104,138 +103,52 @@ export default function ProductDetail() {
 
   return (
     <>
-      <div className="mt-2 max-w-6xl mx-auto px-4 py-1">
+      <div className="mt-2 max-w-6xl mx-auto py-1">
         <div className="flex flex-col md:flex-row gap-3 md:gap-5">
           <div className="md:w-[40%] flex flex-col gap-4">
-            <div className="rounded-xl w-full h-55 md:h-[120px] flex items-center justify-center overflow-hidden">
-              {activeImage ? (
-                <Image
-                  src={activeImage}
-                  alt="Main preview"
-                  width={400}
-                  height={300}
-                  className="object-contain rounded-xl"
-                  priority
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200" />
-              )}
-            </div>
-
-            <div className="flex gap-2 overflow-x-auto">
-              {Array.from({ length: 5 }).map((_, index) => {
-                const thumb = allImages[index];
-                return thumb ? (
-                  <div
-                    key={index}
-                    className={`w-10 h-10 relative rounded-lg overflow-hidden border-1 cursor-pointer ${
-                      activeImage === thumb
-                        ? "border-blue-500"
-                        : "border-gray-200"
-                    }`}
-                    onClick={() => setActiveImage(thumb)}
-                  >
-                    <Image
-                      src={thumb}
-                      alt={`thumbnail-${index}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    key={index}
-                    className="w-10 h-10 bg-gray-200 rounded-lg border border-gray-300"
-                  />
-                );
-              })}
-            </div>
+          <ImageGallery
+            images={allImages}
+            activeImage={activeImage}
+            onSelect={setActiveImage}
+          />         
           </div>
+            <div className="flex-1">
+              <div className="bg-gray-50 p-3 md:p-4 w-full flex flex-col gap-3 shadow-sm">
+                <div className="flex justify-between items-start space-x-4">
+                  <div className="flex-1 space-y-2">
+                    <h2 className="text-base md:text-lg font-medium text-gray-800">
+                      {product.name}
+                      <span className="text-blue-600 font-normal text-sm ml-1">
+                        – UGX {parseInt(product.price).toLocaleString()}
+                      </span>
+                    </h2>
 
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="space-y-2">
-              <h2 className="text-base md:text-lg font-medium text-gray-800">
-                {product.name}
-                <span className="text-blue-600 font-normal text-sm ml-1">
-                  – UGX {parseInt(product.price).toLocaleString()}
-                </span>
-              </h2>
+                    <p className="text-sm text-gray-600">{product.description}</p>
+                  </div>
 
-              <p className="text-sm text-gray-600 ">{product.description}</p>
-            </div>
+                  <ContactButtons phoneNumber="+256700000000" />
+                </div>
 
-            <div className="flex flex-col gap-2 pt-1">
-              <div className="flex items-center gap-2">
-                <span>Quantity :</span>
-                <div className="flex items-center border border-gray-300 rounded overflow-hidden">
-                  {/* Down Arrow */}
-                  <button
-                    onClick={() => setQuantity((prev) => Math.max(1, parseInt(prev || 1) - 1))}
-                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                    type="button"
-                  >
-                    &#8722;
-                  </button>
+                <div className="flex flex-col gap-2 pt-1">
+                  <QuantityInput quantity={quantity} setQuantity={setQuantity} />
 
-                  {/* Input */}
-                  <input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '') {
-                        setQuantity('');
-                        return;
-                      }
-                      const num = parseInt(val);
-                      if (!isNaN(num) && num > 0) {
-                        setQuantity(num);
-                      }
-                    }}
-                    onBlur={() => {
-                      if (!quantity || quantity < 1) {
-                        setQuantity(1);
-                      }
-                    }}
-                    className="w-12 text-center text-sm py-1 border-l border-r border-gray-300 appearance-none"
-                    aria-label="Quantity"
-                  />
-
-                  {/* Up Arrow */}
-                  <button
-                    onClick={() => setQuantity((prev) => parseInt(prev || 1) + 1)}
-                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                    type="button"
-                  >
-                    &#43;
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddToOrder}
+                      className="flex-1 min-w-[90px] bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition"
+                    >
+                      Add to Order
+                    </button>
+                    <button
+                      onClick={handleBuyNow}
+                      className="flex-1 min-w-[90px] border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 transition"
+                    >
+                      Buy Now / View Orders
+                    </button>
+                  </div>
                 </div>
               </div>
-          
-
-              
-
-
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddToOrder}
-                  className="flex-1 min-w-[90px] bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition"
-                >
-                  Add to Order
-                </button>
-                <button
-                  onClick={handleBuyNow}
-                  className="flex-1 min-w-[90px] border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 transition"
-                >
-                  View Orders
-                </button>
-              </div>
-
-
             </div>
-          </div>
         </div>
       </div>
 
