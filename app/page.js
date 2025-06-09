@@ -231,6 +231,8 @@ export default function Home() {
       </section>
 
       <FeaturedProducts selectedCategory={selectedCategory} />
+      {/* <FeaturedProducts selectedCategory={selectedCategory} products={filteredProducts} /> */}
+
     </>
   );
 }

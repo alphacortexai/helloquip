@@ -1,0 +1,51 @@
+const regionsData = {
+  regions: [
+    {
+      name: "Kampala Region",
+      areas: [
+        "Bakuli",
+        "Banada",
+        "Biina",
+        "Bugolobi",
+        "Bukasa",
+        "Bukoto",
+        "Bulenga",
+        "Bunamwaya",
+        "Bunga",
+        "Busega",
+        "Butabika",
+        "Buwate",
+        "Buziga",
+        "Bwaise",
+        "Bweyogerere",
+        "Central Business District",
+        "Down Town Kampala",
+        "Ggaba",
+        "Kabalagala",
+        "Kabojja",
+        "Kabowa",
+        "Kagoma",
+        "Kalerwe",
+        "Kampala Industrial Area",
+        "Kamwokya",
+        "Kansanga",
+        "Kanyanya",
+        "Kasubi",
+        "Katwe",
+        "Kavule",
+        "Kawaala",
+        "Kawanda / Kagoma",
+        "Kawempe",
+        "Kazo",
+        "Kibiri",
+        "Kibuli",
+        "Kigowa"
+      ]
+    },
+    {
+      name: "Eastern Region",
+      areas: []
+    },
+    // ... other regions
+  ]
+};

@@ -124,6 +124,7 @@ export default function ProductDetail() {
                     </h2>
 
                     <p className="text-sm text-gray-600">{product.description}</p>
+                    <p className="text-sm text-gray-600">{product.productCode}</p>
                   </div>
 
                   <ContactButtons phoneNumber="+256700000000" />
