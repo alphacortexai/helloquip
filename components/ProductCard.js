@@ -103,7 +103,7 @@ const ProductCard = ({ product, variant = 'default' }) => {
         className="w-full h-48 object-cover rounded-xl mb-3"
       />
       <h2 className="text-lg font-semibold">{product.name}</h2>
-      <p className="text-sm text-gray-400 italic mb-1">{productCodeText}</p>
+      <p className="text-sm text-gray-400 italic mb-1"> CODE: {productCodeText}</p>
       <p className="text-gray-600 mt-1">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2">UGX {product.price}</p>
     </div>
@@ -119,7 +119,7 @@ const ProductCard = ({ product, variant = 'default' }) => {
       />
       <div>
         <h2 className="text-lg font-semibold">{product.name}</h2>
-        <p className="text-sm text-gray-400 italic mb-1">{productCodeText}</p>
+        <p className="text-sm text-gray-400 italic mb-1"> CODE: {productCodeText}</p>
         <p className="text-gray-600 mt-1 line-clamp-2">{product.description}</p>
         <p className="text-blue-600 font-bold mt-2">UGX {product.price}</p>
       </div>
@@ -135,7 +135,7 @@ const ProductCard = ({ product, variant = 'default' }) => {
         className="w-full h-56 object-cover rounded-xl mb-3"
       />
       <h2 className="text-base font-semibold">{product.name}</h2>
-      <p className="text-xs text-gray-400 italic mb-1">{productCodeText}</p>
+      <p className="text-sm text-gray-400 italic mb-1"> CODE: {productCodeText}</p>
       <p className="text-gray-500 text-sm mt-1 line-clamp-3">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2 text-sm">UGX {product.price}</p>
     </div>
