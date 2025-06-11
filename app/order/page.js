@@ -278,9 +278,10 @@ export default function OrderPage() {
   const selectedRegion = regionsData.find((r) => r.region === address.city);
 
   return (
-    <div className="flex flex-col px-6 md:px-16 lg:px-32 py-6 min-h-screen">
 
-      <div className="mb-1">
+    <div className="flex flex-col px-0 py-6 min-h-screen">
+
+      <div className="mb-1 ml-2 mr-2">
         <Link href="/" className="flex items-center text-blue-600 hover:underline">
           <span className="mb-2 top-[130px] right-2 px-4 py-1 rounded border border-blue-600 text-blue-600 cursor-pointer font-semibold">
             Back to Shop
