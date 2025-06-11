@@ -23,7 +23,7 @@ import {
 import { db } from "@/lib/firebase";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import ContactButtons from "@/components/ContactButtons";
-import ShippingAddressForm from "@/components/ShippingAddressForm";
+
 
 // Your JSON data for regions and areas (cities and areas)
 const regionsData = [
@@ -279,22 +279,25 @@ export default function OrderPage() {
 
   return (
     <div className="flex flex-col px-6 md:px-16 lg:px-32 py-6 min-h-screen">
-      <div className="mb-4">
+
+      <div className="mb-1">
         <Link href="/" className="flex items-center text-blue-600 hover:underline">
-          <span className="mb-10 top-[130px] right-2 px-4 py-1 rounded border border-blue-600 text-blue-600 cursor-pointer font-semibold">
+          <span className="mb-2 top-[130px] right-2 px-4 py-1 rounded border border-blue-600 text-blue-600 cursor-pointer font-semibold">
             Back to Shop
           </span>
         </Link>
       </div>
 
-      <h1 className="text-3xl font-semibold mb-8">Order Summary</h1>
-
       {orders.length === 0 ? (
         <p>You have no orders. Please add items to your cart.</p>
       ) : (
         orders.map((order) => (
-          <div key={order.id} className="mb-18">
+          <div key={order.id} className="mb-16">
+            {/* Card 5: Contact Buttons */}
+            <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm mb-2 mt-1">
+            <h1 className="text-3xl font-semibold mb-1">Order Summary</h1>
             <h2 className="text-xl font-semibold mb-4">Items:</h2>
+
             <ul>
               {order.items.map((item) => (
                 <li key={item.id} className="flex items-center mb-3 border-b pb-3">
@@ -340,12 +343,13 @@ export default function OrderPage() {
               ))}
             </ul>
 
-            <p className="font-semibold text-green-500 mt-4">
+            <p className="text-[20px] font-semibold text-green-500 mt-6 mb-4">
               Total Amount: UGX {order.amount.toLocaleString()}
             </p>
+            </div>
 
-            <div className="mt-8 border p-4 rounded">
-              <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
+            <div className="mt-2 p-4 rounded shadow-sm shadow-gray-100 bg-white">
+              <h2 className="text-xl font-semibold mb-4">Shipping/Delivery Address</h2>
 
               {!editing ? (
                 <div>
@@ -363,7 +367,7 @@ export default function OrderPage() {
                   </p>
                   <button
                     onClick={() => setEditing(true)}
-                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     Edit Address
                   </button>
@@ -371,7 +375,7 @@ export default function OrderPage() {
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <label className="block font-semibold">Full Name</label>
+                    <label className="block font-semibold">Name</label>
                     <input
                       type="text"
                       name="fullName"
@@ -391,7 +395,7 @@ export default function OrderPage() {
                         setAddress((prev) => ({
                           ...prev,
                           city: e.target.value,
-                          area: "", // Reset district when region changes
+                          area: "", // Reset area when region changes
                         }));
                       }}
                       className="border p-2 w-full rounded"
@@ -435,16 +439,16 @@ export default function OrderPage() {
                     />
                   </div>
 
-                  <div className="space-x-3 mt-3">
+                  <div className="space-y-3 mt-3">
                     <button
                       onClick={saveAddress}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                     >
                       Save
                     </button>
                     <button
                       onClick={() => setEditing(false)}
-                      className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                      className="w-full px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
                     >
                       Cancel
                     </button>
@@ -453,14 +457,26 @@ export default function OrderPage() {
               )}
             </div>
 
-            <button
-              onClick={placeOrder}
-              className="mt-8 px-6 py-3 bg-blue-700 text-white rounded hover:bg-blue-800"
-            >
-              Place Order
-            </button>
 
+            {/* Place Order Buttons */}
+            <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm mb-2 mt-2">
+              <button
+                onClick={placeOrder}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-base font-semibold shadow-sm transition-all duration-200"
+              >
+                🛒 Place Order
+              </button>
+            </div>
+
+
+
+
+            {/*  Contact Buttons */}
+            <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm mb-1">
+              <h3 className="text-base font-semibold text-gray-800 mb-2 text-center">Need Help?</h3>
               <ContactButtons phoneNumber="+256700000000" />
+            </div>
+
           </div>
         ))
       )}

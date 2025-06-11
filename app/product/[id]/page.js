@@ -101,72 +101,180 @@ export default function ProductDetail() {
 
   const allImages = [product.imageUrl, ...(product.extraImageUrls || [])];
 
+  // return (
+  //   <>
+  //     <div className="mt-2 max-w-6xl mx-auto py-1">
+  //       <div className="flex flex-col md:flex-row gap-3 md:gap-5">
+  //         <div className="md:w-[40%] flex flex-col gap-4">
+  //         <ImageGallery
+  //           images={allImages}
+  //           activeImage={activeImage}
+  //           onSelect={setActiveImage}
+  //         />         
+  //         </div>
+  //           <div className="flex-1">
+  //             <div className="bg-gray-50 p-3 md:p-4 w-full flex flex-col gap-3 shadow-sm">
+  //               <div className="flex justify-between items-start space-x-4">
+  //                 <div className="flex-1 space-y-2">
+  //                   <h2 className="text-base md:text-lg font-medium text-gray-800">
+  //                     {product.name}
+  //                     <span className="text-blue-600 font-normal text-sm ml-1">
+  //                       – UGX {parseInt(product.price).toLocaleString()}
+  //                     </span>
+  //                   </h2>
+
+  //                   <p className="text-sm text-gray-600">{product.description}</p>
+  //                   <p className="text-sm text-gray-600">{product.productCode}</p>
+  //                 </div>
+
+  //                 <ContactButtons phoneNumber="+256700000000" />
+  //               </div>
+
+  //               <div className="flex flex-col gap-2 pt-1">
+  //                 <QuantityInput quantity={quantity} setQuantity={setQuantity} />
+
+  //                 <div className="flex gap-2">
+  //                   <button
+  //                     onClick={handleAddToOrder}
+  //                     className="flex-1 min-w-[90px] bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition"
+  //                   >
+  //                     Add to Order
+  //                   </button>
+  //                   <button
+  //                     onClick={handleBuyNow}
+  //                     className="flex-1 min-w-[90px] border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 transition"
+  //                   >
+  //                     Buy Now / View Orders
+  //                   </button>
+  //                 </div>
+  //               </div>
+  //             </div>
+  //           </div>
+  //       </div>
+  //     </div>
+
+  //     {product?.category && (
+  //       <div className="pt-2 pb-8">
+  //         <h3 className="text-sm  text-center mb-2">
+  //           Products Related to{" "}
+  //           <span className="font-semibold"> {product.name} </span>
+  //         </h3>
+  //         {/* <FeaturedProducts selectedCategory={product.category} /> */}
+  //      <FeaturedProducts
+  //         selectedCategory={product.category}
+  //         // keyword={product.name?.split(" ")[0]} // example: first word of product name
+  //         keyword={product.name?.split(" ").slice(0, 2).join(" ").toLowerCase()}
+  //       />
+  //       </div>
+  //     )}
+  //   </>
+  // );
+
+
+
   return (
-    <>
-      <div className="mt-2 max-w-6xl mx-auto py-1">
-        <div className="flex flex-col md:flex-row gap-3 md:gap-5">
-          <div className="md:w-[40%] flex flex-col gap-4">
+  <>
+    <div className="max-w-6xl md:px-6">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-6">
+        {/* Image Gallery */}
+        <div className="md:w-[40%] flex flex-col gap-4">
           <ImageGallery
             images={allImages}
             activeImage={activeImage}
             onSelect={setActiveImage}
-          />         
+          />
+        </div>
+
+        {/* Product Info */}
+<div className="flex-1 ml-2 mr-2">
+  <div className="w-full flex flex-col gap-1">
+
+    {/* Card 1: Price, Name, Product Code */}
+    <div className="bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 flex flex-col gap-3">
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-[22px] font-bold text-gray-900">
+            UGX {Number(product.price || 0).toLocaleString?.()}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="line-through text-gray-500 text-sm">
+              UGX {Number(product.oldPrice || product.price * 1.6).toLocaleString?.()}
+            </span>
+            <span className="bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
+              {product.discountPercentage || "43%"}
+            </span>
           </div>
-            <div className="flex-1">
-              <div className="bg-gray-50 p-3 md:p-4 w-full flex flex-col gap-3 shadow-sm">
-                <div className="flex justify-between items-start space-x-4">
-                  <div className="flex-1 space-y-2">
-                    <h2 className="text-base md:text-lg font-medium text-gray-800">
-                      {product.name}
-                      <span className="text-blue-600 font-normal text-sm ml-1">
-                        – UGX {parseInt(product.price).toLocaleString()}
-                      </span>
-                    </h2>
-
-                    <p className="text-sm text-gray-600">{product.description}</p>
-                    <p className="text-sm text-gray-600">{product.productCode}</p>
-                  </div>
-
-                  <ContactButtons phoneNumber="+256700000000" />
-                </div>
-
-                <div className="flex flex-col gap-2 pt-1">
-                  <QuantityInput quantity={quantity} setQuantity={setQuantity} />
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAddToOrder}
-                      className="flex-1 min-w-[90px] bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition"
-                    >
-                      Add to Order
-                    </button>
-                    <button
-                      onClick={handleBuyNow}
-                      className="flex-1 min-w-[90px] border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-100 transition"
-                    >
-                      Buy Now / View Orders
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
         </div>
       </div>
+      <p className="text-[16px] font-semibold text-gray-800 uppercase">
+        {product.name || 'Unnamed Product'}
+      </p>
+      <p className="text-sm text-gray-500">{product.productCode}</p>
+    </div>
 
-      {product?.category && (
-        <div className="pt-2 pb-8">
-          <h3 className="text-sm  text-center mb-2">
-            Products Related to{" "}
-            <span className="font-semibold"> {product.name} </span>
-          </h3>
-          {/* <FeaturedProducts selectedCategory={product.category} /> */}
-       <FeaturedProducts
+    {/* Card 2: Product Description */}
+    <div className="bg-white p-4 rounded-md border border-gray-100">
+      <h3 className="text-base font-semibold text-gray-800 mb-1">Product Description</h3>
+      <p className="text-sm text-gray-600 leading-relaxed">
+        {product.description || "No description provided for this product."}
+      </p>
+    </div>
+
+    {/* Card 3: Quantity */}
+    <div className="bg-white p-4 rounded-md border border-gray-100">
+      <h3 className="text-base font-semibold text-gray-800 mb-1">Select Quantity</h3>
+      <QuantityInput quantity={quantity} setQuantity={setQuantity} />
+    </div>
+
+    {/* Card 4: Action Buttons */}
+    <div className="bg-white p-4  border border-gray-100 shadow-sm flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 w-full">
+        <button
+          onClick={handleAddToOrder}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-base font-semibold shadow-sm transition-all duration-200"
+        >
+          🛒 Add to Order
+        </button>
+        <button
+          onClick={handleBuyNow}
+          className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 bg-white hover:bg-gray-50 px-6 py-3 rounded-md text-base font-medium shadow-sm transition-all duration-200"
+        >
+          💳 Buy Now / View Orders
+        </button>
+      </div>
+    </div>
+
+    {/* Card 5: Contact Buttons */}
+    <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm">
+      <h3 className="text-base font-semibold text-gray-800 mb-2 text-center">Need Help?</h3>
+      <ContactButtons phoneNumber="+256700000000" />
+    </div>
+
+
+  </div>
+</div>
+
+
+
+
+      </div>
+    </div>
+
+    {/* Related Products Section */}
+    {product?.category && (
+      <div className="pt-6 pb-12 md:px-6">
+        <h3 className="text-center text-sm font-medium text-gray-700 mb-4">
+          Products related to
+          <span className="font-semibold text-gray-900"> {product.name} </span>
+        </h3>
+        <FeaturedProducts
           selectedCategory={product.category}
-          // keyword={product.name?.split(" ")[0]} // example: first word of product name
           keyword={product.name?.split(" ").slice(0, 2).join(" ").toLowerCase()}
         />
-        </div>
-      )}
-    </>
-  );
+      </div>
+    )}
+  </>
+);
+
+
 }
