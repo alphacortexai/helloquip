@@ -142,7 +142,7 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
           )}
         </div>
 
-        <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-4">
+        <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
           {products.map(({ id, name, description, price, imageUrl,productCode }) => (
             <Link key={id} href={`/product/${id}`} className="cursor-pointer group break-inside-avoid ">
               <ProductCard
