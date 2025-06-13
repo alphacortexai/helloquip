@@ -296,8 +296,8 @@ export default function OrderPage() {
           <div key={order.id} className="mb-16">
             {/* Card 5: Contact Buttons */}
             <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm mb-2 mt-1">
-            <h1 className="text-3xl font-semibold mb-1">Order Summary</h1>
-            <h2 className="text-xl font-semibold mb-4">Items:</h2>
+            <h1 className="text-[20px] font-semibold mb-1">Order Summary</h1>
+            <h3 className="text-xl font-semibold mb-4">Items:</h3>
 
             <ul>
               {order.items.map((item) => (

@@ -214,11 +214,28 @@ export default function ProductDetail() {
 
     {/* Card 2: Product Description */}
     <div className="bg-white p-4 rounded-md border border-gray-100">
-      <h3 className="text-base font-semibold text-gray-800 mb-1">Product Description</h3>
+      <h3 className="text-base font-semibold text-gray-800 mb-1">Product Description k</h3>
       <p className="text-sm text-gray-600 leading-relaxed">
         {product.description || "No description provided for this product."}
       </p>
     </div>
+
+    {/* Card 3: Product Attributes */}
+    {product.attributes && product.attributes.length > 0 && (
+      <div className="bg-white p-4 rounded-md border border-gray-100 mt-1">
+        <h3 className="text-base font-semibold text-gray-800 mb-2">Product Attributes</h3>
+        <ul className="text-sm text-gray-600 space-y-1">
+          {product.attributes.map((attr, index) => (
+            <li key={index} className="flex justify-between">
+              <span className="font-medium">{attr.name}:</span>
+              <span>{attr.description}</span> {/* FIXED this line */}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+
 
     {/* Card 3: Quantity */}
     <div className="bg-white p-4 rounded-md border border-gray-100">
