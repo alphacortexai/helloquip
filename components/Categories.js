@@ -42,12 +42,12 @@ export default function Categories({ onCategorySelect }) {
   };
 
   return (
-    <div className="mx-2 sm:mx-2 md:mx-6">
-      <div className="max-w-7xl mx-auto px-4 py-2">
+    <div className="mx-1 sm:mx-1 md:mx-2 ">
+      <div className="max-w-7xl py-2">
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto no-scrollbar">
         <div
-          className="inline-grid grid-rows-2 gap-x-4 gap-y-1"
+          className="inline-grid grid-rows-2 gap-x-3 gap-y-1"
           style={{
             gridAutoFlow: "column",
             gridAutoColumns: "75px", // You can increase this too for larger images
@@ -60,20 +60,20 @@ export default function Categories({ onCategorySelect }) {
                 onClick={() => handleCategoryClick(cat)}
               >
 
-              <div
-                className={`w-full aspect-square bg-gray-100 rounded-[25px] p-0 overflow-hidden
-                  ${selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""}
-                `}
-              >
-                <img
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  className="w-full h-full object-contain"
-                  draggable={false}
-                />
-              </div>
+                <div
+                  className={`w-full aspect-square bg-gray-100 rounded-[25px] p-0 overflow-hidden
+                    ${selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""}
+                  `}
+                >
+                  <img
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    className="w-full h-full object-contain"
+                    draggable={false}
+                  />
+                </div>
 
-                <p className="mt-2 text-[14px] leading-[16px] font-regular text-gray-500">{cat.name}</p>
+                <p className="mt-2 text-[13px] leading-[14px] font-regular text-gray-500">{cat.name}</p>
               </div>
             </Link>
           ))}

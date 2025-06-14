@@ -172,7 +172,7 @@ export default function ProductDetail() {
 
 
 
-  return (
+return (
   <>
     <div className="max-w-6xl md:px-6">
       <div className="flex flex-col md:flex-row gap-2 md:gap-6">
@@ -186,101 +186,94 @@ export default function ProductDetail() {
         </div>
 
         {/* Product Info */}
-<div className="flex-1 ml-2 mr-2">
-  <div className="w-full flex flex-col gap-1">
+        <div className="flex-1 ml-1 mr-1">
+          <div className="w-full flex flex-col gap-2">
 
-    {/* Card 1: Price, Name, Product Code */}
-    <div className="bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 flex flex-col gap-3">
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-[22px] font-bold text-gray-900">
-            UGX {Number(product.price || 0).toLocaleString?.()}
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="line-through text-gray-500 text-sm">
-              UGX {Number(product.oldPrice || product.price * 1.6).toLocaleString?.()}
-            </span>
-            <span className="bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
-              {product.discountPercentage || "43%"}
-            </span>
+            {/* Card 1: Price, Name, Product Code */}
+            <div className="bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 flex flex-col gap-2">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    UGX {Number(product.price || 0).toLocaleString?.()}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="line-through text-gray-500 text-xs">
+                      UGX {Number(product.oldPrice || product.price * 1.6).toLocaleString?.()}
+                    </span>
+                    <span className="bg-red-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+                      {product.discountPercentage || "43%"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm font-semibold text-gray-800 uppercase truncate">
+                {product.name || 'Unnamed Product'}
+              </p>
+              <p className="text-xs text-gray-500">{product.productCode}</p>
+            </div>
+
+            {/* Card 2: Product Description */}
+            <div className="bg-white p-4 rounded-md border border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-800 mb-1">Product Description</h3>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                {product.description || "No description provided for this product."}
+              </p>
+            </div>
+
+            {/* Card 3: Product Attributes */}
+            {product.attributes && product.attributes.length > 0 && (
+              <div className="bg-white p-4 rounded-md border border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-800 mb-1">Product Attributes</h3>
+                <ul className="text-xs text-gray-600 space-y-1">
+                  {product.attributes.map((attr, index) => (
+                    <li key={index} className="flex justify-between">
+                      <span className="font-medium">{attr.name}:</span>
+                      <span>{attr.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Card 4: Quantity */}
+            <div className="bg-white p-4 rounded-md border border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-800 mb-1">Select Quantity</h3>
+              <QuantityInput quantity={quantity} setQuantity={setQuantity} />
+            </div>
+
+            {/* Card 5: Action Buttons */}
+            <div className="bg-white p-4 border border-gray-100 shadow-sm flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  onClick={handleAddToOrder}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-semibold shadow-sm transition-all duration-200"
+                >
+                  🛒 Add to Order
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 bg-white hover:bg-gray-50 px-5 py-2.5 rounded-md text-sm font-medium shadow-sm transition-all duration-200"
+                >
+                  💳 Buy Now / View Orders
+                </button>
+              </div>
+            </div>
+
+            {/* Card 6: Contact Buttons */}
+            <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-800 mb-2 text-center">Need Help?</h3>
+              <ContactButtons phoneNumber="+256700000000" />
+            </div>
+
           </div>
         </div>
-      </div>
-      <p className="text-[16px] font-semibold text-gray-800 uppercase">
-        {product.name || 'Unnamed Product'}
-      </p>
-      <p className="text-sm text-gray-500">{product.productCode}</p>
-    </div>
-
-    {/* Card 2: Product Description */}
-    <div className="bg-white p-4 rounded-md border border-gray-100">
-      <h3 className="text-base font-semibold text-gray-800 mb-1">Product Description k</h3>
-      <p className="text-sm text-gray-600 leading-relaxed">
-        {product.description || "No description provided for this product."}
-      </p>
-    </div>
-
-    {/* Card 3: Product Attributes */}
-    {product.attributes && product.attributes.length > 0 && (
-      <div className="bg-white p-4 rounded-md border border-gray-100 mt-1">
-        <h3 className="text-base font-semibold text-gray-800 mb-2">Product Attributes</h3>
-        <ul className="text-sm text-gray-600 space-y-1">
-          {product.attributes.map((attr, index) => (
-            <li key={index} className="flex justify-between">
-              <span className="font-medium">{attr.name}:</span>
-              <span>{attr.description}</span> {/* FIXED this line */}
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-
-
-    {/* Card 3: Quantity */}
-    <div className="bg-white p-4 rounded-md border border-gray-100">
-      <h3 className="text-base font-semibold text-gray-800 mb-1">Select Quantity</h3>
-      <QuantityInput quantity={quantity} setQuantity={setQuantity} />
-    </div>
-
-    {/* Card 4: Action Buttons */}
-    <div className="bg-white p-4  border border-gray-100 shadow-sm flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row gap-3 w-full">
-        <button
-          onClick={handleAddToOrder}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-base font-semibold shadow-sm transition-all duration-200"
-        >
-          🛒 Add to Order
-        </button>
-        <button
-          onClick={handleBuyNow}
-          className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 bg-white hover:bg-gray-50 px-6 py-3 rounded-md text-base font-medium shadow-sm transition-all duration-200"
-        >
-          💳 Buy Now / View Orders
-        </button>
-      </div>
-    </div>
-
-    {/* Card 5: Contact Buttons */}
-    <div className="bg-white p-4 rounded-md border border-gray-100 shadow-sm">
-      <h3 className="text-base font-semibold text-gray-800 mb-2 text-center">Need Help?</h3>
-      <ContactButtons phoneNumber="+256700000000" />
-    </div>
-
-
-  </div>
-</div>
-
-
-
-
       </div>
     </div>
 
     {/* Related Products Section */}
     {product?.category && (
       <div className="pt-6 pb-12 md:px-6">
-        <h3 className="text-center text-sm font-medium text-gray-700 mb-4">
+        <h3 className="text-center text-sm font-medium text-gray-700 mb-1">
           Products related to
           <span className="font-semibold text-gray-900"> {product.name} </span>
         </h3>
@@ -292,6 +285,7 @@ export default function ProductDetail() {
     )}
   </>
 );
+
 
 
 }

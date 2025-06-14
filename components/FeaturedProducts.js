@@ -1,4 +1,177 @@
 
+// import { useEffect, useState, useRef, useCallback } from "react";
+// import Link from "next/link";
+// import {
+//   collection,
+//   getDocs,
+//   query,
+//   where,
+//   orderBy,
+//   limit,
+//   startAfter,
+// } from "firebase/firestore";
+// import { db } from "@/lib/firebase";
+// import ProductCard from "./ProductCard";
+
+// export default function FeaturedProducts({ selectedCategory, keyword }) {
+//   const [products, setProducts] = useState([]);
+//   const [loading, setLoading] = useState(false);
+//   const [lastVisible, setLastVisible] = useState(null); // for pagination
+//   const [hasMore, setHasMore] = useState(true); // to track if more products exist
+//   const batchSize = 6; // how many products to fetch per batch
+
+//   // Ref for the scroll container (if any) or window
+//   const scrollListenerAdded = useRef(false);
+
+//   // Function to fetch a batch of products, optionally starting after lastVisible
+//   const fetchProducts = useCallback(
+//     async (startAfterDoc = null, reset = false) => {
+//       setLoading(true);
+
+//       try {
+//         const constraints = [];
+
+//         if (selectedCategory && selectedCategory !== "All Products") {
+//           constraints.push(where("category", "==", selectedCategory));
+//         }
+
+//         constraints.push(orderBy("name"));
+
+//         if (startAfterDoc) {
+//           constraints.push(startAfter(startAfterDoc));
+//         }
+
+//         constraints.push(limit(batchSize));
+
+//         const q = query(collection(db, "products"), ...constraints);
+
+//         const querySnapshot = await getDocs(q);
+
+//         const fetchedProducts = [];
+//         querySnapshot.forEach((doc) => {
+//           fetchedProducts.push({ id: doc.id, ...doc.data() });
+//         });
+
+//         // Save original fetched count before filtering keyword
+//         const fetchedProductsCount = querySnapshot.docs.length;
+
+//         // Keyword filtering
+//         let filteredProducts = fetchedProducts;
+//         if (keyword && keyword.trim()) {
+//           const lowerKeyword = keyword.trim().toLowerCase();
+//           filteredProducts = fetchedProducts.filter(
+//             (product) =>
+//               product.name?.toLowerCase().includes(lowerKeyword) ||
+//               product.description?.toLowerCase().includes(lowerKeyword)
+//           );
+//         }
+
+//         if (reset) {
+//           setProducts(filteredProducts);
+//         } else {
+//           setProducts((prev) => [...prev, ...filteredProducts]);
+//         }
+
+//         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+//         setLastVisible(lastVisibleDoc);
+
+//         // Use original fetched count to determine if more products exist
+//         setHasMore(fetchedProductsCount === batchSize);
+//       } catch (err) {
+//         console.error("Error fetching products:", err);
+//       }
+
+//       setLoading(false);
+//     },
+//     [selectedCategory, keyword]
+//   );
+
+//   // Initial load or reload on category/keyword change
+//   useEffect(() => {
+//     setProducts([]);
+//     setLastVisible(null);
+//     setHasMore(true);
+//     fetchProducts(null, true);
+//   }, [selectedCategory, keyword, fetchProducts]);
+
+//   // Scroll event handler: load more when near bottom
+//   useEffect(() => {
+//     if (loading || !hasMore) return;
+
+//     const handleScroll = () => {
+//       if (
+//         window.innerHeight + window.scrollY >=
+//         document.body.offsetHeight - 500 // 500px from bottom triggers load
+//       ) {
+//         fetchProducts(lastVisible);
+//       }
+//     };
+
+//     if (!scrollListenerAdded.current) {
+//       window.addEventListener("scroll", handleScroll);
+//       scrollListenerAdded.current = true;
+//     }
+
+//     return () => {
+//       window.removeEventListener("scroll", handleScroll);
+//       scrollListenerAdded.current = false;
+//     };
+//   }, [fetchProducts, lastVisible, loading, hasMore]);
+
+//   if (products.length === 0 && !loading) {
+//     return (
+//       <div>
+//         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
+//           {selectedCategory || "Products"}
+//         </div>
+//         <p className="text-center py-4">No products found.</p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <section className="bg-gray-50 py-3">
+//       <div className="max-w-7xl mx-auto px-4">
+//         {/* Title */}
+//         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
+//           {selectedCategory || "Featured Products"}
+//           {keyword && (
+//             <span className="block text-xs text-gray-600 mt-1">
+//               Filtered by keyword: <strong>{keyword}</strong>
+//             </span>
+//           )}
+//         </div>
+
+//         <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
+//           {products.map(({ id, name, description, price, imageUrl,productCode }) => (
+//             <Link key={id} href={`/product/${id}`} className="cursor-pointer group break-inside-avoid ">
+//               <ProductCard
+//                 variant="compact"
+//                 product={{
+//                   id,
+//                   name,
+//                   description,
+//                   productCode,
+//                   price,
+//                   image: imageUrl,
+//                 }}
+//               />
+//             </Link>
+//           ))}
+//         </div>
+
+//         {/* Show loading only if loading AND more products exist */}
+//         {loading && hasMore && (
+//           <p className="text-center py-4 text-gray-600">Loading more products...</p>
+//         )}
+//       </div>
+//     </section>
+//   );
+// }
+
+
+
+
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
@@ -16,14 +189,11 @@ import ProductCard from "./ProductCard";
 export default function FeaturedProducts({ selectedCategory, keyword }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [lastVisible, setLastVisible] = useState(null); // for pagination
-  const [hasMore, setHasMore] = useState(true); // to track if more products exist
-  const batchSize = 6; // how many products to fetch per batch
-
-  // Ref for the scroll container (if any) or window
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const batchSize = 6;
   const scrollListenerAdded = useRef(false);
 
-  // Function to fetch a batch of products, optionally starting after lastVisible
   const fetchProducts = useCallback(
     async (startAfterDoc = null, reset = false) => {
       setLoading(true);
@@ -44,15 +214,13 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
         constraints.push(limit(batchSize));
 
         const q = query(collection(db, "products"), ...constraints);
-
         const querySnapshot = await getDocs(q);
 
-        const fetchedProducts = [];
-        querySnapshot.forEach((doc) => {
-          fetchedProducts.push({ id: doc.id, ...doc.data() });
-        });
+        const fetchedProducts = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-        // Save original fetched count before filtering keyword
         const fetchedProductsCount = querySnapshot.docs.length;
 
         // Keyword filtering
@@ -69,13 +237,16 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
         if (reset) {
           setProducts(filteredProducts);
         } else {
-          setProducts((prev) => [...prev, ...filteredProducts]);
+          // Prevent duplicates by checking IDs
+          setProducts((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const newUnique = filteredProducts.filter((p) => !existingIds.has(p.id));
+            return [...prev, ...newUnique];
+          });
         }
 
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         setLastVisible(lastVisibleDoc);
-
-        // Use original fetched count to determine if more products exist
         setHasMore(fetchedProductsCount === batchSize);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -86,7 +257,6 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
     [selectedCategory, keyword]
   );
 
-  // Initial load or reload on category/keyword change
   useEffect(() => {
     setProducts([]);
     setLastVisible(null);
@@ -94,14 +264,13 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
     fetchProducts(null, true);
   }, [selectedCategory, keyword, fetchProducts]);
 
-  // Scroll event handler: load more when near bottom
   useEffect(() => {
     if (loading || !hasMore) return;
 
     const handleScroll = () => {
       if (
         window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 500 // 500px from bottom triggers load
+        document.body.offsetHeight - 500
       ) {
         fetchProducts(lastVisible);
       }
@@ -132,7 +301,6 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
   return (
     <section className="bg-gray-50 py-3">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Title */}
         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
           {selectedCategory || "Featured Products"}
           {keyword && (
@@ -143,8 +311,12 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
         </div>
 
         <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
-          {products.map(({ id, name, description, price, imageUrl,productCode }) => (
-            <Link key={id} href={`/product/${id}`} className="cursor-pointer group break-inside-avoid ">
+          {products.map(({ id, name, description, price, imageUrl, productCode }) => (
+            <Link
+              key={id}
+              href={`/product/${id}`}
+              className="cursor-pointer group break-inside-avoid"
+            >
               <ProductCard
                 variant="compact"
                 product={{
@@ -160,7 +332,6 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
           ))}
         </div>
 
-        {/* Show loading only if loading AND more products exist */}
         {loading && hasMore && (
           <p className="text-center py-4 text-gray-600">Loading more products...</p>
         )}
