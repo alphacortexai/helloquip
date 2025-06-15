@@ -89,7 +89,9 @@ return (
   <div className="ml-1 mr-0 sm:mx-1 md:mx-1">
     <div className="max-w-7xl py-2">
       {/* Make this flex + center + scroll */}
-      <div className="flex overflow-x-auto no-scrollbar gap-x-5">
+      {/* <div className="flex overflow-x-auto no-scrollbar gap-x-5"> */}
+        <div className="grid grid-cols-4 gap-4">
+
         {categories.map((cat) => (
           <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
             <div
