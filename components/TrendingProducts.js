@@ -1,9 +1,172 @@
-"use client";
-import Head from "next/head";
+// "use client";
 
+// import Head from "next/head";
+// import { useEffect, useState } from "react";
+// import Link from "next/link";
+// import { db } from "@/lib/firebase";
+// import {
+//   collection,
+//   getDocs,
+//   getDocsFromCache,
+//   query,
+//   limit,
+// } from "firebase/firestore";
+// import ProductCard from "@/components/ProductCard";
+
+// export default function TrendingProducts() {
+//   const [products, setProducts] = useState([]);
+//   const [currentSlide, setCurrentSlide] = useState(0);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const fetchTrendingProducts = async () => {
+//       try {
+//         const q = query(collection(db, "trendingProducts"), limit(5));
+//         const snapshot = await getDocs(q);
+
+//         const trendingItems = snapshot.docs.map((doc) => {
+//           const data = doc.data();
+//           return {
+//             id: doc.id,
+//             name: data.name || "Unnamed",
+//             image: data.image || data.imageUrl || "https://via.placeholder.com/200",
+//             price: data.price || 0,
+//             description: data.description || "No description provided.",
+//             productCode: data.productCode || "N/A",
+//           };
+//         });
+
+//         console.log("Fetched Trending Products:", trendingItems);
+//         setProducts(trendingItems);
+//       } catch (error) {
+//         console.warn("Online fetch failed, trying cache:", error);
+
+//         try {
+//           const cachedSnapshot = await getDocsFromCache(collection(db, "trendingProducts"));
+//           const cachedItems = cachedSnapshot.docs.map((doc) => {
+//             const data = doc.data();
+//             return {
+//               id: doc.id,
+//               name: data.name || "Unnamed",
+//               image: data.image || data.imageUrl || "https://via.placeholder.com/200",
+//               price: data.price || 0,
+//               description: data.description || "No description provided.",
+//               productCode: data.productCode || "N/A",
+//             };
+//           });
+
+//           setProducts(cachedItems);
+//         } catch (cacheErr) {
+//           console.error("No cache found for trending products:", cacheErr);
+//         }
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchTrendingProducts();
+//   }, []);
+
+//   useEffect(() => {
+//     if (products.length <= 1) return;
+//     const interval = setInterval(() => {
+//       setCurrentSlide((prev) => (prev + 1) % products.length);
+//     }, 5000);
+//     return () => clearInterval(interval);
+//   }, [products]);
+
+//   const handleSlideChange = (index) => setCurrentSlide(index);
+
+//   if (loading) {
+//     return (
+//       <section className="bg-gray-50 py-2">
+//         <div className="max-w-5xl mx-auto px-4">
+//           <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+//             Loading trending products...
+//           </div>
+//         </div>
+//       </section>
+//     );
+//   }
+
+//   if (products.length === 0) {
+//     return (
+//       <section className="bg-gray-50 py-2">
+//         <div className="max-w-5xl mx-auto px-4">
+//           <div className="text-blue-800 text-sm font-medium px-4 py-2 text-center mb-4">
+//             No trending products found.
+//           </div>
+//         </div>
+//       </section>
+//     );
+//   }
+
+//   return (
+//     <>
+//       <Head>
+//         {products[0] && (
+//           <link
+//             rel="preload"
+//             as="image"
+//             href={products[0].image}
+//             type="image/webp"
+//           />
+//         )}
+//       </Head>
+
+//       <section className="bg-white py-2">
+//         <div className="max-w-5xl mx-auto px-2">
+//           <h2 className="text-sm font-semibold text-center  text-gray-500 mb-2">TRENDING PRODUCTS</h2>
+
+//           <div className="relative overflow-hidden">
+//             {/* Slide container */}
+//             <div
+//               className="flex transition-transform duration-700 ease-in-out"
+//               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+//             >
+//               {products.map((product) => (
+//                 <div
+//                   key={product.id}
+//                   className="w-full flex-shrink-0 px-1"
+//                   style={{ minWidth: "100%" }}
+//                 >
+//                 <Link href={`/product/${product.id}`}>
+//                     <ProductCard product={product} variant="landscapemain02" />
+//                 </Link>
+//                 </div>
+//               ))}
+//             </div>
+
+//             {/* Dots */}
+//             <div className="flex items-center justify-center gap-1 mt-1">
+//               {products.map((_, index) => (
+//                 <button
+//                   key={index}
+//                   onClick={() => handleSlideChange(index)}
+//                   className={`h-1 w-1 rounded-full transition-all duration-300 ${
+//                     currentSlide === index
+//                       ? "bg-blue-600 scale-110"
+//                       : "bg-gray-300"
+//                   }`}
+//                 ></button>
+//               ))}
+//             </div>
+//           </div>
+//         </div>
+//       </section>
+//     </>
+//   );
+// }
+
+
+
+
+
+"use client";
+
+import Head from "next/head";
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -12,40 +175,57 @@ import {
   query,
   limit,
 } from "firebase/firestore";
+import ProductCard from "@/components/ProductCard";
 
 export default function TrendingProducts() {
   const [products, setProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchTrendingProducts = async () => {
-      console.time("fetchTrendingProducts");
       try {
         const q = query(collection(db, "trendingProducts"), limit(5));
         const snapshot = await getDocs(q);
-        const trendingItems = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+
+        const trendingItems = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name || "Unnamed",
+            image: data.image || data.imageUrl || "https://via.placeholder.com/200",
+            price: data.price || 0,
+            description: data.description || "No description provided.",
+            productCode: data.productCode || "N/A",
+          };
+        });
+
         setProducts(trendingItems);
       } catch (error) {
         console.warn("Online fetch failed, trying cache:", error);
+
         try {
-          const cachedSnapshot = await getDocsFromCache(
-            collection(db, "trendingProducts")
-          );
-          const cachedItems = cachedSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+          const cachedSnapshot = await getDocsFromCache(collection(db, "trendingProducts"));
+          const cachedItems = cachedSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              name: data.name || "Unnamed",
+              image: data.image || data.imageUrl || "https://via.placeholder.com/200",
+              price: data.price || 0,
+              description: data.description || "No description provided.",
+              productCode: data.productCode || "N/A",
+            };
+          });
+
           setProducts(cachedItems);
         } catch (cacheErr) {
           console.error("No cache found for trending products:", cacheErr);
         }
       } finally {
         setLoading(false);
-        console.timeEnd("fetchTrendingProducts");
       }
     };
 
@@ -60,8 +240,13 @@ export default function TrendingProducts() {
     return () => clearInterval(interval);
   }, [products]);
 
-  const handleSlideChange = (index) => {
-    setCurrentSlide(index);
+  const handleSlideChange = (index) => setCurrentSlide(index);
+
+  const handleProductClick = (productId) => {
+    setIsNavigating(true);
+    setTimeout(() => {
+      router.push(`/product/${productId}`);
+    }, 200); // delay for effect
   };
 
   if (loading) {
@@ -80,10 +265,7 @@ export default function TrendingProducts() {
     return (
       <section className="bg-gray-50 py-2">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-full text-center mb-4">
-            Trending Products
-          </div>
-          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+          <div className="text-blue-800 text-sm font-medium px-4 py-2 text-center mb-4">
             No trending products found.
           </div>
         </div>
@@ -92,89 +274,59 @@ export default function TrendingProducts() {
   }
 
   return (
-      <>
+    <>
       <Head>
         {products[0] && (
           <link
             rel="preload"
             as="image"
-            href={products[0].imageUrl}
-            type="image/webp" // adjust if your images are jpg/png
+            href={products[0].image}
+            type="image/webp"
           />
         )}
       </Head>
 
-      <section className="bg-white py-4">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="relative w-full overflow-hidden">
+      {/* Full screen loader when navigating */}
+      {isNavigating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
+        </div>
+      )}
+
+      <section className="bg-gray/70  py-2">
+        <div className="max-w-5xl mx-auto px-2 ">
+          <h2 className="text-sm font-semibold text-center text-gray-500 mb-2">TRENDING PRODUCTS</h2>
+
+          <div className="relative overflow-hidden">
             <div
               className="flex transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-              {products.map((product, index) => (
-                <Link
+              {products.map((product) => (
+                <div
                   key={product.id}
-                  href={`/product/${product.productId}`}
-                  className="relative group w-full max-w-md mx-auto flex-shrink-0 rounded-lg overflow-hidden"
+                  className="w-full flex-shrink-0 px-1"
+                  style={{ minWidth: "100%" }}
                 >
-                  <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg shadow-md">
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      width={400}
-                      height={300}
-                      quality={60}
-                      className="object-cover w-full h-full group-hover:scale-105 group-hover:brightness-75 transition duration-500 ease-in-out"
-                      sizes="(max-width: 640px) 100vw, 400px"
-                      priority={index === 0}
-                    />
-                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                  <div
+                    onClick={() => handleProductClick(product.id)}
+                    className="cursor-pointer"
+                  >
+                    <ProductCard product={product} variant="landscapemain02" />
                   </div>
-
-                  <div className="absolute bottom-4 left-4 right-4 z-20 text-white transition-all duration-300 ease-in-out group-hover:-translate-y-2">
-                    <h3 className="text-sm sm:text-base font-semibold truncate">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs sm:text-sm truncate">{product.description}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="bg-white/90 text-black font-semibold px-2 py-0.5 rounded text-xs">
-                        {typeof product.price === "number"
-                          ? product.price.toLocaleString("en-UG", {
-                              style: "currency",
-                              currency: "UGX",
-                            })
-                          : product.price}
-                      </span>
-                      <button className="flex items-center gap-1 bg-blue-600 text-white px-2 py-0.5 rounded text-xs hover:bg-blue-700">
-                        Buy now
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3 w-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M17 8l4 4m0 0l-4 4m4-4H3"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
 
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="flex items-center justify-center gap-1">
               {products.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => handleSlideChange(index)}
-                  className={`h-2 w-2 rounded-full transition-colors duration-300 ${
-                    currentSlide === index ? "bg-blue-600 scale-110" : "bg-gray-300"
+                  className={`h-1 w-1 rounded-full transition-all duration-300 ${
+                    currentSlide === index
+                      ? "bg-blue-600 scale-110"
+                      : "bg-gray-300"
                   }`}
                 ></button>
               ))}
@@ -182,8 +334,6 @@ export default function TrendingProducts() {
           </div>
         </div>
       </section>
-
     </>
   );
 }
-

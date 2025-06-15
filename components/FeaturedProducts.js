@@ -1,4 +1,3 @@
-
 // import { useEffect, useState, useRef, useCallback } from "react";
 // import Link from "next/link";
 // import {
@@ -16,14 +15,11 @@
 // export default function FeaturedProducts({ selectedCategory, keyword }) {
 //   const [products, setProducts] = useState([]);
 //   const [loading, setLoading] = useState(false);
-//   const [lastVisible, setLastVisible] = useState(null); // for pagination
-//   const [hasMore, setHasMore] = useState(true); // to track if more products exist
-//   const batchSize = 6; // how many products to fetch per batch
-
-//   // Ref for the scroll container (if any) or window
+//   const [lastVisible, setLastVisible] = useState(null);
+//   const [hasMore, setHasMore] = useState(true);
+//   const batchSize = 6;
 //   const scrollListenerAdded = useRef(false);
 
-//   // Function to fetch a batch of products, optionally starting after lastVisible
 //   const fetchProducts = useCallback(
 //     async (startAfterDoc = null, reset = false) => {
 //       setLoading(true);
@@ -44,15 +40,13 @@
 //         constraints.push(limit(batchSize));
 
 //         const q = query(collection(db, "products"), ...constraints);
-
 //         const querySnapshot = await getDocs(q);
 
-//         const fetchedProducts = [];
-//         querySnapshot.forEach((doc) => {
-//           fetchedProducts.push({ id: doc.id, ...doc.data() });
-//         });
+//         const fetchedProducts = querySnapshot.docs.map((doc) => ({
+//           id: doc.id,
+//           ...doc.data(),
+//         }));
 
-//         // Save original fetched count before filtering keyword
 //         const fetchedProductsCount = querySnapshot.docs.length;
 
 //         // Keyword filtering
@@ -69,13 +63,16 @@
 //         if (reset) {
 //           setProducts(filteredProducts);
 //         } else {
-//           setProducts((prev) => [...prev, ...filteredProducts]);
+//           // Prevent duplicates by checking IDs
+//           setProducts((prev) => {
+//             const existingIds = new Set(prev.map((p) => p.id));
+//             const newUnique = filteredProducts.filter((p) => !existingIds.has(p.id));
+//             return [...prev, ...newUnique];
+//           });
 //         }
 
 //         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
 //         setLastVisible(lastVisibleDoc);
-
-//         // Use original fetched count to determine if more products exist
 //         setHasMore(fetchedProductsCount === batchSize);
 //       } catch (err) {
 //         console.error("Error fetching products:", err);
@@ -86,7 +83,6 @@
 //     [selectedCategory, keyword]
 //   );
 
-//   // Initial load or reload on category/keyword change
 //   useEffect(() => {
 //     setProducts([]);
 //     setLastVisible(null);
@@ -94,14 +90,13 @@
 //     fetchProducts(null, true);
 //   }, [selectedCategory, keyword, fetchProducts]);
 
-//   // Scroll event handler: load more when near bottom
 //   useEffect(() => {
 //     if (loading || !hasMore) return;
 
 //     const handleScroll = () => {
 //       if (
 //         window.innerHeight + window.scrollY >=
-//         document.body.offsetHeight - 500 // 500px from bottom triggers load
+//         document.body.offsetHeight - 500
 //       ) {
 //         fetchProducts(lastVisible);
 //       }
@@ -132,19 +127,22 @@
 //   return (
 //     <section className="bg-gray-50 py-3">
 //       <div className="max-w-7xl mx-auto px-4">
-//         {/* Title */}
-//         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
+//         <div className="text-gray-500 text-sm font-semibold  text-center  uppercase mb-2">
 //           {selectedCategory || "Featured Products"}
 //           {keyword && (
 //             <span className="block text-xs text-gray-600 mt-1">
-//               Filtered by keyword: <strong>{keyword}</strong>
+//               Filtered by keyword:: <strong>{keyword}</strong>
 //             </span>
 //           )}
 //         </div>
 
 //         <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
-//           {products.map(({ id, name, description, price, imageUrl,productCode }) => (
-//             <Link key={id} href={`/product/${id}`} className="cursor-pointer group break-inside-avoid ">
+//           {products.map(({ id, name, description, price, imageUrl, productCode }) => (
+//             <Link
+//               key={id}
+//               href={`/product/${id}`}
+//               className="cursor-pointer group break-inside-avoid"
+//             >
 //               <ProductCard
 //                 variant="compact"
 //                 product={{
@@ -160,7 +158,6 @@
 //           ))}
 //         </div>
 
-//         {/* Show loading only if loading AND more products exist */}
 //         {loading && hasMore && (
 //           <p className="text-center py-4 text-gray-600">Loading more products...</p>
 //         )}
@@ -171,9 +168,8 @@
 
 
 
-
 import { useEffect, useState, useRef, useCallback } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   collection,
   getDocs,
@@ -189,15 +185,16 @@ import ProductCard from "./ProductCard";
 export default function FeaturedProducts({ selectedCategory, keyword }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
-  const batchSize = 6;
   const scrollListenerAdded = useRef(false);
+  const router = useRouter();
+  const batchSize = 6;
 
   const fetchProducts = useCallback(
     async (startAfterDoc = null, reset = false) => {
       setLoading(true);
-
       try {
         const constraints = [];
 
@@ -221,8 +218,6 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
           ...doc.data(),
         }));
 
-        const fetchedProductsCount = querySnapshot.docs.length;
-
         // Keyword filtering
         let filteredProducts = fetchedProducts;
         if (keyword && keyword.trim()) {
@@ -237,7 +232,6 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
         if (reset) {
           setProducts(filteredProducts);
         } else {
-          // Prevent duplicates by checking IDs
           setProducts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
             const newUnique = filteredProducts.filter((p) => !existingIds.has(p.id));
@@ -247,11 +241,10 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
 
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         setLastVisible(lastVisibleDoc);
-        setHasMore(fetchedProductsCount === batchSize);
+        setHasMore(querySnapshot.docs.length === batchSize);
       } catch (err) {
         console.error("Error fetching products:", err);
       }
-
       setLoading(false);
     },
     [selectedCategory, keyword]
@@ -287,6 +280,13 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
     };
   }, [fetchProducts, lastVisible, loading, hasMore]);
 
+  const handleProductClick = (id) => {
+    setIsNavigating(true);
+    setTimeout(() => {
+      router.push(`/product/${id}`);
+    }, 200);
+  };
+
   if (products.length === 0 && !loading) {
     return (
       <div>
@@ -299,12 +299,19 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
   }
 
   return (
-    <section className="bg-gray-50 py-3">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
+    <section className="bg-gray/70 py-3 relative">
+      {/* Full screen loader when navigating */}
+      {isNavigating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-2">
+        <div className="text-gray-500 text-sm font-semibold text-center uppercase mb-2">
           {selectedCategory || "Featured Products"}
           {keyword && (
-            <span className="block text-xs text-gray-600 mt-1">
+            <span className="block text-xs text-gray-600 ">
               Filtered by keyword: <strong>{keyword}</strong>
             </span>
           )}
@@ -312,9 +319,9 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
 
         <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
           {products.map(({ id, name, description, price, imageUrl, productCode }) => (
-            <Link
+            <div
               key={id}
-              href={`/product/${id}`}
+              onClick={() => handleProductClick(id)}
               className="cursor-pointer group break-inside-avoid"
             >
               <ProductCard
@@ -328,7 +335,7 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
                   image: imageUrl,
                 }}
               />
-            </Link>
+            </div>
           ))}
         </div>
 

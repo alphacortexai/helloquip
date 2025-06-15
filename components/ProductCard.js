@@ -234,6 +234,48 @@ const ProductCard = ({ product, variant = 'default' }) => {
     </div>
   );
 
+
+
+const renderLandscapeMain02 = () => (
+  <div className={`bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-4 transition-opacity duration-300 ${wrapperStyle}`}>
+    {/* Moderate image size */}
+    <div className="w-40 sm:w-44 h-48 sm:h-52 bg-gray-50 flex-shrink-0">
+      <img
+        {...imageProps}
+        className="w-full h-full object-cover rounded-l-2xl"
+      />
+    </div>
+
+    <div className="flex flex-col justify-between p-5 w-full">
+      <div>
+        <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2">
+          {product.name || 'Unnamed Product'}
+        </h3>
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+          {product.description || 'No description available'}
+        </p>
+      </div>
+
+      <div className="flex items-end justify-between mt-3">
+        <div>
+          <p className="text-sm text-gray-900 font-semibold">
+            UGX {Number(product.price || 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500">1 item (MOQ)</p>
+        </div>
+        <p className="text-xs text-gray-400 italic">
+          CODE: {product.productCode || 'N/A'}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+
+
+
+
+
   const renderPortrait = () => (
     <div className={`${commonClasses} ${softShadow} p-4 w-48 transition-opacity duration-300 ${wrapperStyle}`}>
       <img {...imageProps} className="w-full h-56 object-cover rounded-xl mb-3" />
@@ -263,6 +305,8 @@ const ProductCard = ({ product, variant = 'default' }) => {
       return renderLandscape();
     case 'landscapemain':
       return renderLandscapeMain();
+    case 'landscapemain02':
+      return renderLandscapeMain02();
     case 'portrait':
       return renderPortrait();
     case 'compact':
