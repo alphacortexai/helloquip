@@ -221,7 +221,7 @@ export default function ClientLayoutWrapper({ children }) {
 
                 {/* Badge for Messenger */}
                 {label === "Messenger" && unreadMessages > 0 && (
-                  <span className="absolute top-0 right-3 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center pointer-events-none">
+                  <span className="absolute top-0 right-3 bg-green-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center pointer-events-none">
                     {unreadMessages}
                   </span>
                 )}

@@ -131,7 +131,7 @@ export default function Navbar() {
                 aria-label="View messages"
               >
                 <ChatBubbleLeftEllipsisIcon className="h-6 w-6" />
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-green-600 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {unreadMessages}
                 </span>
               </button>
