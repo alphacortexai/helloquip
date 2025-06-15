@@ -88,41 +88,45 @@ export default function Categories({ onCategorySelect }) {
 return (
   <div className="ml-1 mr-0 sm:mx-1 md:mx-1">
     <div className="max-w-7xl py-2">
-      {/* Make this flex + center + scroll */}
-      {/* <div className="flex overflow-x-auto no-scrollbar gap-x-5"> */}
-        <div className="grid grid-cols-4 gap-4">
-
-        {categories.map((cat) => (
-          <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
-            <div
-              className="cursor-pointer text-center max-w-[70px] flex-shrink-0"
-              onClick={() => handleCategoryClick(cat)}
-            >
-              {/* Icon Image */}
+      {/* Scrollable wrapper with horizontal scroll */}
+      <div className="overflow-x-auto no-scrollbar">
+        <div
+          className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-4 gap-y-3"
+          style={{ width: "max-content" }}
+        >
+          {categories.map((cat) => (
+            <Link href={`/category/${generateSlug(cat.name)}`} key={cat.id}>
               <div
-                className={`relative w-[60px] h-[60px] bg-gray-100 rounded-[18px] overflow-hidden mx-auto
-                  ${selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""}
-                `}
+                className="cursor-pointer text-center w-[70px]"
+                onClick={() => handleCategoryClick(cat)}
               >
-                <img
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  className="w-full h-full object-contain"
-                  draggable={false}
-                />
-              </div>
+                {/* Icon Image */}
+                <div
+                  className={`relative w-[60px] h-[60px] bg-gray-100 rounded-[18px] overflow-hidden mx-auto ${
+                    selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""
+                  }`}
+                >
+                  <img
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    className="w-full h-full object-contain"
+                    draggable={false}
+                  />
+                </div>
 
-              {/* Text Below */}
-              <p className="mt-1 text-[12px] font-medium text-gray-700 leading-tight line-clamp-2">
-                {cat.name}
-              </p>
-            </div>
-          </Link>
-        ))}
+                {/* Text Below */}
+                <p className="mt-1 text-[12px] font-medium text-gray-700 leading-tight line-clamp-2">
+                  {cat.name}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   </div>
 );
+
 
 
 
