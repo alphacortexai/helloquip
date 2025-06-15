@@ -93,7 +93,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <h1
-              className="text-3xl font-extrabold text-blue-700 cursor-pointer"
+              className="text-3xl font-extrabold text-blue-600 cursor-pointer"
               onClick={() => router.push("/")}
             >
               HelloQuip
