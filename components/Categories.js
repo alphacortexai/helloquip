@@ -101,18 +101,20 @@ return (
                 onClick={() => handleCategoryClick(cat)}
               >
                 {/* Icon Image */}
-                <div
-                  className={`relative w-[60px] h-[60px] bg-gray-100 rounded-[18px] overflow-hidden mx-auto ${
-                    selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""
-                  }`}
-                >
-                  <img
-                    src={cat.imageUrl}
-                    alt={cat.name}
-                    className="w-full h-full object-contain"
-                    draggable={false}
-                  />
-                </div>
+              <div
+                className={`relative w-[60px] h-[60px] bg-gray-100 rounded-[18px] overflow-hidden mx-auto shadow-[0_2px_6px_rgba(0,0,0,0.15)] ${
+                  selectedCategoryId === cat.id ? "border-2 border-teal-400" : ""
+                }`}
+              >
+                <img
+                  src={cat.imageUrl}
+                  alt={cat.name}
+                  className="w-full h-full object-contain"
+                  draggable={false}
+                />
+              </div>
+
+
 
                 {/* Text Below */}
                 <p className="mt-1 text-[12px] font-medium text-gray-700 leading-tight line-clamp-2">
@@ -126,8 +128,6 @@ return (
     </div>
   </div>
 );
-
-
 
 
 }
