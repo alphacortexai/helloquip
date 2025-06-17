@@ -175,7 +175,7 @@ const ProductCard = ({ product, variant = 'default' }) => {
 
   const commonClasses = 'bg-white shadow-sm hover:shadow-md rounded-2xl transition duration-200';
   const softShadow = 'shadow-[0_4px_12px_rgba(0,0,0,0.05)]';
-  const productCodeText = product.productCode ? product.productCode : "null";
+  const productCodeText = product.productCode ? product.sku : "null";
 
   const imageProps = {
     src: product.image || 'https://via.placeholder.com/220',
@@ -226,8 +226,8 @@ const ProductCard = ({ product, variant = 'default' }) => {
             </p>
             <p className="text-[11px] text-gray-500">1 item (MOQ)</p>
           </div>
-          <p className="text-[11px] text-gray-400 italic">
-            CODE: {product.productCode || 'N/A'}
+          <p className="text-[7px] text-gray-400 italic">
+            CODE: {product.sku || 'N/A'}
           </p>
         </div>
       </div>
@@ -280,7 +280,7 @@ const renderLandscapeMain02 = () => (
     <div className={`${commonClasses} ${softShadow} p-4 w-48 transition-opacity duration-300 ${wrapperStyle}`}>
       <img {...imageProps} className="w-full h-56 object-cover rounded-xl mb-3" />
       <h2 className="text-base font-semibold">{product.name}</h2>
-      <p className="text-sm text-gray-400 italic mb-1"> CODE: {productCodeText}</p>
+      <p className="text-[7px] text-gray-400 italic mb-1"> CODE: {productCodeText}</p>
       <p className="text-gray-500 text-sm mt-1 line-clamp-3">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2 text-sm">UGX {product.price}</p>
     </div>
@@ -295,7 +295,7 @@ const renderLandscapeMain02 = () => (
         <p className="text-sm font-medium text-gray-800 line-clamp-2 mb-2">{product.name || 'Unnamed Product'}</p>
         <p className="text-sm text-gray-900 font-semibold">UGX {Number(product.price || 0).toLocaleString?.()}</p>
         <p className="text-xs text-gray-500 mb-2">1 item (MOQ)</p>
-        <p className="text-[12px] text-gray-400 italic mt-1">CODE: {product.productCode || 'N/A'}</p>
+        <p className="text-[7px] text-gray-400 italic mt-1">CODE: {product.sku || 'N/A'}</p>
       </div>
     </div>
   );
