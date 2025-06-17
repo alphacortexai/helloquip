@@ -36,14 +36,15 @@
 //       await addDoc(collection(db, "categories"), {
 //         name,
 //         imageUrl,
+//         parentId: null, // 🔥 Marking as top-level category
 //         createdAt: new Date(),
 //       });
 
-//       setMessage("Category created successfully!");
+//       setMessage("✅ Category created successfully!");
 //       setName("");
 //       setImageFile(null);
 //     } catch (error) {
-//       setMessage("Error uploading category: " + error.message);
+//       setMessage("❌ Error uploading category: " + error.message);
 //     }
 
 //     setUploading(false);
@@ -69,11 +70,10 @@
 //           {uploading ? "Uploading..." : "Create Category"}
 //         </button>
 //       </form>
-//       {message && <p className="mt-4 text-center">{message}</p>}
+//       {message && <p className="mt-4 text-center text-sm text-gray-700">{message}</p>}
 //     </div>
 //   );
 // }
-
 
 
 
@@ -97,6 +97,10 @@ export default function CategoryForm() {
     }
   };
 
+  // 🔤 Generate URL-friendly slug
+  const generateSlug = (name) =>
+    name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -109,12 +113,14 @@ export default function CategoryForm() {
     setMessage("");
 
     try {
+      const slug = generateSlug(name);
       const storageRef = ref(storage, `category-images/${Date.now()}_${imageFile.name}`);
       const snapshot = await uploadBytes(storageRef, imageFile);
       const imageUrl = await getDownloadURL(snapshot.ref);
 
       await addDoc(collection(db, "categories"), {
         name,
+        slug,
         imageUrl,
         parentId: null, // 🔥 Marking as top-level category
         createdAt: new Date(),
@@ -154,3 +160,4 @@ export default function CategoryForm() {
     </div>
   );
 }
+

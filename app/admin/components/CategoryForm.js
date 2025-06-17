@@ -1,9 +1,13 @@
-
-
 // "use client";
 // import { useState, useEffect } from "react";
 // import { db, storage } from "@/lib/firebase";
-// import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
+// import {
+//   collection,
+//   addDoc,
+//   updateDoc,
+//   doc,
+//   getDocs,
+// } from "firebase/firestore";
 // import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // export default function CategoryForm({ existingCategory = null, onSuccess }) {
@@ -11,8 +15,21 @@
 //   const [image, setImage] = useState(null);
 //   const [preview, setPreview] = useState(existingCategory?.imageUrl || null);
 //   const [loading, setLoading] = useState(false);
+//   const [parentId, setParentId] = useState(existingCategory?.parentId || "");
+//   const [allCategories, setAllCategories] = useState([]);
 
-//   // Generate preview URL when image changes
+//   useEffect(() => {
+//     const fetchCategories = async () => {
+//       const snapshot = await getDocs(collection(db, "categories"));
+//       const list = snapshot.docs.map(doc => ({
+//         id: doc.id,
+//         ...doc.data(),
+//       }));
+//       setAllCategories(list);
+//     };
+//     fetchCategories();
+//   }, []);
+
 //   useEffect(() => {
 //     if (!image) {
 //       setPreview(existingCategory?.imageUrl || null);
@@ -20,7 +37,6 @@
 //     }
 //     const objectUrl = URL.createObjectURL(image);
 //     setPreview(objectUrl);
-
 //     return () => URL.revokeObjectURL(objectUrl);
 //   }, [image, existingCategory]);
 
@@ -31,25 +47,35 @@
 //     try {
 //       let imageUrl = existingCategory?.imageUrl || "";
 //       if (image) {
-//         const imageRef = ref(storage, `categories/${image.name}-${Date.now()}`);
+//         const imageRef = ref(
+//           storage,
+//           `categories/${image.name}-${Date.now()}`
+//         );
 //         await uploadBytes(imageRef, image);
 //         imageUrl = await getDownloadURL(imageRef);
 //       }
 
+//       const data = {
+//         name,
+//         imageUrl,
+//         parentId: parentId || null,
+//       };
+
 //       if (existingCategory) {
 //         const docRef = doc(db, "categories", existingCategory.id);
-//         await updateDoc(docRef, { name, imageUrl });
+//         await updateDoc(docRef, data);
 //       } else {
-//         await addDoc(collection(db, "categories"), { name, imageUrl });
+//         await addDoc(collection(db, "categories"), data);
 //       }
 
 //       onSuccess && onSuccess();
 //       setName("");
 //       setImage(null);
 //       setPreview(null);
+//       setParentId("");
 //     } catch (err) {
-//       console.error("Error submitting category:", err);
-//       alert("Failed to save category. Please try again.");
+//       console.error("Error saving category:", err);
+//       alert("Failed to save category.");
 //     }
 
 //     setLoading(false);
@@ -60,49 +86,70 @@
 //       onSubmit={handleSubmit}
 //       className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md space-y-6"
 //     >
+//       <h2 className="text-lg font-semibold text-gray-800">
+//         {existingCategory ? "Edit Category" : "Create Category"}
+//       </h2>
+
+//       {/* Category Name */}
 //       <div>
-//         <label
-//           htmlFor="categoryName"
-//           className="block text-sm font-medium text-gray-700 mb-1"
-//         >
+//         <label className="block text-sm font-medium text-gray-700 mb-1">
 //           Category Name
 //         </label>
 //         <input
-//           id="categoryName"
 //           type="text"
-//           placeholder="Enter category name"
-//           className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
 //           value={name}
 //           onChange={(e) => setName(e.target.value)}
+//           placeholder="Enter category name"
+//           className="w-full border border-gray-300 rounded-md px-3 py-2"
 //           required
 //           disabled={loading}
 //         />
 //       </div>
 
+//       {/* Parent Selector */}
 //       <div>
-//         <label
-//           htmlFor="categoryImage"
-//           className="block text-sm font-medium text-gray-700 mb-1"
+//         <label className="block text-sm font-medium text-gray-700 mb-1">
+//           Parent Category (optional)
+//         </label>
+//         <select
+//           value={parentId}
+//           onChange={(e) => setParentId(e.target.value)}
+//           className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+//           disabled={loading}
 //         >
+//           <option value="">-- No Parent (Top Level) --</option>
+//           {allCategories
+//             .filter((cat) => !existingCategory || cat.id !== existingCategory.id)
+//             .map((cat) => (
+//               <option key={cat.id} value={cat.id}>
+//                 {cat.name}
+//               </option>
+//             ))}
+//         </select>
+//       </div>
+
+//       {/* Image Uploader */}
+//       <div>
+//         <label className="block text-sm font-medium text-gray-700 mb-1">
 //           Category Image
 //         </label>
 //         <input
-//           id="categoryImage"
 //           type="file"
 //           accept="image/*"
 //           onChange={(e) => setImage(e.target.files[0])}
 //           disabled={loading}
-//           className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-md file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+//           className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-md file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
 //         />
 //         {preview && (
 //           <img
 //             src={preview}
-//             alt="Selected preview"
+//             alt="Selected"
 //             className="mt-4 w-32 h-32 object-cover rounded-md border border-gray-200 shadow-sm"
 //           />
 //         )}
 //       </div>
 
+//       {/* Submit Button */}
 //       <button
 //         type="submit"
 //         disabled={loading}
@@ -141,6 +188,7 @@
 
 
 
+
 "use client";
 import { useState, useEffect } from "react";
 import { db, storage } from "@/lib/firebase";
@@ -153,6 +201,17 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// Helper to generate slug from name
+function generateSlug(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")         // Replace spaces with -
+    .replace(/[^\w\-]+/g, "")     // Remove all non-word chars
+    .replace(/\-\-+/g, "-");      // Replace multiple - with single -
+}
+
 export default function CategoryForm({ existingCategory = null, onSuccess }) {
   const [name, setName] = useState(existingCategory?.name || "");
   const [image, setImage] = useState(null);
@@ -164,7 +223,7 @@ export default function CategoryForm({ existingCategory = null, onSuccess }) {
   useEffect(() => {
     const fetchCategories = async () => {
       const snapshot = await getDocs(collection(db, "categories"));
-      const list = snapshot.docs.map(doc => ({
+      const list = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
@@ -190,16 +249,16 @@ export default function CategoryForm({ existingCategory = null, onSuccess }) {
     try {
       let imageUrl = existingCategory?.imageUrl || "";
       if (image) {
-        const imageRef = ref(
-          storage,
-          `categories/${image.name}-${Date.now()}`
-        );
+        const imageRef = ref(storage, `categories/${image.name}-${Date.now()}`);
         await uploadBytes(imageRef, image);
         imageUrl = await getDownloadURL(imageRef);
       }
 
+      const slug = generateSlug(name);
+
       const data = {
         name,
+        slug,           // <-- save slug here
         imageUrl,
         parentId: parentId || null,
       };
@@ -250,7 +309,7 @@ export default function CategoryForm({ existingCategory = null, onSuccess }) {
       </div>
 
       {/* Parent Selector */}
-      <div>
+      {/* <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Parent Category (optional)
         </label>
@@ -269,7 +328,7 @@ export default function CategoryForm({ existingCategory = null, onSuccess }) {
               </option>
             ))}
         </select>
-      </div>
+      </div> */}
 
       {/* Image Uploader */}
       <div>
@@ -327,3 +386,5 @@ export default function CategoryForm({ existingCategory = null, onSuccess }) {
     </form>
   );
 }
+
+

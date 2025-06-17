@@ -1,7 +1,10 @@
+
+
 // "use client";
 // import { useState, useEffect } from "react";
 // import { db } from "@/lib/firebase";
 // import { collection, addDoc, getDocs } from "firebase/firestore";
+// import { toast } from "sonner";
 
 // export default function SubCategoryForm({ onSuccess }) {
 //   const [name, setName] = useState("");
@@ -20,23 +23,24 @@
 
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
-//     if (!parentId) return alert("Please select a parent category.");
-//     if (!name.trim()) return alert("Please enter a subcategory name.");
+//     if (!parentId) return toast.warning("Please select a parent category.");
+//     if (!name.trim()) return toast.warning("Please enter a subcategory name.");
 
 //     setLoading(true);
 //     try {
 //       await addDoc(collection(db, "categories"), {
 //         name: name.trim(),
 //         parentId,
-//         imageUrl: "", // Optional: or omit this field
+//         imageUrl: "", // Optional
 //       });
 
+//       toast.success("Subcategory created successfully!");
 //       onSuccess && onSuccess();
 //       setName("");
 //       setParentId("");
 //     } catch (err) {
 //       console.error("Error adding subcategory:", err);
-//       alert("Failed to create subcategory.");
+//       toast.error("Failed to create subcategory.");
 //     }
 //     setLoading(false);
 //   };
@@ -110,11 +114,16 @@ export default function SubCategoryForm({ onSuccess }) {
   useEffect(() => {
     const fetchCategories = async () => {
       const snapshot = await getDocs(collection(db, "categories"));
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const list = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((cat) => cat.parentId === null); // ✅ Only top-level
       setCategories(list);
     };
     fetchCategories();
   }, []);
+
+  const generateSlug = (name) =>
+    name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -123,10 +132,14 @@ export default function SubCategoryForm({ onSuccess }) {
 
     setLoading(true);
     try {
+      const slug = generateSlug(name);
+
       await addDoc(collection(db, "categories"), {
         name: name.trim(),
+        slug,
         parentId,
         imageUrl: "", // Optional
+        createdAt: new Date(),
       });
 
       toast.success("Subcategory created successfully!");
