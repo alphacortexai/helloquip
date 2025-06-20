@@ -299,50 +299,50 @@ export default function FeaturedProducts({ selectedCategory, keyword }) {
   }
 
   return (
-    <section className="bg-gray/70 py-3 relative">
-      {/* Full screen loader when navigating */}
-      {isNavigating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
-        </div>
+<section className="bg-gray/70 py-3 relative">
+  {isNavigating && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+      <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
+    </div>
+  )}
+
+  <div className="max-w-7xl mx-auto px-2">
+    <div className="text-gray-500 text-sm font-semibold text-center uppercase mb-2">
+      {selectedCategory || "Featured Products"}
+      {keyword && (
+        <span className="block text-xs text-gray-600">
+          Filtered by keyword: <strong>{keyword}</strong>
+        </span>
       )}
+    </div>
 
-      <div className="max-w-7xl mx-auto px-2">
-        <div className="text-gray-500 text-sm font-semibold text-center uppercase mb-2">
-          {selectedCategory || "Featured Products"}
-          {keyword && (
-            <span className="block text-xs text-gray-600 ">
-              Filtered by keyword: <strong>{keyword}</strong>
-            </span>
-          )}
+    <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
+      {products.map(({ id, name, description, price, imageUrl, sku }) => (
+        <div
+          key={id}
+          onClick={() => handleProductClick(id)}
+          className="cursor-pointer group break-inside-avoid"
+        >
+          <ProductCard
+            variant="compact"
+            product={{
+              id,
+              name,
+              description,
+              sku,
+              price,
+              image: imageUrl,
+            }}
+          />
         </div>
+      ))}
+    </div>
 
-        <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
-          {products.map(({ id, name, description, price, imageUrl, sku }) => (
-            <div
-              key={id}
-              onClick={() => handleProductClick(id)}
-              className="cursor-pointer group break-inside-avoid"
-            >
-              <ProductCard
-                variant="compact"
-                product={{
-                  id,
-                  name,
-                  description,
-                  sku,  // Rename here to sku
-                  price,
-                  image: imageUrl,
-                }}
-              />
-            </div>
-          ))}
-        </div>
+    {loading && hasMore && (
+      <p className="text-center py-4 text-gray-600">Loading more products...</p>
+    )}
+  </div>
+</section>
 
-        {loading && hasMore && (
-          <p className="text-center py-4 text-gray-600">Loading more products...</p>
-        )}
-      </div>
-    </section>
   );
 }
