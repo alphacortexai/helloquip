@@ -291,27 +291,95 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const [sku, setSku] = useState("");
   const [productCode, setProductCode] = useState("");
 
-  useEffect(() => {
-    if (existingProduct) {
-      setName(existingProduct.name);
-      setDescription(existingProduct.description);
-      setPrice(existingProduct.price);
-      setCategory(existingProduct.category);
-      setSubCategory(existingProduct.subCategory || "");
-      setSelectedShop(existingProduct.shopId);
-      setImageUrl(existingProduct.imageUrl);
-      setExtraImageUrls(existingProduct.extraImageUrls || []);
-      setAttributes(existingProduct.attributes || [{ name: "", description: "" }]);
-      setTags(existingProduct.tags || "");
-      setDiscount(existingProduct.discount || "");
-      setQty(existingProduct.qty || "");
-      setWarranty(existingProduct.warranty || "");
-      setManufacturer(existingProduct.manufacturer || "");
-      setIsFeatured(existingProduct.isFeatured || false);
-      setSku(existingProduct.sku || "");
-      setProductCode(existingProduct.productCode || "");
+  const generateUniqueSKU = async () => {
+  let unique = false;
+  let sku = '';
+
+  while (!unique) {
+    sku = generateRandomSKU();
+
+    const q = query(collection(db, 'products'), where('sku', '==', sku));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      unique = true; // No product has this SKU, so it's unique
     }
-  }, [existingProduct]);
+  }
+
+  return sku;
+};
+
+
+
+  const generateRandomSKU = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const getRandomChar = () => chars[Math.floor(Math.random() * chars.length)];
+
+    let alphaPart = '';
+    for (let i = 0; i < 3; i++) {
+      alphaPart += getRandomChar();
+    }
+
+    const numberPart = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+
+    return `H-${alphaPart}-${numberPart}`;
+  };
+
+
+  // useEffect(() => {
+  //   if (existingProduct) {
+  //     setName(existingProduct.name);
+  //     setDescription(existingProduct.description);
+  //     setPrice(existingProduct.price);
+  //     setCategory(existingProduct.category);
+  //     setSubCategory(existingProduct.subCategory || "");
+  //     setSelectedShop(existingProduct.shopId);
+  //     setImageUrl(existingProduct.imageUrl);
+  //     setExtraImageUrls(existingProduct.extraImageUrls || []);
+  //     setAttributes(existingProduct.attributes || [{ name: "", description: "" }]);
+  //     setTags(existingProduct.tags || "");
+  //     setDiscount(existingProduct.discount || "");
+  //     setQty(existingProduct.qty || "");
+  //     setWarranty(existingProduct.warranty || "");
+  //     setManufacturer(existingProduct.manufacturer || "");
+  //     setIsFeatured(existingProduct.isFeatured || false);
+  //     setSku(existingProduct.sku || "");
+  //     setProductCode(existingProduct.productCode || "");
+  //   }
+  // }, [existingProduct]);
+
+
+  useEffect(() => {
+  if (existingProduct) {
+    setName(existingProduct.name);
+    setDescription(existingProduct.description);
+    setPrice(existingProduct.price);
+    setCategory(existingProduct.category);
+    setSubCategory(existingProduct.subCategory || "");
+    setSelectedShop(existingProduct.shopId);
+    setImageUrl(existingProduct.imageUrl);
+    setExtraImageUrls(existingProduct.extraImageUrls || []);
+    setAttributes(existingProduct.attributes || [{ name: "", description: "" }]);
+    
+    // Fix here: convert array to string if needed
+    if (Array.isArray(existingProduct.tags)) {
+      setTags(existingProduct.tags.join(", "));
+    } else {
+      setTags(existingProduct.tags || "");
+    }
+    
+    setDiscount(existingProduct.discount || "");
+    setQty(existingProduct.qty || "");
+    setWarranty(existingProduct.warranty || "");
+    setManufacturer(existingProduct.manufacturer || "");
+    setIsFeatured(existingProduct.isFeatured || false);
+    setSku(existingProduct.sku || "");
+    setProductCode(existingProduct.productCode || "");
+  }
+}, [existingProduct]);
+
+
+
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -356,14 +424,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     const subCatName = subCategories.find(sc => sc.id === subCategory)?.name || "SUBCAT";
 
     const newProductCode = await generateProductCode(shopName, catName, subCatName, name);
-    const newSku =
-      shortCode(shopName) +
-      "-" +
-      shortCode(catName) +
-      "-" +
-      shortCode(subCatName) +
-      "-" +
-      shortCode(name);
+    const newSku = await generateUniqueSKU();
 
     setProductCode(newProductCode);
     setSku(newSku);
@@ -440,12 +501,28 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
       uploadedExtraImageUrls.push(url);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
     const slug = generateSlug(name);
     const shopName = shops.find(s => s.id === selectedShop)?.name || "SHOP";
     const catName = categories.find(c => c.id === category)?.name || "CAT";
     const subCatName = subCategories.find(sc => sc.id === subCategory)?.name || "SUBCAT";
     const generatedProductCode = await generateProductCode(shopName, catName, subCatName, name);
-    const generatedSku = shortCode(shopName) + '-' + shortCode(catName) + '-' + shortCode(subCatName) + '-' + shortCode(name);
+
+    const generatedSku = existingProduct ? sku : await generateUniqueSKU();
+    setSku(generatedSku);
+
+
     setProductCode(generatedProductCode);
     setSku(generatedSku);
 
@@ -453,7 +530,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
       name,
       slug,
       productCode: generatedProductCode,
-      sku: generatedSku,
+      sku: generatedSku,  // Use the unique SKU here
       description,
       price: parseFloat(price),
       discount: parseFloat(discount) || 0,
@@ -470,6 +547,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
       attributes,
       updatedAt: new Date(),
     };
+
 
     if (!existingProduct) data.createdAt = new Date();
 

@@ -199,7 +199,7 @@ export default function ClientLayoutWrapper({ children }) {
 
       {/* Mobile Bottom Navigation */}
       {showMobileNav && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t border-gray-200 z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t border-gray-200 z-100">
           <div className="flex justify-between items-center px-4 py-2 text-xs text-gray-600">
             {navItems.map(({ label, href, icon: Icon }, idx) => (
               <button
