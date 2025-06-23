@@ -191,25 +191,35 @@ return (
 
             {/* Card 1: Price, Name, Product Code */}
             <div className="bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 flex flex-col gap-2">
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+              <div className="bg-orange-50 border border-orange-200 rounded-full p-4 mb-2 space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-lg font-bold text-gray-900">
-                    UGX {Number(product.price || 0).toLocaleString?.()}
+                  <span className="text-[15px] font-bold text-gray-900">
+                    UGX {(product.discount > 0 
+                      ? product.price * (1 - product.discount / 100) 
+                      : product.price
+                    ).toLocaleString()}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="line-through text-gray-500 text-xs">
-                      UGX {Number(product.oldPrice || product.price * 1.6).toLocaleString?.()}
-                    </span>
-                    <span className="bg-red-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded">
-                      {product.discountPercentage || "43%"}
-                    </span>
+                    {product.discount > 0 && (
+                      <span className="line-through text-gray-500 text-[15px]">
+                        UGX {product.price.toLocaleString()}
+                      </span>
+                    )}
+
+                    {/* Discount Badge */}
+                    {product.discount > 0 && (
+                      <span className="bg-red-600 text-white text-[10px] font-semibold px-1 py-1 rounded-[10px]">
+                        {`${product.discount}%`}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
               <p className="text-sm font-semibold text-gray-800 uppercase truncate">
                 {product.name || 'Unnamed Product'}
               </p>
-              <p className="text-xs text-gray-500">{product.productCode}</p>
+              <p className="text-[14px] text-gray-500">SKU : {product.sku}</p>
+              <p className="text-[11px] text-gray-500 break-words">CODE : {product.productCode}</p>
             </div>
 
             {/* Card 2: Product Description */}
@@ -267,6 +277,7 @@ return (
 
           </div>
         </div>
+        
       </div>
     </div>
 
@@ -277,10 +288,20 @@ return (
           Products related to
           <span className="font-semibold text-gray-900"> {product.name} </span>
         </h3>
-        <FeaturedProducts
+        {/* <FeaturedProducts
           selectedCategory={product.category}
           keyword={product.name?.split(" ").slice(0, 2).join(" ").toLowerCase()}
+        /> */}
+        <FeaturedProducts
+          selectedCategory={product.category}
+          keyword={product.name?.split(" ").slice(0, 2).join(" ").toLowerCase()} // optional short keyword
+          name={product.name}
+          manufacturer={product.manufacturer}
+          tags={product.tags}
+          cardVariant="landscapemain"
+          excludeId={product.id}
         />
+
       </div>
     )}
   </>
