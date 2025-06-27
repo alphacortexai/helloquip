@@ -290,6 +290,10 @@ const renderCompact = () => (
 );
 
 
+
+
+
+
   
   const renderCompactX = () => (
     <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
