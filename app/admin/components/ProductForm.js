@@ -1,250 +1,3 @@
-// "use client";
-
-// import { useState, useEffect } from "react";
-// import { db, storage } from "@/lib/firebase";
-// import {
-//   collection,
-//   addDoc,
-//   updateDoc,
-//   doc,
-//   getDocs,
-// } from "firebase/firestore";
-// import {
-//   ref,
-//   uploadBytes,
-//   getDownloadURL,
-// } from "firebase/storage";
-
-// export default function ProductForm({ existingProduct = null, onSuccess = () => {} }) {
-//   const MAX_EXTRA_IMAGES = 5;
-
-//   const [name, setName] = useState("");
-//   const [description, setDescription] = useState("");
-//   const [price, setPrice] = useState("");
-//   const [category, setCategory] = useState("");
-//   const [image, setImage] = useState(null);
-//   const [imageUrl, setImageUrl] = useState("");
-//   const [extraImages, setExtraImages] = useState([]);
-//   const [extraImageUrls, setExtraImageUrls] = useState([]);
-//   const [categories, setCategories] = useState([]);
-//   const [shops, setShops] = useState([]);
-//   const [selectedShop, setSelectedShop] = useState("");
-//   const [attributes, setAttributes] = useState([{ name: "", description: "" }]);
-
-//   useEffect(() => {
-//     if (existingProduct) {
-//       setName(existingProduct.name);
-//       setDescription(existingProduct.description);
-//       setPrice(existingProduct.price);
-//       setCategory(existingProduct.category);
-//       setSelectedShop(existingProduct.shopId);
-//       setImageUrl(existingProduct.imageUrl);
-//       setExtraImageUrls(existingProduct.extraImageUrls || []);
-//       setAttributes(existingProduct.attributes || [{ name: "", description: "" }]);
-//     }
-//   }, [existingProduct]);
-
-//   useEffect(() => {
-//     const fetchCategories = async () => {
-//       const snapshot = await getDocs(collection(db, "categories"));
-//       const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//       setCategories(cats);
-//     };
-//     fetchCategories();
-//   }, []);
-
-//   useEffect(() => {
-//     const fetchShops = async () => {
-//       const snapshot = await getDocs(collection(db, "shops"));
-//       const shopList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//       setShops(shopList);
-//       if (!existingProduct && shopList.length > 0) {
-//         setSelectedShop(shopList[0].id);
-//       }
-//     };
-//     fetchShops();
-//   }, [existingProduct]);
-
-//   const handleAttributeChange = (index, field, value) => {
-//     const updated = [...attributes];
-//     updated[index][field] = value;
-//     setAttributes(updated);
-//   };
-
-//   const handleAddAttribute = () => {
-//     setAttributes([...attributes, { name: "", description: "" }]);
-//   };
-
-//   const handleRemoveAttribute = (index) => {
-//     const updated = attributes.filter((_, i) => i !== index);
-//     setAttributes(updated);
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!selectedShop) return alert("Please select a shop.");
-//     if (!category) return alert("Please select a category.");
-
-//     let finalImageUrl = imageUrl;
-//     let uploadedExtraImageUrls = [];
-
-//     if (image) {
-//       const imageRef = ref(storage, `products/${image.name}`);
-//       await uploadBytes(imageRef, image);
-//       finalImageUrl = await getDownloadURL(imageRef);
-//     }
-
-//     const imagesToUpload = extraImages.slice(0, MAX_EXTRA_IMAGES);
-//     for (let img of imagesToUpload) {
-//       const imgRef = ref(storage, `products/extras/${Date.now()}_${img.name}`);
-//       await uploadBytes(imgRef, img);
-//       const url = await getDownloadURL(imgRef);
-//       uploadedExtraImageUrls.push(url);
-//     }
-
-//     const data = {
-//       name,
-//       description,
-//       price: parseFloat(price),
-//       category,
-//       shopId: selectedShop,
-//       imageUrl: finalImageUrl,
-//       extraImageUrls: uploadedExtraImageUrls,
-//       attributes,
-//       updatedAt: new Date(),
-//     };
-
-//     try {
-//       if (existingProduct) {
-//         const productRef = doc(db, "products", existingProduct.id);
-//         await updateDoc(productRef, data);
-//         alert("Product updated!");
-//       } else {
-//         const generateProductCode = async (shopId, categoryName) => {
-//           const shop = shops.find(s => s.id === shopId);
-//           if (!shop) return null;
-//           const firstWord = shop.name.trim().split(" ")[0];
-//           const catSegment = categoryName.trim().substring(0, 4).toLowerCase();
-//           const prefix = `${firstWord}_${catSegment}`;
-//           const productsSnap = await getDocs(collection(db, "products"));
-//           const count = productsSnap.docs.filter(doc =>
-//             doc.data().productCode?.startsWith(prefix)
-//           ).length;
-//           return `${prefix}_${String(count + 1).padStart(3, '0')}`;
-//         };
-
-//         const productCode = await generateProductCode(selectedShop, category);
-
-//         await addDoc(collection(db, "products"), {
-//           ...data,
-//           createdAt: new Date(),
-//           productCode,
-//         });
-
-//         alert("Product created!");
-//         setName("");
-//         setDescription("");
-//         setPrice("");
-//         setCategory("");
-//         setImage(null);
-//         setImageUrl("");
-//         setExtraImages([]);
-//         setExtraImageUrls([]);
-//         setAttributes([{ name: "", description: "" }]);
-//       }
-
-//       onSuccess();
-//     } catch (err) {
-//       console.error(err);
-//       alert("Something went wrong.");
-//     }
-//   };
-
-//   const handleExtraImagesChange = (e) => {
-//     let files = Array.from(e.target.files);
-//     if (files.length > MAX_EXTRA_IMAGES) {
-//       alert(`You can upload up to ${MAX_EXTRA_IMAGES} additional images.`);
-//       files = files.slice(0, MAX_EXTRA_IMAGES);
-//     }
-//     setExtraImages(files);
-//   };
-
-//   return (
-//     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 bg-white shadow-lg rounded-2xl space-y-5">
-//       <h2 className="text-xl font-bold text-gray-800 text-center">
-//         {existingProduct ? "Edit Product" : "Create New Product!!"}
-//       </h2>
-
-//       <select value={selectedShop} onChange={(e) => setSelectedShop(e.target.value)} required className="w-full p-3 bg-gray-100 rounded-xl">
-//         <option value="">Select shop</option>
-//         {shops.map(shop => <option key={shop.id} value={shop.id}>{shop.name}</option>)}
-//       </select>
-
-//       <input type="text" placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full p-3 bg-gray-100 rounded-xl" />
-
-//       <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} required className="w-full p-3 bg-gray-100 rounded-xl" />
-
-//       <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full p-3 bg-gray-100 rounded-xl" />
-
-//       <select value={category} onChange={(e) => setCategory(e.target.value)} required className="w-full p-3 bg-gray-100 rounded-xl">
-//         <option value="">Select category</option>
-//         {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-//       </select>
-
-//       <div>
-//         <label className="block mb-1 font-medium">Main Image</label>
-//         <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} className="w-full p-3 bg-gray-100 rounded-xl" />
-//         {imageUrl && <img src={imageUrl} className="w-24 h-24 object-cover mt-2 rounded-xl" alt="Main" />}
-//       </div>
-
-//       <div>
-//         <label className="block mb-1 font-medium">Extra Images (up to 5)</label>
-//         <input type="file" accept="image/*" onChange={handleExtraImagesChange} multiple className="w-full p-3 bg-gray-100 rounded-xl" />
-//         {extraImageUrls.length > 0 && (
-//           <div className="flex gap-2 mt-2 flex-wrap">
-//             {extraImageUrls.map((url, idx) => <img key={idx} src={url} className="w-20 h-20 object-cover rounded-xl" alt="Extra" />)}
-//           </div>
-//         )}
-//       </div>
-
-//       <div className="space-y-3">
-//         <h3 className="font-semibold text-lg">Product Attributes</h3>
-//         {attributes.map((attr, index) => (
-//           <div key={index} className="flex flex-col sm:flex-row gap-2">
-//             <input
-//               type="text"
-//               placeholder="Attribute name"
-//               value={attr.name}
-//               onChange={(e) => handleAttributeChange(index, "name", e.target.value)}
-//               className="flex-1 p-2 bg-gray-100 rounded-xl"
-//               required
-//             />
-//             <input
-//               type="text"
-//               placeholder="Attribute description"
-//               value={attr.description}
-//               onChange={(e) => handleAttributeChange(index, "description", e.target.value)}
-//               className="flex-1 p-2 bg-gray-100 rounded-xl"
-//               required
-//             />
-//             {index > 0 && (
-//               <button type="button" onClick={() => handleRemoveAttribute(index)} className="text-red-600 hover:underline">Remove</button>
-//             )}
-//           </div>
-//         ))}
-//         <button type="button" onClick={handleAddAttribute} className="text-blue-600 hover:underline">+ Add Attribute</button>
-//       </div>
-
-//       <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700">
-//         {existingProduct ? "Update Product" : "Add Product"}
-//       </button>
-//     </form>
-//   );
-
-// }
-
-
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -290,6 +43,8 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const [isFeatured, setIsFeatured] = useState(false);
   const [sku, setSku] = useState("");
   const [productCode, setProductCode] = useState("");
+  // state declaration new
+  const [isDraft, setIsDraft] = useState(existingProduct?.isDraft || false);  // state declaration new
 
   const generateUniqueSKU = async () => {
   let unique = false;
@@ -326,27 +81,6 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   };
 
 
-  // useEffect(() => {
-  //   if (existingProduct) {
-  //     setName(existingProduct.name);
-  //     setDescription(existingProduct.description);
-  //     setPrice(existingProduct.price);
-  //     setCategory(existingProduct.category);
-  //     setSubCategory(existingProduct.subCategory || "");
-  //     setSelectedShop(existingProduct.shopId);
-  //     setImageUrl(existingProduct.imageUrl);
-  //     setExtraImageUrls(existingProduct.extraImageUrls || []);
-  //     setAttributes(existingProduct.attributes || [{ name: "", description: "" }]);
-  //     setTags(existingProduct.tags || "");
-  //     setDiscount(existingProduct.discount || "");
-  //     setQty(existingProduct.qty || "");
-  //     setWarranty(existingProduct.warranty || "");
-  //     setManufacturer(existingProduct.manufacturer || "");
-  //     setIsFeatured(existingProduct.isFeatured || false);
-  //     setSku(existingProduct.sku || "");
-  //     setProductCode(existingProduct.productCode || "");
-  //   }
-  // }, [existingProduct]);
 
 
   useEffect(() => {
@@ -480,111 +214,119 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedShop || !category || !subCategory) return alert("Please complete all required fields.");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!selectedShop || !category || !subCategory) {
+    return alert("Please complete all required fields.");
+  }
 
-    let finalImageUrl = imageUrl;
-    let uploadedExtraImageUrls = [];
+  if (!isDraft && !price) {
+    return alert("Price is required for non-draft products.");
+  }
 
-    if (image) {
-      const imageRef = ref(storage, `products/${image.name}`);
-      await uploadBytes(imageRef, image);
-      finalImageUrl = await getDownloadURL(imageRef);
-    }
+  let finalImageUrl = imageUrl;
+  let uploadedExtraImageUrls = [];
 
-    const imagesToUpload = extraImages.slice(0, MAX_EXTRA_IMAGES);
-    for (let img of imagesToUpload) {
-      const imgRef = ref(storage, `products/extras/${Date.now()}_${img.name}`);
-      await uploadBytes(imgRef, img);
-      const url = await getDownloadURL(imgRef);
-      uploadedExtraImageUrls.push(url);
-    }
+  if (image) {
+    const imageRef = ref(storage, `products/${image.name}`);
+    await uploadBytes(imageRef, image);
+    finalImageUrl = await getDownloadURL(imageRef);
+  }
 
+  const imagesToUpload = extraImages.slice(0, MAX_EXTRA_IMAGES);
+  for (let img of imagesToUpload) {
+    const imgRef = ref(storage, `products/extras/${Date.now()}_${img.name}`);
+    await uploadBytes(imgRef, img);
+    const url = await getDownloadURL(imgRef);
+    uploadedExtraImageUrls.push(url);
+  }
 
+  const slug = generateSlug(name);
+  const shopName = shops.find(s => s.id === selectedShop)?.name || "SHOP";
+  const catName = categories.find(c => c.id === category)?.name || "CAT";
+  const subCatName = subCategories.find(sc => sc.id === subCategory)?.name || "SUBCAT";
+  const generatedProductCode = await generateProductCode(shopName, catName, subCatName, name);
+  const generatedSku = existingProduct ? sku : await generateUniqueSKU();
 
+  const data = {
+    name,
+    slug,
+    productCode: generatedProductCode,
+    sku: generatedSku,
+    description,
+    price: isDraft ? parseFloat(price) || 0 : parseFloat(price),
+    discount: parseFloat(discount) || 0,
+    qty: parseInt(qty) || 0,
+    category,
+    subCategory,
+    shopId: selectedShop,
+    tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+    isFeatured,
+    warranty,
+    manufacturer,
+    imageUrl: finalImageUrl,
+    extraImageUrls: uploadedExtraImageUrls,
+    attributes,
+    updatedAt: new Date(),
+    isDraft,
+    promoted: "false",
+  };
 
+  if (!existingProduct) data.createdAt = new Date();
 
+  try {
+    let collectionName = isDraft ? "drafts" : "products";
 
+    if (existingProduct) {
+      const existingCollection = existingProduct.isDraft ? "drafts" : "products";
 
-
-
-
-
-
-
-    const slug = generateSlug(name);
-    const shopName = shops.find(s => s.id === selectedShop)?.name || "SHOP";
-    const catName = categories.find(c => c.id === category)?.name || "CAT";
-    const subCatName = subCategories.find(sc => sc.id === subCategory)?.name || "SUBCAT";
-    const generatedProductCode = await generateProductCode(shopName, catName, subCatName, name);
-
-    const generatedSku = existingProduct ? sku : await generateUniqueSKU();
-    setSku(generatedSku);
-
-
-    setProductCode(generatedProductCode);
-    setSku(generatedSku);
-
-    const data = {
-      name,
-      slug,
-      productCode: generatedProductCode,
-      sku: generatedSku,  // Use the unique SKU here
-      description,
-      price: parseFloat(price),
-      discount: parseFloat(discount) || 0,
-      qty: parseInt(qty) || 0,
-      category,
-      subCategory,
-      shopId: selectedShop,
-      tags: tags.split(",").map(t => t.trim()).filter(Boolean),
-      isFeatured,
-      warranty,
-      manufacturer,
-      imageUrl: finalImageUrl,
-      extraImageUrls: uploadedExtraImageUrls,
-      attributes,
-      updatedAt: new Date(),
-    };
-
-
-    if (!existingProduct) data.createdAt = new Date();
-
-    try {
-      if (existingProduct) {
-        const productRef = doc(db, "products", existingProduct.id);
+      // Promote draft to product or update in place
+      if (!isDraft && existingProduct.isDraft) {
+        // Promote to product
+        const newDoc = await addDoc(collection(db, "products"), { ...data, isDraft: false });
+        await updateDoc(doc(db, "drafts", existingProduct.id), { promoted: true });
+        alert("Draft promoted to product!");
+      } else {
+        // Update in the current collection
+        const productRef = doc(db, existingCollection, existingProduct.id);
         await updateDoc(productRef, data);
         alert("Product updated!");
-      } else {
-        await addDoc(collection(db, "products"), data);
-        alert("Product created!");
-        setName("");
-        setDescription("");
-        setPrice("");
-        setDiscount("");
-        setQty("");
-        setCategory("");
-        setSubCategory("");
-        setImage(null);
-        setImageUrl("");
-        setExtraImages([]);
-        setExtraImageUrls([]);
-        setAttributes([{ name: "", description: "" }]);
-        setTags("");
-        setWarranty("");
-        setManufacturer("");
-        setIsFeatured(false);
-        setSku("");
-        setProductCode("");
       }
-
-      onSuccess();
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong.");
+    } else {
+      await addDoc(collection(db, collectionName), data);
+      alert(isDraft ? "Draft saved!" : "Product created!");
     }
-  };
+
+    onSuccess();
+
+    // Reset only if it's a new product
+    if (!existingProduct) {
+      setName("");
+      setDescription("");
+      setPrice("");
+      setDiscount("");
+      setQty("");
+      setCategory("");
+      setSubCategory("");
+      setImage(null);
+      setImageUrl("");
+      setExtraImages([]);
+      setExtraImageUrls([]);
+      setAttributes([{ name: "", description: "" }]);
+      setTags("");
+      setWarranty("");
+      setManufacturer("");
+      setIsFeatured(false);
+      setSku("");
+      setProductCode("");
+      setIsDraft(false);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong.");
+  }
+};
 
   const handleExtraImagesChange = (e) => {
     let files = Array.from(e.target.files);
@@ -665,7 +407,6 @@ return (
         placeholder="Price"
         value={price}
         onChange={(e) => setPrice(e.target.value)}
-        required
         className="w-full p-3 bg-gray-100 rounded-xl"
       />
       <input
@@ -814,26 +555,24 @@ return (
       </button>
     </div>
 
+        {/*Mark as Draft */}
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={isDraft}
+        onChange={(e) => setIsDraft(e.target.checked)}
+        className="h-4 w-4"
+      />
+      <label className="text-md text-gray-700">Save this product Draft (Check box to save this product as draft)</label>
+    </div>
+
     {/* Submit */}
     <button
       type="submit"
       className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700"
     >
-      {existingProduct ? "Update Product" : "Add Product"}
+      {existingProduct ? "Update Product" : "Save / Add Product"}
     </button>
   </form>
 );
-
-
 }
-
-
-
-
-
-
-
-
-
-
-

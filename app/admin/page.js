@@ -18,6 +18,11 @@ import SubCategoryForm from "./components/SubCategoryForm";
 import EditSubCategoryForm from "./components/EditSubCategoryForm";
 import AdminChatPanel from "./chat/page"; // Uncommented to enable Chat view
 import SummaryCard from "./components/SummaryCard";
+import DraftsList from "./components/DraftsList";
+import { useRouter } from "next/navigation"; // ← Add this line
+
+
+
 
 import {
   CubeIcon,
@@ -43,10 +48,20 @@ const tabs = [
   { id: "manageSubCategories", icon: <TruckIcon className="w-6 h-6" />, label: "Sub Categories" },
   { id: "editSubCategories", icon: <TruckIcon className="w-6 h-6" />, label: "Edit Categories" },
   { id: "chats", icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />, label: "Chat" },
+  { id: "drafts", icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />, label: "Draft Products" },
 ];
+
+
 
 function AdminDashboard({ currentAdminUid }) {
   const [view, setView] = useState(null); // null = show dashboard
+  const router = useRouter(); // ← Add this inside your component
+
+  
+  const openChatForUser = (userId) => {
+    router.push(`/admin/chat?userId=${userId}`); 
+    // This assumes you have a page or tab at /admin/chat that loads AdminChatPanel component
+  };
 
   const renderSection = () => {
     switch (view) {
@@ -70,9 +85,10 @@ function AdminDashboard({ currentAdminUid }) {
         return <SubCategoryForm />;
       case "editSubCategories":
         return <EditSubCategoryForm />;
+      case "drafts":
+        return <DraftsList />;
       case "chats":
-        // return <AdminChatPanel />;
-        // return <OrderManager />;
+         return <AdminChatPanel />;
       default:
         return null;
     }
