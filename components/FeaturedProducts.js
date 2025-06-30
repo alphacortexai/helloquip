@@ -178,7 +178,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
-          {products.map(({ id, name, description, price, imageUrl, sku }) => (
+          {products.map(({ id, name, description, price, discount, imageUrl, sku }) => (
             <div
               key={id}
               onClick={() => handleProductClick(id)}
@@ -192,6 +192,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                   description,
                   sku,
                   price,
+                  discount,
                   image: imageUrl,
                 }}
               />
