@@ -308,9 +308,19 @@ const ProductCard = ({ product, variant = 'default' }) => {
       </div>
 
       <div className="px-4 pb-4 pt-2">
-        <p className="text-sm font-medium text-gray-800 line-clamp-2 mb-2">
-          {product.name || 'Unnamed Product'}
-        </p>
+      <p
+        className="text-sm font-medium text-gray-800 mb-2 overflow-hidden"
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          minHeight: '2.5rem', // roughly 2 lines of text height at text-sm
+          lineHeight: '1.25rem', // Tailwind's default line height for text-sm
+        }}
+      >
+        {product.name || 'Unnamed Product'}
+      </p>
+
         <p className="text-sm text-gray-900 font-semibold">
           UGX {discountedPrice.toLocaleString()}
         </p>
