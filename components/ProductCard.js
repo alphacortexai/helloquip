@@ -291,96 +291,46 @@ const ProductCard = ({ product, variant = 'default' }) => {
     </div>
   );
 
-  // const renderCompact = () => (
-  //   <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
-  //     <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 4' }}>
-  //       {!imageLoaded && (
-  //         <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
-  //       )}
-
-  //       <img
-  //         {...imageProps}
-  //         onLoad={() => setImageLoaded(true)}
-  //         className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${
-  //           imageLoaded ? 'opacity-100' : 'opacity-0'
-  //         }`}
-  //       />
-  //     </div>
-
-  //     <div className="px-4 pb-4 pt-2">
-  //     <p
-  //       className="text-sm font-medium text-gray-800 mb-2 overflow-hidden"
-  //       style={{
-  //         display: '-webkit-box',
-  //         WebkitLineClamp: 2,
-  //         WebkitBoxOrient: 'vertical',
-  //         minHeight: '2.5rem', // roughly 2 lines of text height at text-sm
-  //         lineHeight: '1.25rem', // Tailwind's default line height for text-sm
-  //       }}
-  //     >
-  //       {product.name || 'Unnamed Product'}
-  //     </p>
-
-  //       <p className="text-sm text-gray-900 font-semibold">
-  //         UGX {discountedPrice.toLocaleString()}
-  //       </p>
-  //       <p className="text-xs text-gray-500 mb-2">1 item (MOQ)</p>
-  //       <p className="text-[7px] text-gray-400 italic mt-1">
-  //         CODEX: {product.sku || 'N/A'}
-  //       </p>
-  //     </div>
-  //   </div>
-  // );
-
-
-
   const renderCompact = () => (
-  <div
-    className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}
-    style={{ minHeight: '320px' }} // Adjust as needed
-  >
-    <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 4' }}>
-      {!imageLoaded && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
-      )}
+    <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
+      <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 4' }}>
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
+        )}
 
-      <img
-        {...imageProps}
-        loading="lazy"
-        onLoad={() => setImageLoaded(true)}
-        className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${
-          imageLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
-    </div>
+        <img
+          {...imageProps}
+          onLoad={() => setImageLoaded(true)}
+          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
 
-    <div className="px-4 pb-4 pt-2">
+      <div className="px-4 pb-4 pt-2">
       <p
         className="text-sm font-medium text-gray-800 mb-2 overflow-hidden"
         style={{
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
-          minHeight: '2.5rem',
-          lineHeight: '1.25rem',
+          minHeight: '2.5rem', // roughly 2 lines of text height at text-sm
+          lineHeight: '1.25rem', // Tailwind's default line height for text-sm
         }}
       >
         {product.name || 'Unnamed Product'}
       </p>
-      <p className="text-sm text-gray-900 font-semibold">
-        UGX {discountedPrice.toLocaleString()}
-      </p>
-      <p className="text-xs text-gray-500 mb-2">1 item (MOQ)</p>
-      <p className="text-[7px] text-gray-400 italic mt-1">
-        CODEX: {product.sku || 'N/A'}
-      </p>
+
+        <p className="text-sm text-gray-900 font-semibold">
+          UGX {discountedPrice.toLocaleString()}
+        </p>
+        <p className="text-xs text-gray-500 mb-2">1 item (MOQ)</p>
+        <p className="text-[7px] text-gray-400 italic mt-1">
+          CODEX: {product.sku || 'N/A'}
+        </p>
+      </div>
     </div>
-  </div>
-);
-
-
-
-
+  );
 
   const renderCompactX = () => (
     <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
