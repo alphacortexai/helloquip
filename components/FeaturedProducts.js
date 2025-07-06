@@ -177,32 +177,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           )}
         </div>
 
-        {/* <div className="columns-2 sm:columns-4 md:columns-6 lg:columns-4 gap-2 space-y-2">
-          {products.map(({ id, name, description, price, discount, imageUrl, sku }) => (
-            <div
-              key={id}
-              onClick={() => handleProductClick(id)}
-              className="cursor-pointer group break-inside-avoid"
-            >
-              <ProductCard
-                variant="compact"
-                product={{
-                  id,
-                  name,
-                  description,
-                  sku,
-                  price,
-                  discount,
-                  image: imageUrl,
-                }}
-              />
-            </div>
-          ))}
-        </div> */}
 
 
 
-
+{/* 
 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
   {products.map(({ id, name, description, price, discount, imageUrl, sku }) => (
     <div
@@ -224,8 +202,32 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       />
     </div>
   ))}
-</div>
+</div> */}
 
+
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
+  {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+    <div
+      key={id}
+      onClick={() => handleProductClick(id)}
+      className="cursor-pointer group"
+    >
+      <ProductCard
+        variant="compact"
+        isFirst={index === 0} // ✅ Mark the first product
+        product={{
+          id,
+          name,
+          description,
+          sku,
+          price,
+          discount,
+          image: imageUrl,
+        }}
+      />
+    </div>
+  ))}
+</div>
 
 
         {loading && hasMore && (

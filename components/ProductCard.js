@@ -180,7 +180,7 @@
 
 import React, { useState } from 'react';
 
-const ProductCard = ({ product, variant = 'default' }) => {
+const ProductCard = ({ product, variant = 'default', isFirst = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const commonClasses = 'bg-white shadow-sm hover:shadow-md rounded-2xl transition duration-200';
@@ -299,10 +299,12 @@ const ProductCard = ({ product, variant = 'default' }) => {
         )}
 
         <img
-          {...imageProps}
+          src={product.image}
+          alt={product.name || "Product"}
+          loading={isFirst ? "eager" : "lazy"} // ✅ Only eager load first image
           onLoad={() => setImageLoaded(true)}
           className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
+            imageLoaded ? "opacity-100" : "opacity-0"
           }`}
         />
       </div>
