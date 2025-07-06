@@ -292,7 +292,7 @@ const ProductCard = ({ product, variant = 'default' }) => {
   );
 
   const renderCompact = () => (
-    <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
+    <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-1 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 4' }}>
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
