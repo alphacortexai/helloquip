@@ -299,6 +299,34 @@ import {
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
+
+// Helper to decode URL and pick preferred size
+const getPreferredImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+
+  // If it's a string, decode and return
+  if (typeof imageUrl === "string") {
+    try {
+      return decodeURIComponent(imageUrl);
+    } catch {
+      return imageUrl;
+    }
+  }
+
+  // If it's an object with sizes, prefer 680x680 or original or first
+  if (typeof imageUrl === "object") {
+    const preferred =
+      imageUrl["200x200"] || imageUrl["original"] || Object.values(imageUrl)[0];
+    try {
+      return decodeURIComponent(preferred);
+    } catch {
+      return preferred;
+    }
+  }
+
+  return null;
+};
+
 export default function CategoryPage() {
   const { slug } = useParams();
   const router = useRouter();
@@ -423,14 +451,14 @@ export default function CategoryPage() {
       {loading ? (
         <p>Loading...</p>
       ) : products.length === 0 ? (
-        <p>No products found in this category.</p>
+        <p>Sorry!  No products found in this category.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map(({ id, name, price, imageUrl }) => (
             <Link key={id} href={`/product/${id}`} className="group">
               <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden">
                 <img
-                  src={imageUrl}
+                  src={getPreferredImageUrl(imageUrl)}
                   alt={name}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />

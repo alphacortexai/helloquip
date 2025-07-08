@@ -150,6 +150,36 @@
 import { useState } from "react";
 import Image from "next/image";
 
+
+const getPreferredImageUrl = (imageUrl, size = "680x680") => {
+  if (!imageUrl) return null;
+
+  // If it's a string, decode and return
+  if (typeof imageUrl === "string") {
+    try {
+      return decodeURIComponent(imageUrl);
+    } catch {
+      return imageUrl;
+    }
+  }
+
+  // If it's an object with multiple sizes
+  if (typeof imageUrl === "object") {
+    const preferred =
+      imageUrl[size] || imageUrl["original"] || Object.values(imageUrl)[0];
+    try {
+      return decodeURIComponent(preferred);
+    } catch {
+      return preferred;
+    }
+  }
+
+  return null;
+};
+
+
+
+
 export default function ImageGallery({ images, activeImage, onSelect }) {
   const [showFullView, setShowFullView] = useState(false);
 
@@ -167,7 +197,7 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
         >
           <div className="relative w-full max-w-4xl max-h-[90vh]">
             <Image
-              src={activeImage}
+              src={getPreferredImageUrl(activeImage)}
               alt="Full preview"
               layout="responsive"
               width={800}
@@ -194,7 +224,7 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
     >
     {activeImage ? (
         <Image
-        src={activeImage}
+        src={getPreferredImageUrl(activeImage)}
         alt="Main preview"
         fill
         className="object-cover"
@@ -221,10 +251,10 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
             onClick={() => onSelect(thumb)}
             >
             <Image
-                src={thumb}
-                alt={`thumbnail-${index}`}
-                fill
-                className="object-cover"
+              src={getPreferredImageUrl(thumb, "200x200")}
+              alt={`thumbnail-${index}`}
+              fill
+              className="object-cover"
             />
             </div>
         ) : (
