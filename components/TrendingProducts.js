@@ -212,7 +212,7 @@ const getPreferredImageUrl = (imageUrl) => {
 
   if (typeof imageUrl === "object") {
     const preferred =
-      imageUrl["680x680"] ||
+      imageUrl["200x200"] ||
       imageUrl["200x200"] ||
       imageUrl["original"] ||
       Object.values(imageUrl)[0];
