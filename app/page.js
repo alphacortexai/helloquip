@@ -216,27 +216,13 @@ export default function Home() {
                         key={product.id}
                         className="bg-white rounded-lg overflow-hidden"
                       >
-                        {/* <div className="relative w-full h-48">
+                        <div className="relative w-full h-48">
                           <img
                             src={product.imageUrl}
                             alt={product.name}
                             className="w-full h-full object-cover"
                           />
-                        </div> */}
-
-
-
-                          <div className="relative w-full aspect-[4/3]">
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="absolute inset-0 w-full h-full object-cover"
-                            />
-                          </div>
-
-
-
-
+                        </div>
                         <div className="p-4 text-left">
                           <p className="text-sm text-gray-900 mt-2">
                             {product.name}
