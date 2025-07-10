@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import CenteredCard from "@/components/CenteredCard";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   doc,
@@ -19,6 +20,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ContactButtons from "@/components/ContactButtons";
+
+
 
 const regionsData = [
   {
@@ -279,6 +282,7 @@ const mapCartItemsToOrderItems = (cartItems) =>
     id: item.id,
     name: item.name,
     price: item.price,
+    description: item.price,
     sop: item.sop || "",
     category: item.category || "",
     imageUrl: item.imageUrl || "",
@@ -290,6 +294,7 @@ const calculateTotal = (items) =>
 
 export default function OrderPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -301,32 +306,64 @@ export default function OrderPage() {
   });
   const [editing, setEditing] = useState(false);
 
+
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return router.push("/login");
-      setUserId(user.uid);
+  const auth = getAuth();
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) return router.push("/login");
+    setUserId(user.uid);
 
-      const userSnap = await getDoc(doc(db, "users", user.uid));
-      const userAddress = userSnap.exists() ? userSnap.data().address || {} : {};
-      setAddress(userAddress);
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const userAddress = userSnap.exists() ? userSnap.data().address || {} : {};
+    setAddress(userAddress);
 
-      const cartRef = collection(db, "carts", user.uid, "items");
-      const cartSnap = await getDocs(cartRef);
-      const items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setCartItems(items);
+    const cartRef = collection(db, "carts", user.uid, "items");
+    const cartSnap = await getDocs(cartRef);
+    const items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setCartItems(items);
 
-      const order = {
-        id: "order-firebase",
-        items,
-        address: userAddress,
-        amount: calculateTotal(items),
-        date: new Date().toISOString(),
-      };
-      setOrders(items.length ? [order] : []);
-    });
-    return () => unsubscribe();
-  }, [router]);
+    const order = {
+      id: "order-firebase",
+      items,
+      address: userAddress,
+      amount: calculateTotal(items),
+      date: new Date().toISOString(),
+    };
+    setOrders(items.length ? [order] : []);
+    setLoading(false); // ✅ Done loading
+  });
+
+  return () => unsubscribe();
+}, [router]);
+
+
+
+  // useEffect(() => {
+  //   const auth = getAuth();
+  //   const unsubscribe = onAuthStateChanged(auth, async (user) => {
+  //     if (!user) return router.push("/login");
+  //     setUserId(user.uid);
+
+  //     const userSnap = await getDoc(doc(db, "users", user.uid));
+  //     const userAddress = userSnap.exists() ? userSnap.data().address || {} : {};
+  //     setAddress(userAddress);
+
+  //     const cartRef = collection(db, "carts", user.uid, "items");
+  //     const cartSnap = await getDocs(cartRef);
+  //     const items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  //     setCartItems(items);
+
+  //     const order = {
+  //       id: "order-firebase",
+  //       items,
+  //       address: userAddress,
+  //       amount: calculateTotal(items),
+  //       date: new Date().toISOString(),
+  //     };
+  //     setOrders(items.length ? [order] : []);
+  //   });
+  //   return () => unsubscribe();
+  // }, [router]);
 
   const updateQuantity = async (productId, delta) => {
     const item = cartItems.find((item) => item.id === productId);
@@ -418,8 +455,17 @@ export default function OrderPage() {
         </Link>
       </div>
 
-      {orders.length === 0 ? (
-        <p>You have no orders. Please add items to your cart.</p>
+      {loading ? (
+        <CenteredCard message="⏳ Loading your orders..." />
+      ) : orders.length === 0 ? (
+        <CenteredCard
+          title="No Orders Yet"
+          message="Your cart is currently empty. Explore products to get started!"
+        >
+          <Link href="/" className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            🛍️ Browse Products
+          </Link>
+        </CenteredCard>
       ) : (
         orders.map((order) => (
           <div key={order.id} className="mb-16">
@@ -428,11 +474,21 @@ export default function OrderPage() {
               <ul>
                 {order.items.map((item) => (
                   <li key={item.id} className="flex items-center mb-3 border-b pb-3">
-                    <Image src={item.imageUrl} alt={item.name} width={80} height={80} className="rounded" />
+                  <Image
+                    src={
+                      typeof item.imageUrl === "object"
+                        ? decodeURIComponent(item.imageUrl["200x200"])
+                        : decodeURIComponent(item.imageUrl)
+                    }
+                    alt={item.name}
+                    width={80}
+                    height={80}
+                    className="rounded"
+                  />
                     <div className="ml-4 flex-1">
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.category}</p>
-                      <p className="text-sm text-gray-600">SOP: {item.sop}</p>
+                      <p className="text-sm text-gray-600">{item.description}</p>
+                      <p className="text-sm text-gray-600">SKU: {item.sku}</p>
                       <p className="text-sm text-gray-700">Price: UGX {item.price.toLocaleString()}</p>
                       <div className="flex items-center mt-1">
                         <button onClick={() => updateQuantity(item.id, -1)} className="px-2 py-1 bg-gray-200 rounded-l">-</button>

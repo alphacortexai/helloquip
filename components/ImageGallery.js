@@ -254,8 +254,10 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
               src={getPreferredImageUrl(thumb, "200x200")}
               alt={`thumbnail-${index}`}
               fill
+              sizes="40px" // 👈 or whatever width your thumbnail occupies
               className="object-cover"
             />
+
             </div>
         ) : (
             <div

@@ -80,9 +80,6 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     return `H-${alphaPart}-${numberPart}`;
   };
 
-
-
-
   useEffect(() => {
   if (existingProduct) {
     setName(existingProduct.name);
@@ -111,9 +108,6 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     setProductCode(existingProduct.productCode || "");
   }
 }, [existingProduct]);
-
-
-
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -147,8 +141,6 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     fetchSubCategories();
   }, [category]);
 
-
-
   useEffect(() => {
   const autoGenerateCodes = async () => {
     if (!selectedShop || !category || !subCategory || !name) return;
@@ -165,9 +157,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   };
 
   autoGenerateCodes();
-}, [selectedShop, category, subCategory, name]);
-
-
+  }, [selectedShop, category, subCategory, name]);
 
 
   const handleAttributeChange = (index, field, value) => {
@@ -218,31 +208,59 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
 
 /////////////////////
 
-
 // Helper function to generate resized URLs based on original URL
+// const generateResizedUrls = (originalUrl) => {
+//   if (!originalUrl) return null;
+  
+//   const urlWithoutToken = originalUrl.split('?')[0];
+//   const token = originalUrl.includes('?') ? originalUrl.split('?')[1] : '';
+  
+//   const lastSlash = urlWithoutToken.lastIndexOf('/');
+//   const basePath = urlWithoutToken.substring(0, lastSlash + 1); // .../products/
+//   const filename = urlWithoutToken.substring(lastSlash + 1); // pdt1.jpg
+  
+//   const dotIndex = filename.lastIndexOf('.');
+//   const nameWithoutExt = filename.substring(0, dotIndex); // pdt1
+  
+//   const sizes = ['200x200', '680x680', '800x800'];
+//   const resizedUrls = {};
+  
+//   sizes.forEach(size => {
+//     resizedUrls[size] = `${basePath}${encodeURIComponent(nameWithoutExt)}_${size}.webp${token ? '?' + token : ''}`;
+//   });
+  
+//   resizedUrls.original = originalUrl;
+//   return resizedUrls;
+// };
+
+// start of new helper function accounting for 90x90
 const generateResizedUrls = (originalUrl) => {
   if (!originalUrl) return null;
-  
+
   const urlWithoutToken = originalUrl.split('?')[0];
-  const token = originalUrl.includes('?') ? originalUrl.split('?')[1] : '';
-  
+  const token = originalUrl.includes('?') ? '?' + originalUrl.split('?')[1] : '';
+
   const lastSlash = urlWithoutToken.lastIndexOf('/');
   const basePath = urlWithoutToken.substring(0, lastSlash + 1); // .../products/
   const filename = urlWithoutToken.substring(lastSlash + 1); // pdt1.jpg
-  
+
   const dotIndex = filename.lastIndexOf('.');
   const nameWithoutExt = filename.substring(0, dotIndex); // pdt1
-  
-  const sizes = ['200x200', '680x680', '800x800'];
+
+  const sizes = ['90x90', '100x100', '200x200', '680x680', '800x800'];
   const resizedUrls = {};
-  
+
   sizes.forEach(size => {
-    resizedUrls[size] = `${basePath}${encodeURIComponent(nameWithoutExt)}_${size}.webp${token ? '?' + token : ''}`;
+    resizedUrls[size] = `${basePath}${encodeURIComponent(nameWithoutExt)}_${size}.webp${token}`;
   });
-  
+
   resizedUrls.original = originalUrl;
   return resizedUrls;
 };
+
+
+/// end of helper function to generate resized URLs 
+
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -358,14 +376,7 @@ const handleSubmit = async (e) => {
   }
 };
 
-
-
-
 ///////////////////////
-
-
-
-
 
   // const handleSubmit = async (e) => {
   //   e.preventDefault();

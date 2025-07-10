@@ -106,6 +106,50 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import CategoryForm from "./CategoryForm";
 
+
+
+
+function cleanFirebaseUrl(url) {
+  if (!url || typeof url !== "string") return "";
+
+  try {
+    // Decode twice (handles %252F -> %2F)
+    let cleaned = decodeURIComponent(decodeURIComponent(url));
+
+    // Then re-encode once to ensure spaces and other special chars are valid
+    const [baseUrl, query] = cleaned.split("?");
+    const reEncodedPath = encodeURIComponent(baseUrl.split("/o/")[1]); // only encode the storage path
+    return `https://firebasestorage.googleapis.com/v0/b/${baseUrl.split("/b/")[1].split("/")[0]}/o/${reEncodedPath}?${query}`;
+  } catch (err) {
+    console.warn("Failed to clean Firebase URL:", url);
+    return url;
+  }
+}
+
+
+
+
+  // 🔥 Get 90x90 if available, fallback to original
+const getImageSrc = (cat) => {
+  if (cat.id === "all") return cat.imageUrl;
+
+  if (typeof cat.imageUrl === "string") {
+    return cleanFirebaseUrl(cat.imageUrl);
+  }
+
+  if (typeof cat.imageUrl === "object" && cat.imageUrl["90x90"]) {
+    return cleanFirebaseUrl(cat.imageUrl["90x90"]);
+  }
+
+  if (typeof cat.imageUrl === "object" && cat.imageUrl.original) {
+    return cleanFirebaseUrl(cat.imageUrl.original);
+  }
+
+  return "";
+};
+
+
+
 export default function CategoryList() {
   const [categories, setCategories] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -145,10 +189,17 @@ export default function CategoryList() {
           >
             {/* Image Left */}
             <img
-              src={cat.imageUrl}
+              // src={cat.imageUrl}
+              src={getImageSrc(cat)}
               alt={cat.name}
               className="w-20 h-20 object-cover rounded-full flex-shrink-0"
             />
+            {/* <img
+              src={getImageSrc(cat)}
+              alt={cat.name}
+              className="w-full h-full object-contain"
+              draggable={false}
+            /> */}
 
             {/* Content Right */}
             <div className="ml-4 flex flex-1 flex-col justify-center">
