@@ -255,7 +255,7 @@ const ProductCard = ({ product, variant = 'default', isFirst = false }) => {
             </p>
             <p className="text-[11px] text-gray-500">1 item (MOQ)</p>
           </div>
-          <p className="text-[7px] text-gray-400 italic">
+          <p className="text-[12px] text-gray-400 italic">
             CODE: {product.sku}
           </p>
         </div>
@@ -286,7 +286,7 @@ const ProductCard = ({ product, variant = 'default', isFirst = false }) => {
             </p>
             <p className="text-xs text-gray-500">1 item (MOQ)</p>
           </div>
-          <p className="text-xs text-gray-400 italic">
+          <p className="text-[12px] text-gray-500 italic">
             CODE: {product.sku}
           </p>
         </div>
@@ -332,7 +332,7 @@ const ProductCard = ({ product, variant = 'default', isFirst = false }) => {
           UGX {discountedPrice.toLocaleString()}
         </p>
         <p className="text-xs text-gray-500 mb-2">1 item (MOQ)</p>
-        <p className="text-[7px] text-gray-400 italic mt-1">
+        <p className="text-[11px] text-gray-400 italic mt-1">
           CODEX: {product.sku || 'N/A'}
         </p>
       </div>
