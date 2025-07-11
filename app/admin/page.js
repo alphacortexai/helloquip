@@ -20,6 +20,7 @@ import AdminChatPanel from "./chat/page"; // Uncommented to enable Chat view
 import SummaryCard from "./components/SummaryCard";
 import DraftsList from "./components/DraftsList";
 import { useRouter } from "next/navigation"; // ← Add this line
+import QuotationViewer from "./components/QuotationViewer";
 
 
 
@@ -49,6 +50,7 @@ const tabs = [
   { id: "editSubCategories", icon: <TruckIcon className="w-6 h-6" />, label: "Edit Categories" },
   { id: "chats", icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />, label: "Chat" },
   { id: "drafts", icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />, label: "Draft Products" },
+  { id: "quatations", icon: <PencilSquareIcon className="w-6 h-6" />, label: "Quotations" },
 ];
 
 
@@ -89,6 +91,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <DraftsList />;
       case "chats":
          return <AdminChatPanel />;
+      case "quatations":
+        return <QuotationViewer />
       default:
         return null;
     }
