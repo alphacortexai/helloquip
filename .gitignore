@@ -43,3 +43,4 @@ next-env.d.ts
 
 # Ignore Firebase service account keys
 server/firebase/helloquip-80e20-firebase-adminsdk-fbsvc-9c445489ba.json
+server/firebase/serviceAccountKey.json
