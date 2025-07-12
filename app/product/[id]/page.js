@@ -96,6 +96,10 @@ export default function ProductDetail() {
     }
   };
 
+
+  
+
+
   if (loading) return <p className="text-center py-6">Loading...</p>;
   if (!product) return <p className="text-center py-6">Product not found.</p>;
 

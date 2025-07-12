@@ -192,7 +192,7 @@
 
 import React, { useState } from 'react';
 
-const ProductCard = ({ product, variant = 'default', isFirst = false }) => {
+const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const commonClasses = 'bg-white shadow-sm hover:shadow-md rounded-2xl transition duration-200';
@@ -263,36 +263,77 @@ const ProductCard = ({ product, variant = 'default', isFirst = false }) => {
     </div>
   );
 
+  // const renderLandscapeMain02 = () => (
+  //   <div className={`bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-4 transition-opacity duration-300 ${wrapperStyle}`}>
+  //     <div className="w-40 sm:w-44 h-48 sm:h-52 bg-gray-50 flex-shrink-0">
+  //       <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
+  //     </div>
+
+  //     <div className="flex flex-col justify-between p-5 w-full">
+  //       <div>
+  //         <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2">
+  //           {product.name || 'Unnamed Product'}
+  //         </h3>
+  //         <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+  //           {product.description || 'No description available'}
+  //         </p>
+  //       </div>
+
+  //       <div className="flex items-end justify-between mt-3">
+  //         <div>
+  //           <p className="text-sm text-gray-900 font-semibold">
+  //             UGX {discountedPrice.toLocaleString()}
+  //           </p>
+  //           <p className="text-xs text-gray-500">1 item (MOQ)</p>
+  //         </div>
+  //         <p className="text-[12px] text-gray-500 italic">
+  //           CODE: {product.sku}
+  //         </p>
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
+
+
   const renderLandscapeMain02 = () => (
-    <div className={`bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-4 transition-opacity duration-300 ${wrapperStyle}`}>
+    <div className={`relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-4 transition-opacity duration-300 ${wrapperStyle}`}>
+      
+      {/* Badge */}
+      {badge && (
+        <div className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[11px] font-medium px-2 py-0.5 rounded-full shadow-sm">
+          {badge}
+        </div>
+      )}
+
       <div className="w-40 sm:w-44 h-48 sm:h-52 bg-gray-50 flex-shrink-0">
         <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
       </div>
 
       <div className="flex flex-col justify-between p-5 w-full">
         <div>
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2">
+          <h3 className="text-[18px] sm:text-base font-semibold text-gray-800 line-clamp-2">
             {product.name || 'Unnamed Product'}
           </h3>
-          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+          {/* <p className="text-sm text-gray-500 mt-1 line-clamp-2">
             {product.description || 'No description available'}
+          </p> */}
+          <p className="text-[12px] text-gray-500 italic">
+            SKU: {product.sku}
           </p>
-        </div>
 
-        <div className="flex items-end justify-between mt-3">
-          <div>
+          <div className="mt-2">
             <p className="text-sm text-gray-900 font-semibold">
               UGX {discountedPrice.toLocaleString()}
             </p>
             <p className="text-xs text-gray-500">1 item (MOQ)</p>
           </div>
-          <p className="text-[12px] text-gray-500 italic">
-            CODE: {product.sku}
-          </p>
+
         </div>
+
       </div>
     </div>
   );
+
 
   const renderPortrait = () => (
     <div className={`${commonClasses} ${softShadow} p-4 w-48 transition-opacity duration-300 ${wrapperStyle}`}>
