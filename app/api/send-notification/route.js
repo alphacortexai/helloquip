@@ -137,7 +137,7 @@ export async function POST(req) {
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error("EError sending notification:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
