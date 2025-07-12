@@ -44,8 +44,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <CartProvider>
-          <NotificationSetup />  {/* <-- use it here */}
+
           <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+                    <NotificationSetup />  {/* <-- use it here */}
         </CartProvider>
       </body>
     </html>
