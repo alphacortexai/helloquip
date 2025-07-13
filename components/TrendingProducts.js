@@ -644,7 +644,7 @@ export default function TrendingProducts() {
               {products.map((product, index) => (
                 <div
                   key={product.id}
-                  className="w-full flex-shrink-0 snap-center px-2"
+                  className="w-full flex-shrink-0 snap-center px-1"
                   style={{ minWidth: "100%" }}
                 >
                   <div

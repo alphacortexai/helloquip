@@ -296,7 +296,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) =
 
 
   const renderLandscapeMain02 = () => (
-    <div className={`relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-4 transition-opacity duration-300 ${wrapperStyle}`}>
+    <div className={`relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto transition-opacity duration-300 ${wrapperStyle}`}>
       
       {/* Badge */}
       {badge && (
