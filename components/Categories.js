@@ -309,7 +309,7 @@ const getImageSrc = (cat) => {
       <div className="block md:hidden ml-1 mr-0 sm:mx-1 md:mx-1 py-2">
         <div className="overflow-x-auto no-scrollbar">
           <div
-            className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-4 gap-y-3"
+            className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-4 gap-y-2"
             style={{ width: "max-content" }}
           >
             {categories.map((cat) => (
