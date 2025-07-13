@@ -439,7 +439,7 @@ export default function FeaturedProducts({
   }
 
   return (
-    <section className="bg-gray/70 py-3 relative">
+    <section className="bg-gray/70 py-1 relative">
       {isNavigating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
@@ -447,7 +447,7 @@ export default function FeaturedProducts({
       )}
 
       <div className="max-w-7xl mx-auto px-2">
-        <div className="text-gray-500 text-sm font-semibold text-center uppercase mb-2">
+        {/* <div className="text-gray-500 text-sm font-semibold text-center uppercase mb-2">
           {selectedCategory || "Similar Products"}
           {(keyword || name || manufacturer || (tags?.length > 0)) && (
             <span className="block text-xs text-gray-600">
@@ -457,7 +457,7 @@ export default function FeaturedProducts({
                 .join(", ")}
             </span>
           )}
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1">
           {products.map(
