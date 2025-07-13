@@ -639,7 +639,7 @@ export default function TrendingProducts() {
           <div className="relative overflow-hidden">
             <div
               ref={scrollContainerRef}
-              className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth"
+              className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
             >
               {products.map((product, index) => (
                 <div
@@ -662,7 +662,7 @@ export default function TrendingProducts() {
               ))}
             </div>
 
-            <div className="flex items-center justify-center gap-1 mt-3">
+            {/* <div className="flex items-center justify-center gap-1 mt-3">
               {products.map((_, index) => (
                 <button
                   key={index}
@@ -674,7 +674,7 @@ export default function TrendingProducts() {
                   }`}
                 />
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
