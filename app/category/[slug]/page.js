@@ -402,12 +402,12 @@ export default function CategoryPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4">
-      <button
+      {/* <button
         onClick={() => router.back()}
         className="mb-4 px-4 py-2 bg-blue-100 text-blue-700 text-sm shadow-sm hover:bg-blue-200 transition-all"
       >
         ← Back
-      </button>
+      </button> */}
 
       <h2 className="text-xl sm:text-2xl font-bold mb-3 text-gray-800">{categoryName}</h2>
 
@@ -453,7 +453,7 @@ export default function CategoryPage() {
       ) : products.length === 0 ? (
         <p>Sorry!  No products found in this category.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {products.map(({ id, name, price, imageUrl }) => (
             <Link key={id} href={`/product/${id}`} className="group">
               <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden">
