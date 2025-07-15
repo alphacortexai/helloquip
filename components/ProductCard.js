@@ -195,6 +195,10 @@ import React, { useState } from 'react';
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
+    const imageUrl = product.mainImage || product.extraImages?.[0] || "/fallback.jpg";
+
+
+
   const commonClasses = 'bg-white shadow-sm hover:shadow-md rounded-2xl transition duration-200';
   const softShadow = 'shadow-[0_4px_12px_rgba(0,0,0,0.05)]';
   const productCodeText = product.sku || 'N/A';
@@ -207,12 +211,18 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) =
 
   // Centralized image props with LCP optimizations applied for the first image
   const imageProps = {
-    src: product.image || 'https://via.placeholder.com/220',
+    src: product.image || 'https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/placeholder.jpg?alt=media&token=7b4e6ab8-7a01-468c-b5f7-a19d31290045',
     alt: product.name || 'Product',
     loading: isFirst ? 'eager' : 'lazy',         // eager for LCP image, lazy otherwise
     fetchPriority: isFirst ? 'high' : 'auto',    // high fetch priority for LCP
     onLoad: () => setImageLoaded(true),
+    onError: () => setImageLoaded(true), // Avoid skeleton staying forever
   };
+
+
+
+
+  
 
   const wrapperStyle = imageLoaded ? 'opacity-100' : 'opacity-0';
 
@@ -263,36 +273,6 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) =
     </div>
   );
 
-  // const renderLandscapeMain02 = () => (
-  //   <div className={`bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-4 transition-opacity duration-300 ${wrapperStyle}`}>
-  //     <div className="w-40 sm:w-44 h-48 sm:h-52 bg-gray-50 flex-shrink-0">
-  //       <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
-  //     </div>
-
-  //     <div className="flex flex-col justify-between p-5 w-full">
-  //       <div>
-  //         <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2">
-  //           {product.name || 'Unnamed Product'}
-  //         </h3>
-  //         <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-  //           {product.description || 'No description available'}
-  //         </p>
-  //       </div>
-
-  //       <div className="flex items-end justify-between mt-3">
-  //         <div>
-  //           <p className="text-sm text-gray-900 font-semibold">
-  //             UGX {discountedPrice.toLocaleString()}
-  //           </p>
-  //           <p className="text-xs text-gray-500">1 item (MOQ)</p>
-  //         </div>
-  //         <p className="text-[12px] text-gray-500 italic">
-  //           CODE: {product.sku}
-  //         </p>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
 
 
   const renderLandscapeMain02 = () => (
@@ -345,14 +325,62 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) =
     </div>
   );
 
-  const renderCompact = () => (
+  // const renderCompact = () => (
+  //   <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-1 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
+  //     <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 4' }}>
+  //       {!imageLoaded && (
+  //         <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
+  //       )}
+
+  //       <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} />
+  //     </div>
+
+  //     <div className="px-4 pb-4 pt-2">
+  //       <p
+  //         className="text-sm font-medium text-gray-800 mb-2 overflow-hidden"
+  //         style={{
+  //           display: '-webkit-box',
+  //           WebkitLineClamp: 2,
+  //           WebkitBoxOrient: 'vertical',
+  //           minHeight: '2.5rem', // roughly 2 lines of text height at text-sm
+  //           lineHeight: '1.25rem', // Tailwind's default line height for text-sm
+  //         }}
+  //       >
+  //         {product.name || 'Unnamed Product'}
+  //       </p>
+
+  //       <p className="text-sm text-gray-900 font-semibold">
+  //         UGX {discountedPrice.toLocaleString()}
+  //       </p>
+  //       <p className="text-xs text-gray-500 mb-2">1 item (MOQ)</p>
+  //       <p className="text-[11px] text-gray-400 italic mt-1">
+  //         CODEX: {product.sku || 'N/A'}
+  //       </p>
+  //     </div>
+  //   </div>
+  // );
+
+const renderCompact = () => {
+
+  return (
     <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-1 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 4' }}>
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
         )}
 
-        <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} />
+        {imageUrl ? (
+          <img
+            {...imageProps}
+            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs rounded-xl">
+            No Image
+          </div>
+        )}
       </div>
 
       <div className="px-4 pb-4 pt-2">
@@ -362,8 +390,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) =
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            minHeight: '2.5rem', // roughly 2 lines of text height at text-sm
-            lineHeight: '1.25rem', // Tailwind's default line height for text-sm
+            minHeight: '2.5rem',
+            lineHeight: '1.25rem',
           }}
         >
           {product.name || 'Unnamed Product'}
@@ -379,6 +407,11 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false }) =
       </div>
     </div>
   );
+};
+
+
+
+
 
   const renderCompactX = () => (
     <div className={`bg-white border border-gray-200 rounded-2xl p-1 w-full max-w-xs mx-auto hover:shadow-md transition mb-2 break-inside-avoid transition-opacity duration-300 ${wrapperStyle}`}>

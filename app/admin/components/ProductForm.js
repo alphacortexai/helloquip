@@ -261,7 +261,6 @@ const generateResizedUrls = (originalUrl) => {
 
 /// end of helper function to generate resized URLs 
 
-
 const handleSubmit = async (e) => {
   e.preventDefault();
 
@@ -273,10 +272,12 @@ const handleSubmit = async (e) => {
     return alert("Price is required for non-draft products.");
   }
 
-  let finalImageUrls = null; // will hold object {original, 200x200, 680x680, 800x800}
-  let uploadedExtraImageUrls = []; // array of objects like above
+  // Start with existing images; only overwrite if new ones are uploaded
+  let finalImageUrls = existingProduct?.imageUrl || null;
+  let uploadedExtraImageUrls = existingProduct?.extraImageUrls || [];
 
   try {
+    // Upload new main image only if user selected one
     if (image) {
       const imageRef = ref(storage, `products/${image.name}`);
       await uploadBytes(imageRef, image);
@@ -284,13 +285,17 @@ const handleSubmit = async (e) => {
       finalImageUrls = generateResizedUrls(originalUrl);
     }
 
-    const imagesToUpload = extraImages.slice(0, MAX_EXTRA_IMAGES);
-    for (let img of imagesToUpload) {
-      const imgRef = ref(storage, `products/extras/${Date.now()}_${img.name}`);
-      await uploadBytes(imgRef, img);
-      const originalUrl = await getDownloadURL(imgRef);
-      const resizedSet = generateResizedUrls(originalUrl);
-      uploadedExtraImageUrls.push(resizedSet);
+    // Upload new extra images only if user selected any
+    if (extraImages.length > 0) {
+      uploadedExtraImageUrls = []; // reset array if new images
+      const imagesToUpload = extraImages.slice(0, MAX_EXTRA_IMAGES);
+      for (let img of imagesToUpload) {
+        const imgRef = ref(storage, `products/extras/${Date.now()}_${img.name}`);
+        await uploadBytes(imgRef, img);
+        const originalUrl = await getDownloadURL(imgRef);
+        const resizedSet = generateResizedUrls(originalUrl);
+        uploadedExtraImageUrls.push(resizedSet);
+      }
     }
 
     const slug = generateSlug(name);
@@ -316,8 +321,8 @@ const handleSubmit = async (e) => {
       isFeatured,
       warranty,
       manufacturer,
-      imageUrl: finalImageUrls,          // <-- updated here (object now)
-      extraImageUrls: uploadedExtraImageUrls, // <-- updated here (array of objects)
+      imageUrl: finalImageUrls,          // <-- properly set image object or old value
+      extraImageUrls: uploadedExtraImageUrls, // <-- properly set extras array or old value
       attributes,
       updatedAt: new Date(),
       isDraft,
@@ -375,122 +380,6 @@ const handleSubmit = async (e) => {
     alert("Something went wrong.");
   }
 };
-
-///////////////////////
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!selectedShop || !category || !subCategory) {
-  //     return alert("Please complete all required fields.");
-  //   }
-
-  //   if (!isDraft && !price) {
-  //     return alert("Price is required for non-draft products.");
-  //   }
-
-  //   let finalImageUrl = imageUrl;
-  //   let uploadedExtraImageUrls = [];
-
-  //   if (image) {
-  //     const imageRef = ref(storage, `products/${image.name}`);
-  //     await uploadBytes(imageRef, image);
-  //     finalImageUrl = await getDownloadURL(imageRef);
-  //   }
-
-  //   const imagesToUpload = extraImages.slice(0, MAX_EXTRA_IMAGES);
-  //   for (let img of imagesToUpload) {
-  //     const imgRef = ref(storage, `products/extras/${Date.now()}_${img.name}`);
-  //     await uploadBytes(imgRef, img);
-  //     const url = await getDownloadURL(imgRef);
-  //     uploadedExtraImageUrls.push(url);
-  //   }
-
-  //   const slug = generateSlug(name);
-  //   const shopName = shops.find(s => s.id === selectedShop)?.name || "SHOP";
-  //   const catName = categories.find(c => c.id === category)?.name || "CAT";
-  //   const subCatName = subCategories.find(sc => sc.id === subCategory)?.name || "SUBCAT";
-  //   const generatedProductCode = await generateProductCode(shopName, catName, subCatName, name);
-  //   const generatedSku = existingProduct ? sku : await generateUniqueSKU();
-
-  //   const data = {
-  //     name,
-  //     slug,
-  //     productCode: generatedProductCode,
-  //     sku: generatedSku,
-  //     description,
-  //     price: isDraft ? parseFloat(price) || 0 : parseFloat(price),
-  //     discount: parseFloat(discount) || 0,
-  //     qty: parseInt(qty) || 0,
-  //     category,
-  //     subCategory,
-  //     shopId: selectedShop,
-  //     tags: tags.split(",").map(t => t.trim()).filter(Boolean),
-  //     isFeatured,
-  //     warranty,
-  //     manufacturer,
-  //     imageUrl: finalImageUrl,
-  //     extraImageUrls: uploadedExtraImageUrls,
-  //     attributes,
-  //     updatedAt: new Date(),
-  //     isDraft,
-  //     promoted: "false",
-  //   };
-
-  //   if (!existingProduct) data.createdAt = new Date();
-
-  //   try {
-  //     let collectionName = isDraft ? "drafts" : "products";
-
-  //     if (existingProduct) {
-  //       const existingCollection = existingProduct.isDraft ? "drafts" : "products";
-
-  //       // Promote draft to product or update in place
-  //       if (!isDraft && existingProduct.isDraft) {
-  //         // Promote to product
-  //         const newDoc = await addDoc(collection(db, "products"), { ...data, isDraft: false });
-  //         await updateDoc(doc(db, "drafts", existingProduct.id), { promoted: true });
-  //         alert("Draft promoted to product!");
-  //       } else {
-  //         // Update in the current collection
-  //         const productRef = doc(db, existingCollection, existingProduct.id);
-  //         await updateDoc(productRef, data);
-  //         alert("Product updated!");
-  //       }
-  //     } else {
-  //       await addDoc(collection(db, collectionName), data);
-  //       alert(isDraft ? "Draft saved!" : "Product created!");
-  //     }
-
-  //     onSuccess();
-
-  //     // Reset only if it's a new product
-  //     if (!existingProduct) {
-  //       setName("");
-  //       setDescription("");
-  //       setPrice("");
-  //       setDiscount("");
-  //       setQty("");
-  //       setCategory("");
-  //       setSubCategory("");
-  //       setImage(null);
-  //       setImageUrl("");
-  //       setExtraImages([]);
-  //       setExtraImageUrls([]);
-  //       setAttributes([{ name: "", description: "" }]);
-  //       setTags("");
-  //       setWarranty("");
-  //       setManufacturer("");
-  //       setIsFeatured(false);
-  //       setSku("");
-  //       setProductCode("");
-  //       setIsDraft(false);
-  //     }
-
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Something went wrong.");
-  //   }
-  // };
 
   const handleExtraImagesChange = (e) => {
     let files = Array.from(e.target.files);
