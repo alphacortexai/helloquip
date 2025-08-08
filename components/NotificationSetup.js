@@ -1,30 +1,3 @@
-// "use client";
-
-// import { useEffect } from "react";
-// import { getAuth, onAuthStateChanged } from "firebase/auth";
-// import { requestPermissionAndToken, listenForForegroundMessages } from "@/lib/NotificationManager";
-
-// export default function NotificationSetup() {
-//   useEffect(() => {
-//     const auth = getAuth();
-
-//     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-//       if (user) {
-//         await requestPermissionAndToken(user);
-
-//         listenForForegroundMessages((payload) => {
-//           const { title, body } = payload.notification || {};
-//           alert(`${title}: ${body}`);
-//         });
-//       }
-//     });
-
-//     return () => unsubscribe();
-//   }, []);
-
-//   return null;
-// }
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -43,19 +16,25 @@ export default function NotificationSetup() {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await requestPermissionAndToken(user);
+        try {
+          // Try to set up notifications, but don't crash if it fails
+          await requestPermissionAndToken(user);
 
-        listenForForegroundMessages((payload) => {
-          const { title, body } = payload?.notification || {};
+          listenForForegroundMessages((payload) => {
+            const { title, body } = payload?.notification || {};
 
-          console.log("💬 Foreground FCM received:", title, body);
+            console.log("💬 Foreground FCM received:", title, body);
 
-          if (title && body) {
-            setNotification({ title, body });
+            if (title && body) {
+              setNotification({ title, body });
 
-            setTimeout(() => setNotification(null), 5000);
-          }
-        });
+              setTimeout(() => setNotification(null), 5000);
+            }
+          });
+        } catch (error) {
+          console.warn("Failed to set up notifications:", error);
+          // Don't crash the app if notifications fail
+        }
       }
     });
 

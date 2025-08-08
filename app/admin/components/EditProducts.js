@@ -76,7 +76,19 @@ export default function EditProducts({ currentAdminUid }) {
   const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
+        // Delete the product
         await deleteDoc(doc(db, "products", id));
+        
+        // Also remove from trending products if it exists there
+        try {
+          const trendingRef = doc(db, "trendingProducts", id);
+          await deleteDoc(trendingRef);
+          console.log(`Removed product ${id} from trending products`);
+        } catch (trendingError) {
+          // Product wasn't trending, which is fine
+          console.log(`Product ${id} was not in trending products`);
+        }
+        
         setProducts((prev) => prev.filter((p) => p.id !== id));
       } catch (error) {
         alert("Failed to delete product. Please try again.");

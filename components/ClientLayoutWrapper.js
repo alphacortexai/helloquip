@@ -134,19 +134,19 @@ export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const hideNavbarOn = ["/register", "/login", "/messenger"];
+  const hideNavbarOn = ["/register", "/login", "/messenger", "/admin"];
   const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin", "/admin/chat"];
   const hideMobileNavOn = ["/admin", "/login", "/register", "/messenger"];
 
-  const showNavbar = !hideNavbarOn.includes(pathname);
-  const showFooter = !hideFooterOn.includes(pathname);
+  const showNavbar = !hideNavbarOn.includes(pathname) && !pathname.startsWith('/admin');
+  const showFooter = !hideFooterOn.includes(pathname) && !pathname.startsWith('/admin');
   const auth = getAuth();
 
   const [user, setUser] = useState(null);
   const [orderCount, setOrderCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
-  const showMobileNav = user && !hideMobileNavOn.includes(pathname);
+  const showMobileNav = user && !hideMobileNavOn.includes(pathname) && !pathname.startsWith('/admin');
 
   const navItems = [
     { label: "Home", href: "/", icon: HomeIcon },
@@ -205,8 +205,8 @@ export default function ClientLayoutWrapper({ children }) {
 
       {/* Mobile Bottom Navigation */}
       {showMobileNav && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t border-gray-200 z-100">
-          <div className="flex justify-between items-center px-4 py-2 text-xs text-gray-600">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-inner border-t border-gray-200 z-100 md:hidden">
+          <div className="flex justify-between items-center px-4 py-4 text-xs text-gray-600">
             {navItems.map(({ label, href, icon: Icon }, idx) => (
               <button
                 key={idx}
@@ -238,6 +238,10 @@ export default function ClientLayoutWrapper({ children }) {
       )}
 
       {showFooter && <Footer />}
+      {/* Mobile Footer Spacer - Always show on mobile when footer is hidden */}
+      {!showFooter && (
+        <div className="block md:hidden h-20"></div>
+      )}
     </>
   );
 }

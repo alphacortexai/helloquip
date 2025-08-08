@@ -240,7 +240,7 @@ export default function ShipmentsPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto min-h-screen">
+    <div className="p-6 max-w-3xl mx-auto min-h-screen pb-20 md:pb-6">
       <h1 className="text-2xl font-semibold mb-6">Your Orders</h1>
       {orders.map((order) => (
         <div key={order.id} className="border rounded-md p-4 mb-6 shadow-sm">
@@ -270,18 +270,22 @@ export default function ShipmentsPage() {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-1">Items:</h3>
-            {order.items.map((item) => (
-              <div
-                key={item.id || item.name}
-                className="flex justify-between border-b py-1"
-              >
-                <span>{item.name}</span>
-                <span>
-                  {item.quantity} × UGX {item.price.toLocaleString()}
-                </span>
-              </div>
-            ))}
+            <h3 className="font-semibold mb-1">Items ({order.items?.length || 0}):</h3>
+            {order.items && order.items.length > 0 ? (
+              order.items.map((item) => (
+                <div
+                  key={item.id || item.name}
+                  className="flex justify-between border-b py-1"
+                >
+                  <span>{item.name}</span>
+                  <span>
+                    {item.quantity} × UGX {item.price.toLocaleString()}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">No items found in this order.</p>
+            )}
           </div>
 
           <div className="mt-3 font-semibold text-right">

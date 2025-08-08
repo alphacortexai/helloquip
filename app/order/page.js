@@ -1,297 +1,54 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, doc, getDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import CenteredCard from "@/components/CenteredCard";
-import ConvertToQuotationButton from "@/components/ConvertToQuotationButton";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  addDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import ContactButtons from "@/components/ContactButtons";
+import ConvertToQuotationButton from "@/components/ConvertToQuotationButton";
 
+function cleanFirebaseUrl(url) {
+  if (!url || typeof url !== "string") return "";
 
+  try {
+    let cleaned = decodeURIComponent(decodeURIComponent(url));
+    const [baseUrl, query] = cleaned.split("?");
+    const reEncodedPath = encodeURIComponent(baseUrl.split("/o/")[1]);
+    return `https://firebasestorage.googleapis.com/v0/b/${baseUrl.split("/b/")[1].split("/")[0]}/o/${reEncodedPath}?${query}`;
+  } catch (err) {
+    console.warn("Failed to clean Firebase URL:", url);
+    return url;
+  }
+}
 
-const regionsData = [
-  {
-    region: "Kampala",
-    area: [
-      "Bunga",
-      "Kampala Central Division",
-      "Kampala Nakawa Division",
-      "Kasubi",
-      "Kireka",
-      "Kitintale",
-      "Nakasero",
-      "Wandegeya",
-      "Bakuli",
-      "Banda",
-      "Biina",
-      "Bugolobi",
-      "Bukasa",
-      "Bukesa",
-      "Bukoto",
-      "Bulenga",
-      "Bunamwaya",
-      "Busega",
-      "Butabika",
-      "Buwate",
-      "Buziga",
-      "Bwaise",
-      "Bweyogerere",
-      "Central Business District",
-      "Down Town Kampala",
-      "Ggaba",
-      "Kabalagala",
-      "Kabojja",
-      "Kabowa",
-      "Kabuusu",
-      "Kagoma",
-      "Kalerwe",
-      "Kampala Industrial Area",
-      "Kamwokya",
-      "Kansanga",
-      "Kanyanya",
-      "Katwe",
-      "Kavule",
-      "Kawaala",
-      "kawanda / Kagoma",
-      "Kawempe",
-      "Kazo",
-      "Kibiri",
-      "Kibuli",
-      "Kibuye",
-      "Kigowa",
-      "Kikaya",
-      "Kikoni",
-      "Kinawataka",
-      "Kira",
-      "Kirinya",
-      "Kirombe",
-      "Kisaasi",
-      "Kisenyi",
-      "Kisugu",
-      "Kitante",
-      "Kitebi",
-      "Kitende",
-      "Kiwatule",
-      "Kololo",
-      "Komamboga",
-      "Kulambiro",
-      "Kyaliwajjala",
-      "Kyambogo",
-      "Kyanja",
-      "Kyebando",
-      "Kyengera",
-      "Lubowa",
-      "Lubya",
-      "Lugala",
-      "Lugoba",
-      "Lugogo",
-      "Lusaze",
-      "Luwafu",
-      "Luzira",
-      "Lweza",
-      "Maganjo",
-      "Makerere",
-      "Makindye",
-      "Masanafu",
-      "Mbalwa",
-      "Mbuya",
-      "Mengo",
-      "Mpanga",
-      "Mpererwe",
-      "Mulago",
-      "Munyonyo",
-      "Mutundwe",
-      "Mutungo",
-      "Muyenga",
-      "Naalya",
-      "Nabisunsa",
-      "Nabweru",
-      "Naguru",
-      "Najjanankumbi",
-      "Najjera",
-      "Nakawa",
-      "Nakivubo",
-      "Nalukolongo",
-      "Namasuba",
-      "Namirembe",
-      "Namugongo",
-      "Namungoona",
-      "Namuwongo",
-      "Nankulabye",
-      "Nasser Road",
-      "Nateete",
-      "Ndeeba",
-      "Ndejje",
-      "Nsambya",
-      "Ntinda",
-      "Nyanama",
-      "Old Kampala",
-      "Rubaga",
-      "Salaama",
-      "Seguku",
-      "Sonde",
-      "Wakaliga",
-      "Wankulukuku",
-      "Zana"
-    ],
-  },
-  {
-    region: "Wakiso",
-    area: [
-      "Nansana",
-      "Kira Municipality",
-      "Kasangati",
-      "Kajjansi",
-      "Busukuma",
-      "Ssabagabo",
-      "Kyengera",
-      "Kajjansi Town Council",
-    ],
-  },
-  {
-    region: "Eastern Region",
-    area: [
-      "Bugembe",
-      "Bugiri",
-      "Busia",
-      "Buwenge",
-      "Iganga",
-      "Irundu",
-      "Jinja",
-      "Kagulu",
-      "Kamuli",
-      "Kidera",
-      "Kumi",
-      "Mbale",
-      "Mbikko",
-      "Namungalwa",
-      "Pallisa",
-      "Serere",
-      "Sironko",
-      "Soroti",
-      "Tororo"
-    ],
-  },
-  {
-    region: "Entebbe Area",
-    area: [
-      "Abayita Ababiri",
-      "Akright City - Entebbe",
-      "Banga",
-      "Bugonga",
-      "Entebbe Market Area",
-      "Entebbe Town",
-      "Katabi",
-      "Kisubi",
-      "Kitala",
-      "Kitende",
-      "Kitoro",
-      "Kitubulu",
-      "Kiwafu - entebbe",
-      "Lunyo",
-      "Manyago",
-      "Nakiwogo",
-      "Namulanda",
-      "Nkumba",
-      "Nsamizi"
-    ],
-  },
-  {
-    region: "Northern Region",
-    area: [
-      "Adjumani",
-      "Arua",
-      "Gulu",
-      "Kalongo",
-      "Kamdini",
-      "Kitgum",
-      "Koboko",
-      "Lira",
-      "Moyo",
-      "Nebbi",
-      "Oyam",
-      "Pader",
-      "Patongo"
-    ],
-  },
-  {
-    region: "Rest of Central Region",
-    area: [
-      "Busunju",
-      "Bwikwe",
-      "Gayaza",
-      "Kajjansi",
-      "Kalagi",
-      "Kasangati",
-      "Kayunga",
-      "Kiboga",
-      "Kikajjo",
-      "lugazi",
-      "Luweero",
-      "Masaka",
-      "Matugga",
-      "Mityana",
-      "Mpigi",
-      "Mubende",
-      "Mukono / Town Area",
-      "Namanve",
-      "Nsangi",
-      "Nsasa",
-      "Nyendo",
-      "Seeta",
-      "Wakiso",
-      "wampewo"
-    ],
-  },
-  {
-    region: "Western Region",
-    area: [
-      "Bushenyi",
-      "Bweyale",
-      "Hoima",
-      "Ibanda",
-      "Kabale",
-      "Kabarole (Fort Portal)",
-      "Kagadi",
-      "Kasese",
-      "Kisoro",
-      "Kyegegwa",
-      "Kyenjojo",
-      "Masindi",
-      "Mbarara"
-    ],
-  },
-];
+function getImageSrc(item) {
+  if (typeof item.imageUrl === "string") {
+    return cleanFirebaseUrl(item.imageUrl);
+  }
+  if (typeof item.imageUrl === "object" && item.imageUrl["200x200"]) {
+    return cleanFirebaseUrl(item.imageUrl["200x200"]);
+  }
+  if (typeof item.imageUrl === "object" && item.imageUrl.original) {
+    return cleanFirebaseUrl(item.imageUrl.original);
+  }
+  return "";
+}
 
-const mapCartItemsToOrderItems = (cartItems) =>
-  cartItems.map((item) => ({
-    id: item.id,
-    name: item.name,
-    price: item.price,
-    description: item.price,
-    sop: item.sop || "",
-    category: item.category || "",
-    imageUrl: item.imageUrl || "",
-    quantity: item.quantity || 1,
-  }));
+function calculateTotal(items) {
+  return items.reduce((total, item) => {
+    const price = item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price;
+    return total + price * (item.quantity || 1);
+  }, 0);
+}
 
-const calculateTotal = (items) =>
-  items.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
+function isAddressComplete(address) {
+  return address.fullName && address.area && address.city && address.phoneNumber;
+}
 
 export default function OrderPage() {
   const router = useRouter();
@@ -305,314 +62,644 @@ export default function OrderPage() {
     city: "",
     phoneNumber: "",
   });
+
+  // Ensure all address values are strings to prevent controlled/uncontrolled input errors
+  const safeAddress = {
+    fullName: address.fullName || "",
+    area: address.area || "",
+    city: address.city || "",
+    phoneNumber: address.phoneNumber || "",
+  };
+
+  // Address data
+  const regionsData = [
+    {
+      region: "Kampala",
+      area: [
+        "Bunga",
+        "Kampala Central Division",
+        "Kampala Nakawa Division",
+        "Kasubi",
+        "Kireka",
+        "Kitintale",
+        "Nakasero",
+        "Wandegeya",
+        "Bakuli",
+        "Banda",
+        "Biina",
+        "Bugolobi",
+        "Bukasa",
+        "Bukesa",
+        "Bukoto",
+        "Bulenga",
+        "Bunamwaya",
+        "Busega",
+        "Butabika",
+        "Buwate",
+        "Buziga",
+        "Bwaise",
+        "Bweyogerere",
+        "Central Business District",
+        "Down Town Kampala",
+        "Ggaba",
+        "Kabalagala",
+        "Kabojja",
+        "Kabowa",
+        "Kabuusu",
+        "Kagoma",
+        "Kalerwe",
+        "Kampala Industrial Area",
+        "Kamwokya",
+        "Kansanga",
+        "Kanyanya",
+        "Katwe",
+        "Kavule",
+        "Kawaala",
+        "kawanda / Kagoma",
+        "Kawempe",
+        "Kazo",
+        "Kibiri",
+        "Kibuli",
+        "Kibuye",
+        "Kigowa",
+        "Kikaya",
+        "Kikoni",
+        "Kinawataka",
+        "Kira",
+        "Kirinya",
+        "Kirombe",
+        "Kisaasi",
+        "Kisenyi",
+        "Kisugu",
+        "Kitante",
+        "Kitebi",
+        "Kitende",
+        "Kiwatule",
+        "Kololo",
+        "Komamboga",
+        "Kulambiro",
+        "Kyaliwajjala",
+        "Kyambogo",
+        "Kyanja",
+        "Kyebando",
+        "Kyengera",
+        "Lubowa",
+        "Lubya",
+        "Lugala",
+        "Lugoba",
+        "Lugogo",
+        "Lusaze",
+        "Luwafu",
+        "Luzira",
+        "Lweza",
+        "Maganjo",
+        "Makerere",
+        "Makindye",
+        "Masanafu",
+        "Mbalwa",
+        "Mbuya",
+        "Mengo",
+        "Mpanga",
+        "Mpererwe",
+        "Mulago",
+        "Munyonyo",
+        "Mutundwe",
+        "Mutungo",
+        "Muyenga",
+        "Naalya",
+        "Nabisunsa",
+        "Nabweru",
+        "Naguru",
+        "Najjanankumbi",
+        "Najjera",
+        "Nakawa",
+        "Nakivubo",
+        "Nalukolongo",
+        "Namasuba",
+        "Namirembe",
+        "Namugongo",
+        "Namungoona",
+        "Namuwongo",
+        "Nankulabye",
+        "Nasser Road",
+        "Nateete",
+        "Ndeeba",
+        "Ndejje",
+        "Nsambya",
+        "Ntinda",
+        "Nyanama",
+        "Old Kampala",
+        "Rubaga",
+        "Salaama",
+        "Seguku",
+        "Sonde",
+        "Wakaliga",
+        "Wankulukuku",
+        "Zana"
+      ],
+    },
+    {
+      region: "Wakiso",
+      area: [
+        "Nansana",
+        "Kira Municipality",
+        "Kasangati",
+        "Kajjansi",
+        "Busukuma",
+        "Ssabagabo",
+        "Kyengera",
+        "Kajjansi Town Council",
+      ],
+    },
+    {
+      region: "Eastern Region",
+      area: [
+        "Bugembe",
+        "Bugiri",
+        "Busia",
+        "Buwenge",
+        "Iganga",
+        "Irundu",
+        "Jinja",
+        "Kagulu",
+        "Kamuli",
+        "Kidera",
+        "Kumi",
+        "Mbale",
+        "Mbikko",
+        "Namungalwa",
+        "Pallisa",
+        "Serere",
+        "Sironko",
+        "Soroti",
+        "Tororo"
+      ],
+    },
+    {
+      region: "Entebbe Area",
+      area: [
+        "Abayita Ababiri",
+        "Akright City - Entebbe",
+        "Banga",
+        "Bugonga",
+        "Entebbe Market Area",
+        "Entebbe Town",
+        "Katabi",
+        "Kisubi",
+        "Kitala",
+        "Kitende",
+        "Kitoro",
+        "Kitubulu",
+        "Kiwafu - entebbe",
+        "Lunyo",
+        "Manyago",
+        "Nakiwogo",
+        "Namulanda",
+        "Nkumba",
+        "Nsamizi"
+      ],
+    },
+    {
+      region: "Northern Region",
+      area: [
+        "Adjumani",
+        "Arua",
+        "Gulu",
+        "Kalongo",
+        "Kamdini",
+        "Kitgum",
+        "Koboko",
+        "Lira",
+        "Moyo",
+        "Nebbi",
+        "Oyam",
+        "Pader",
+        "Patongo"
+      ],
+    },
+    {
+      region: "Rest of Central Region",
+      area: [
+        "Busunju",
+        "Bwikwe",
+        "Gayaza",
+        "Kajjansi",
+        "Kalagi",
+        "Kasangati",
+        "Kayunga",
+        "Kiboga",
+        "Kikajjo",
+        "lugazi",
+        "Luweero",
+        "Masaka",
+        "Matugga",
+        "Mityana",
+        "Mpigi",
+        "Mubende",
+        "Mukono / Town Area",
+        "Namanve",
+        "Nsangi",
+        "Nsasa",
+        "Nyendo",
+        "Seeta",
+        "Wakiso",
+        "wampewo"
+      ],
+    },
+    {
+      region: "Western Region",
+      area: [
+        "Bushenyi",
+        "Bweyale",
+        "Hoima",
+        "Ibanda",
+        "Kabale",
+        "Kabarole (Fort Portal)",
+        "Kagadi",
+        "Kasese",
+        "Kisoro",
+        "Kyegegwa",
+        "Kyenjojo",
+        "Masindi",
+        "Mbarara"
+      ],
+    },
+  ];
+
+  const selectedRegion = regionsData.find(region => region.region === address.city);
+  const availableAreas = selectedRegion ? selectedRegion.area : [];
   const [editing, setEditing] = useState(false);
 
-
   useEffect(() => {
-  const auth = getAuth();
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (!user) return router.push("/login");
-    setUserId(user.uid);
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return router.push("/login");
+      setUserId(user.uid);
 
-    const userSnap = await getDoc(doc(db, "users", user.uid));
-    const userAddress = userSnap.exists() ? userSnap.data().address || {} : {};
-    setAddress(userAddress);
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const userAddress = userSnap.exists() ? userSnap.data().address || {} : {};
+      setAddress(userAddress);
 
-    const cartRef = collection(db, "carts", user.uid, "items");
-    const cartSnap = await getDocs(cartRef);
-    const items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setCartItems(items);
+      const cartRef = collection(db, "carts", user.uid, "items");
+      const cartSnap = await getDocs(cartRef);
+      const items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setCartItems(items);
 
-    const order = {
-      id: "order-firebase",
-      items,
-      address: userAddress,
-      amount: calculateTotal(items),
-      date: new Date().toISOString(),
-    };
-    setOrders(items.length ? [order] : []);
-    setLoading(false); // ✅ Done loading
-  });
+      const order = {
+        id: "order-firebase",
+        items,
+        address: userAddress,
+        amount: calculateTotal(items),
+        date: new Date().toISOString(),
+      };
+      setOrders(items.length ? [order] : []);
+      setLoading(false);
+    });
 
-  return () => unsubscribe();
-}, [router]);
+    return () => unsubscribe();
+  }, [router]);
 
+  const updateQuantity = async (itemId, change) => {
+    if (!userId) return;
 
+    const itemRef = doc(db, "carts", userId, "items", itemId);
+    const itemSnap = await getDoc(itemRef);
 
+    if (!itemSnap.exists()) return;
 
-  const updateQuantity = async (productId, delta) => {
-    const item = cartItems.find((item) => item.id === productId);
-    if (!item) return;
-    const newQty = Math.max(1, (item.quantity || 1) + delta);
-    const ref = doc(db, "carts", userId, "items", productId);
-    await updateDoc(ref, { quantity: newQty });
-    const updatedCart = cartItems.map((i) =>
-      i.id === productId ? { ...i, quantity: newQty } : i
-    );
-    setCartItems(updatedCart);
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === "order-firebase"
-          ? { ...o, items: updatedCart, amount: calculateTotal(updatedCart) }
-          : o
+    const currentQuantity = itemSnap.data().quantity || 1;
+    const newQuantity = Math.max(1, currentQuantity + change);
+
+    await updateDoc(itemRef, { quantity: newQuantity });
+
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
       )
     );
-  };
 
-  const removeItem = async (productId) => {
-    await deleteDoc(doc(db, "carts", userId, "items", productId));
-    const updatedCart = cartItems.filter((item) => item.id !== productId);
-    setCartItems(updatedCart);
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === "order-firebase"
-          ? { ...o, items: updatedCart, amount: calculateTotal(updatedCart) }
-          : o
-      )
+      prev.map((order) => ({
+        ...order,
+        items: order.items.map((item) =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        ),
+        amount: calculateTotal(
+          order.items.map((item) =>
+            item.id === itemId ? { ...item, quantity: newQuantity } : item
+          )
+        ),
+      }))
     );
   };
 
-  const handleAddressChange = (e) => {
-    const { name, value } = e.target;
-    setAddress((prev) => ({ ...prev, [name]: value }));
+  const removeItem = async (itemId) => {
+    if (!userId) return;
+
+    try {
+      await deleteDoc(doc(db, "carts", userId, "items", itemId));
+      setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+      setOrders((prev) =>
+        prev.map((order) => ({
+          ...order,
+          items: order.items.filter((item) => item.id !== itemId),
+          amount: calculateTotal(order.items.filter((item) => item.id !== itemId)),
+        }))
+      );
+      toast.success("Item removed from cart");
+    } catch (error) {
+      console.error("Error removing item:", error);
+      toast.error("Failed to remove item");
+    }
   };
 
-  // const saveAddress = () => {
-  //   setOrders((prev) => prev.map((o) => ({ ...o, address })));
-  //   setEditing(false);
-  // };
+  const placeOrder = async () => {
+    if (!isAddressComplete(address)) {
+      toast.error("Please complete your address information");
+      return;
+    }
+
+    try {
+      const orderData = {
+        userId,
+        items: cartItems,
+        address,
+        totalAmount: calculateTotal(cartItems),
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+
+      const orderRef = doc(collection(db, "orders"));
+      await setDoc(orderRef, orderData);
+
+      // Clear cart
+      for (const item of cartItems) {
+        await deleteDoc(doc(db, "carts", userId, "items", item.id));
+      }
+
+      toast.success("Order placed successfully!");
+      router.push("/");
+    } catch (error) {
+      console.error("Error placing order:", error);
+      toast.error("Failed to place order");
+    }
+  };
 
   const saveAddress = async () => {
     if (!userId) return;
 
-    // Save to order state
-    setOrders((prev) => prev.map((o) => ({ ...o, address })));
-    setEditing(false);
-
-    // Persist to Firestore
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, { address });
-  };
-
-
-  const isAddressComplete = (addr) => {
-    return addr.fullName && addr.phoneNumber && addr.city && addr.area;
-  };
-
-
-  const placeOrder = async () => {
-    if (!isAddressComplete(address)) {
-      alert("🚫 Please fill in all shipping address fields before placing an order.");
-      return;
+    try {
+      await updateDoc(doc(db, "users", userId), { address });
+      setEditing(false);
+      toast.success("Address saved successfully");
+    } catch (error) {
+      console.error("Error saving address:", error);
+      toast.error("Failed to save address");
     }
-
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user || !cartItems.length) return router.push("/login");
-
-    const userSnap = await getDoc(doc(db, "users", user.uid));
-    const userData = userSnap.exists() ? userSnap.data() : {};
-    const finalAddress = {
-      fullName: address.fullName || userData.fullName || "N/A",
-      area: address.area || "N/A",
-      city: address.city || "N/A",
-      phoneNumber: address.phoneNumber || user.phoneNumber || "N/A",
-    };
-
-    const orderData = {
-      userId: user.uid,
-      userEmail: user.email || "N/A",
-      userName: user.displayName || userData.fullName || "N/A",
-      userPhone: user.phoneNumber || userData.phoneNumber || "N/A",
-      address: finalAddress,
-      items: mapCartItemsToOrderItems(cartItems),
-      totalAmount: calculateTotal(cartItems),
-      status: "Pending",
-      paymentMethod: "Cash on Delivery",
-      createdAt: new Date().toISOString(),
-    };
-
-    await addDoc(collection(db, "orders"), orderData);
-    const cartRef = collection(db, "carts", user.uid, "items");
-    const snap = await getDocs(cartRef);
-    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
-    setCartItems([]);
-    setOrders([]);
-    router.push("/shipments");
   };
 
+  if (loading) {
+    return <CenteredCard message="⏳ Loading your orders..." />;
+  }
 
-  const selectedRegion = regionsData.find((r) => r.region === address.city);
+  if (orders.length === 0) {
+    return (
+      <CenteredCard
+        title="No Orders Yet"
+        message="Your cart is currently empty. Explore products to get started!"
+      >
+        <Link href="/" className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          🛍️ Browse Products
+        </Link>
+      </CenteredCard>
+    );
+  }
 
   return (
-    <div className="flex flex-col px-0 py-6 min-h-screen">
-      {loading ? (
-        <CenteredCard message="⏳ Loading your orders..." />
-      ) : orders.length === 0 ? (
-        <CenteredCard
-          title="No Orders Yet"
-          message="Your cart is currently empty. Explore products to get started!"
-        >
-          <Link href="/" className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            🛍️ Browse Products
-          </Link>
-        </CenteredCard>
-      ) : (
-        orders.map((order) => (
-          <div key={order.id} className="mb-16">
-            <div className="bg-white p-4  shadow-sm">
-              <h1 className="text-lg font-semibold mb-1">Order Summary</h1>
-              <ul>
-                {order.items.map((item) => (
-                  <li key={item.id} className="flex items-center mb-3 border-b pb-3">
-                  <Image
-                    src={
-                      typeof item.imageUrl === "object"
-                        ? decodeURIComponent(item.imageUrl["200x200"])
-                        : decodeURIComponent(item.imageUrl)
-                    }
-                    alt={item.name}
-                    width={80}
-                    height={80}
-                    className="rounded"
-                  />
-                    <div className="ml-4 flex-1">
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.description}</p>
-                      <p className="text-sm text-gray-600">SKU: {item.sku}</p>
-                      <p className="text-sm text-gray-700">Price: UGX {item.price.toLocaleString()}</p>
-                      <div className="flex items-center mt-1">
-                        <button onClick={() => updateQuantity(item.id, -1)} className="px-2 py-1 bg-gray-200 rounded-l">-</button>
-                        <span className="px-3 py-1 border-t border-b">{item.quantity || 1}</span>
-                        <button onClick={() => updateQuantity(item.id, 1)} className="px-2 py-1 bg-gray-200 rounded-r">+</button>
-                        <button onClick={() => removeItem(item.id)} className="ml-4 px-2 py-1 bg-red-400 text-white rounded">Remove</button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-green-500 text-xl mt-4">Total: UGX {order.amount.toLocaleString()}</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Summary</h1>
+          <p className="text-gray-600">Review your items and complete your order</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content - Order Items */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">Cart Items ({cartItems.length})</h2>
+              </div>
+              
+                             <div className="divide-y divide-gray-200">
+                 {orders[0]?.items.map((item) => (
+                   <div key={item.id} className="p-4 md:p-6">
+                     <div className="flex items-start space-x-3 md:space-x-4">
+                       <div className="flex-shrink-0">
+                         <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-lg overflow-hidden">
+                           <Image
+                             src={getImageSrc(item)}
+                             alt={item.name}
+                             width={80}
+                             height={80}
+                             className="w-full h-full object-cover"
+                           />
+                         </div>
+                       </div>
+                       
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-start justify-between">
+                           <div className="flex-1">
+                             <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1">{item.name}</h3>
+                             <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm text-gray-500">
+                               <span>SKU: {item.sku}</span>
+                               {item.shopName && <span className="hidden md:inline">Shop: {item.shopName}</span>}
+                             </div>
+                           </div>
+                           
+                                                                                   <div className="text-right ml-2 md:ml-4">
+                               <div className="text-xs text-gray-400 mb-1">
+                                 (Unit Price: UGX {(item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price).toLocaleString()} X {(item.quantity || 1)}pcs)
+                               </div>
+                               <div className="text-base md:text-lg font-semibold text-gray-900">
+                                 UGX {((item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price) * (item.quantity || 1)).toLocaleString()}
+                               </div>
+                               {item.discount > 0 && (
+                                 <div className="text-xs md:text-sm text-gray-500 line-through">
+                                   UGX {(item.price * (item.quantity || 1)).toLocaleString()}
+                                 </div>
+                               )}
+                             </div>
+                         </div>
+                         
+                         <div className="flex items-center justify-between mt-3 md:mt-4">
+                           <div className="flex items-center space-x-1 md:space-x-2">
+                             <button
+                               onClick={() => updateQuantity(item.id, -1)}
+                               className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-sm"
+                             >
+                               -
+                             </button>
+                             <span className="w-8 md:w-12 text-center font-medium text-sm">{item.quantity || 1}</span>
+                             <button
+                               onClick={() => updateQuantity(item.id, 1)}
+                               className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-sm"
+                             >
+                               +
+                             </button>
+                           </div>
+                           
+                           <button
+                             onClick={() => removeItem(item.id)}
+                             className="text-red-600 hover:text-red-700 text-xs md:text-sm font-medium transition-colors"
+                           >
+                             Remove
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+               </div>
             </div>
+          </div>
 
-            <div className="mt-4 p-4 bg-white rounded shadow-sm">
-              <h2 className="text-lg font-semibold mb-2">Shipping Address</h2>
-              <div className="space-y-2">
-                <input
-                  name="fullName"
-                  value={address.fullName}
-                  onChange={(e) => {
-                    handleAddressChange(e);
-                    setEditing(true);
-                  }}
-                  placeholder="Full Name"
-                  className="w-full border border-gray-300 p-2 rounded bg-white"
-                />
-                <select
-                  name="city"
-                  value={address.city}
-                  onChange={(e) => {
-                    handleAddressChange(e);
-                    setAddress((prev) => ({
-                      ...prev,
-                      city: e.target.value,
-                      area: "", // reset area when region changes
-                    }));
-                    setEditing(true);
-                  }}
-                  className="w-full border border-gray-300 p-2 rounded bg-white"
-                >
-                  <option value="">Select Region</option>
-                  {regionsData.map((r) => (
-                    <option key={r.region} value={r.region}>
-                      {r.region}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  name="area"
-                  value={address.area}
-                  onChange={(e) => {
-                    handleAddressChange(e);
-                    setEditing(true);
-                  }}
-                  disabled={!address.city}
-                  className="w-full border border-gray-300 p-2 rounded bg-white"
-                >
-                  <option value="">Select Area</option>
-                  {selectedRegion?.area.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  name="phoneNumber"
-                  value={address.phoneNumber}
-                  onChange={(e) => {
-                    handleAddressChange(e);
-                    setEditing(true);
-                  }}
-                  placeholder="Phone Number"
-                  className="w-full border border-gray-300 p-2 rounded bg-white"
-                />
-
-                {editing && (
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => {
-                        saveAddress();
-                        setEditing(false);
-                      }}
-                      className="w-full bg-green-600 text-white py-2 rounded"
-                    >
-                      💾 Save Changes
-                    </button>
-                  </div>
-                )}
+          {/* Sidebar - Address & Actions */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Order Summary */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">UGX {orders[0]?.amount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium text-green-600">Free</span>
+                </div>
+                <hr className="border-gray-200" />
+                <div className="flex justify-between text-lg font-semibold">
+                  <span>Total</span>
+                  <span className="text-green-600">UGX {orders[0]?.amount.toLocaleString()}</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 mt-4 shadow-sm">
-              <button onClick={placeOrder} className="w-full bg-blue-600 text-white px-6 py-3 rounded text-base font-semibold">🛒 Place Order</button>
-            
+                         {/* Shipping Address */}
+             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+               <div className="mb-4">
+                 <h3 className="text-lg font-semibold text-gray-900">Shipping Address</h3>
+               </div>
 
-            {isAddressComplete(address) ? (
-              <ConvertToQuotationButton
-                cartItems={cartItems}
-                address={address}
-                userId={userId}
-                userData={{
-                  fullName: address.fullName,
-                  phoneNumber: address.phoneNumber,
-                }}
-              />
-            ) : (
-              <p className="text-red-500 mt-2 text-sm">Please complete your address above to generate a quotation.</p>
-            )}
+               <div className="space-y-4">
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                   <input
+                     type="text"
+                     value={safeAddress.fullName}
+                     onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                     placeholder="Enter your full name"
+                   />
+                 </div>
+                 
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                   <select
+                     value={safeAddress.city}
+                     onChange={(e) => setAddress({ ...address, city: e.target.value, area: "" })}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   >
+                     <option value="">Select a region</option>
+                     {regionsData.map((region) => (
+                       <option key={region.region} value={region.region}>
+                         {region.region}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+                 
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                   <select
+                     value={safeAddress.area}
+                     onChange={(e) => setAddress({ ...address, area: e.target.value })}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                     disabled={!safeAddress.city}
+                   >
+                     <option value="">Select an area</option>
+                     {availableAreas.map((area) => (
+                       <option key={area} value={area}>
+                         {area}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+                 
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                   <input
+                     type="tel"
+                     value={safeAddress.phoneNumber}
+                     onChange={(e) => setAddress({ ...address, phoneNumber: e.target.value })}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                     placeholder="Enter your phone number"
+                   />
+                 </div>
+                 
+                 <button
+                   onClick={saveAddress}
+                   className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                 >
+                   Save Address
+                 </button>
+               </div>
+             </div>
 
-            
+            {/* Action Buttons */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <button
+                onClick={placeOrder}
+                disabled={!isAddressComplete(address)}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold mb-4"
+              >
+                🛒 Place Order
+              </button>
+
+              {isAddressComplete(address) ? (
+                <ConvertToQuotationButton
+                  cartItems={cartItems}
+                  address={address}
+                  userId={userId}
+                  userData={{
+                    fullName: address.fullName,
+                    phoneNumber: address.phoneNumber,
+                  }}
+                />
+              ) : (
+                <p className="text-red-500 text-sm text-center">Please complete your address to generate a quotation.</p>
+              )}
             </div>
 
-            <div className="bg-white p-4 mt-4 shadow-sm text-center">
-              <h3 className="font-semibold mb-2">Need Help?</h3>
+            {/* Help Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Need Help?</h3>
               <ContactButtons phoneNumber="+256700000000" />
             </div>
 
-
-          <div className="mt-4 px-4">
-            <Link
-              href="/"
-              className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded text-base font-semibold transition"
-            >
-              🛍️ Back to Shop
-            </Link>
+            {/* Back to Shop */}
+            <div className="text-center">
+              <Link
+                href="/"
+                className="inline-block bg-gray-100 text-gray-700 hover:bg-gray-200 px-6 py-3 rounded-md font-medium transition-colors"
+              >
+                🛍️ Back to Shop
+              </Link>
+            </div>
           </div>
-
-
-
-          </div>
-        ))
-      )}
+        </div>
+      </div>
     </div>
   );
 }

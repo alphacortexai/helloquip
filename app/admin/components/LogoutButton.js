@@ -1,56 +1,11 @@
-// // import { getAuth, signOut } from "firebase/auth";
-
-// // function LogoutButton() {
-// //   const auth = getAuth();
-// //   const router = useRouter();
-
-// //   const handleLogout = async () => {
-// //     await signOut(auth);
-// //     router.push("/admin/login");
-// //   };
-
-// //   return (
-// //     <button
-// //       onClick={handleLogout}
-// //       className="bg-red-500 text-white px-3 py-1 rounded"
-// //     >
-// //       Logout
-// //     </button>
-// //   );
-// // }
-
-// "use client";
-
-// import { getAuth, signOut } from "firebase/auth";
-
-// function LogoutButton() {
-//   const auth = getAuth();
-//   const router = useRouter();
-
-//   const handleLogout = async () => {
-//     await signOut(auth);
-//     router.push("/admin/login");
-//   };
-
-//   return (
-//     <button
-//       onClick={handleLogout}
-//       className="bg-red-500 text-white px-3 py-1 rounded"
-//     >
-//       Logout
-//     </button>
-//   );
-// }
-
-
 "use client";
 
 import { getAuth, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { app } from "@/lib/firebase"; // ensure this matches your Firebase config path
+import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 
-export default function LogoutButton() {
-  const auth = getAuth(app);
+export default function LogoutButton({ isDropdown = false }) {
+  const auth = getAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -62,11 +17,24 @@ export default function LogoutButton() {
     }
   };
 
+  if (isDropdown) {
+    return (
+      <button
+        onClick={handleLogout}
+        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+      >
+        <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+        Logout
+      </button>
+    );
+  }
+
   return (
     <button
       onClick={handleLogout}
-      className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded"
+      className="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
     >
+      <ArrowRightOnRectangleIcon className="w-4 h-4 mr-1" />
       Logout
     </button>
   );

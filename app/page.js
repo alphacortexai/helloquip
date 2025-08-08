@@ -3,12 +3,9 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-
 import Categories from "@/components/Categories";
-// import TrendingProducts from "@/components/TrendingProducts";
-// import FeaturedProducts from "@/components/FeaturedProducts";
-
+import Testimonials from "@/components/Testimonials";
+import Footer from "@/components/Footer";
 import dynamic from "next/dynamic";
 
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
@@ -17,7 +14,6 @@ const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), 
 const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), {
   loading: () => <div className="text-center py-10">Loading featured products...</div>,
 });
-
 
 export default function Home() {
   const [allProducts, setAllProducts] = useState([]);
@@ -65,74 +61,155 @@ export default function Home() {
 
   return (
     <>
-      {/* Spinner */}
+      {/* Loading Spinner */}
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
         </div>
       )}
 
-      {/* Layout */}
-      <div className="md:flex md:min-h-screen md:max-w-7xl md:mx-auto md:pt-4">
-        {/* Sidebar */}
-        <aside className="md:w-64 md:pr-4 hidden md:block sticky top-16 h-fit">
-
-
-          <Categories onCategorySelect={setSelectedCategory} />
-        </aside>
-
-        {/* Mobile Categories */}
-        <div className="block md:hidden bg-white/70 py-2 rounded-xl ml-2 mr-2 mt-1">
-          <div className="max-w-7xl mx-auto px-1">
-            <Categories onCategorySelect={setSelectedCategory} />
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <main className="flex-1">
-          {searching ? (
-            <section className="bg-white py-12">
-              <div className="px-4">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-                  Search Results
-                </h3>
-                {filteredProducts.length === 0 ? (
-                  <p className="text-center text-gray-500">No products found.</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {filteredProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="bg-white rounded-lg overflow-hidden"
-                      >
-                        <div className="relative w-full h-48">
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="p-4 text-left">
-                          <p className="text-sm text-gray-900 mt-2">
-                            {product.name}
-                          </p>
-                          <p className="text-base font-bold text-blue-800">
-                            UGX {product.price?.toLocaleString?.()}
-                          </p>
-                        </div>
+      {/* Main Layout */}
+      <div className="min-h-screen bg-gray-50">
+        {/* Search Results */}
+        {searching ? (
+          <section className="bg-white py-12">
+            <div className="max-w-7xl mx-auto px-4">
+              <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+                Search Results
+              </h1>
+              {filteredProducts.length === 0 ? (
+                <p className="text-center text-gray-500">No products found.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="bg-white rounded-lg overflow-hidden max-w-xs w-full mx-auto shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="relative w-full h-48">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="p-4 text-left">
+                        <p className="text-sm text-gray-900 mt-2 font-medium">
+                          {product.name}
+                        </p>
+                        <p className="text-base font-bold text-blue-800">
+                          UGX {product.price?.toLocaleString?.()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* Desktop Layout */}
+            <div className="hidden md:block">
+              <div className="max-w-7xl mx-auto px-4 py-6">
+                {/* Top Row - Categories, Trending Products, and Featured Deal */}
+                <div className="grid grid-cols-[280px_1fr_300px] gap-4 mb-8">
+                  {/* Categories */}
+                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">Categories</h2>
+                    <Categories onCategorySelect={setSelectedCategory} />
+                  </section>
+
+                  {/* Trending Products */}
+                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Trending Products</h2>
+                    <TrendingProducts />
+                  </section>
+
+                  {/* Featured Deal */}
+                  <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white h-[444px]">
+                    <div className="h-full flex flex-col justify-center items-center text-center">
+                      <div>
+                        <h3 className="text-2xl font-bold mb-4">Featured Deal</h3>
+                        <p className="text-lg mb-6">Get up to 50% off on selected medical equipment</p>
+                        <ul className="space-y-2 text-sm mb-8 inline-block text-left">
+                          <li>• Premium quality equipment</li>
+                          <li>• Fast delivery nationwide</li>
+                          <li>• Professional support</li>
+                        </ul>
+                      </div>
+                      <button className="bg-white text-green-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                        View Deal
+                      </button>
+                    </div>
+                  </section>
+                </div>
+
+                {/* Featured Products */}
+                <div className="space-y-6">
+                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                    <FeaturedProducts selectedCategory={selectedCategory} />
+                  </section>
+
+                  {/* New Arrivals */}
+                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">New Arrivals</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {/* Placeholder for new arrivals */}
+                      <div className="text-center py-8 text-gray-500">
+                        <p>New products coming soon...</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Customer Testimonials */}
+                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                    <Testimonials />
+                  </section>
+                </div>
               </div>
-            </section>
-          ) : (
-            <>
-              <TrendingProducts />
-              <FeaturedProducts selectedCategory={selectedCategory} />
-            </>
-          )}
-        </main>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="block md:hidden">
+              <div className="px-2 py-1">
+                {/* Mobile Categories */}
+                <div className="bg-white rounded-xl py-4 mb-1">
+                  <Categories onCategorySelect={setSelectedCategory} />
+                </div>
+
+                {/* Trending Products */}
+                <section className="bg-white rounded-xl mb-1">
+                  <h2 className="hidden text-xl font-bold text-gray-800 mb-4 px-2">Trending Products</h2>
+                  <TrendingProducts />
+                </section>
+
+                {/* Featured Products */}
+                <section className="mb-1">
+                  <h2 className="hidden text-xl font-bold text-gray-800 mb-4 px-2">Featured Products</h2>
+                  <FeaturedProducts selectedCategory={selectedCategory} />
+                </section>
+
+                {/* Promotional Banner */}
+                <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white mb-6">
+                  <div className="text-center">
+                    <h3 className="text-xl font-bold mb-2">Special Offers</h3>
+                    <p className="text-sm mb-4">Get up to 50% off on selected medical equipment</p>
+                    <button className="bg-white text-blue-600 px-6 py-2 rounded-full text-sm font-semibold">
+                      Shop Now
+                    </button>
+                  </div>
+                </section>
+
+                {/* Customer Testimonials */}
+                <section className="bg-white rounded-xl p-6 mb-6">
+                  <Testimonials />
+                </section>
+              </div>
+            </div>
+          </>
+        )}
+        <Footer />
       </div>
     </>
   );

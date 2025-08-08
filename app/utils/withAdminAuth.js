@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 // 👇 Replace with actual admin emails
 const adminEmails = [
@@ -23,8 +22,8 @@ export default function withAdminAuth(Component) {
         if (!user) {
           router.push("/admin/login");
         } else if (!adminEmails.includes(user.email)) {
-        //   alert("Access denied. Admins only.");
-          toast.info("Access Denied");
+          console.log("Access denied for email:", user.email);
+          alert("Access denied. Admins only.");
           router.push("/admin/login");
         } else {
           setCurrentAdminUid(user.uid);
