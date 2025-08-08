@@ -6,6 +6,8 @@ import { db } from "@/lib/firebase";
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
+import AIChatWidget from "@/components/AIChatWidget";
 import dynamic from "next/dynamic";
 
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
@@ -70,6 +72,7 @@ export default function Home() {
 
       {/* Main Layout */}
       <div className="min-h-screen bg-gray-50">
+        <Navbar onSearch={handleSearch} />
         {/* Search Results */}
         {searching ? (
           <section className="bg-white py-12">
@@ -210,6 +213,7 @@ export default function Home() {
           </>
         )}
         <Footer />
+        <AIChatWidget />
       </div>
     </>
   );

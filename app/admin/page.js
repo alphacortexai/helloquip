@@ -22,6 +22,7 @@ import DraftsList from "./components/DraftsList";
 import { useRouter } from "next/navigation";
 import QuotationViewer from "./components/QuotationViewer";
 import FeedbackManager from "./components/FeedbackManager";
+import ChatLogsPage from "./chat-logs/page";
 
 import {
   CubeIcon,
@@ -167,6 +168,15 @@ const tabs = [
     bgColor: "bg-rose-50",
     borderColor: "border-rose-100"
   },
+  { 
+    id: "chatLogs", 
+    icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />, 
+    label: "Chat Logs",
+    description: "Monitor AI conversations",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -239,6 +249,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <QuotationViewer />
       case "feedback":
         return <FeedbackManager />
+      case "chatLogs":
+        return <ChatLogsPage />;
       default:
         return null;
     }
