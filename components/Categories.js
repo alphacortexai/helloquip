@@ -121,7 +121,7 @@ export default function Categories({ onCategorySelect, isSidebar = false }) {
       <div className="block md:hidden">
         <div className="overflow-x-auto no-scrollbar px-2">
           <div
-            className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-2 gap-y-1"
+            className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-2 gap-y-4"
             style={{ width: "max-content", paddingRight: "16px" }}
           >
             {categories.map((cat) => (

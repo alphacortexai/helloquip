@@ -222,7 +222,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
             <div
               key={id}

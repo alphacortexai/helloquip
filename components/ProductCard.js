@@ -27,7 +27,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const imageUrl = getImageUrl(product, variant);
 
-  const commonClasses = 'bg-white shadow-sm hover:shadow-md rounded-2xl transition duration-200';
+  const commonClasses = 'bg-gray-50 shadow-sm hover:shadow-md rounded-3xl transition duration-200';
   const softShadow = 'shadow-[0_4px_12px_rgba(0,0,0,0.05)]';
   const productCodeText = product.sku || 'N/A';
 
@@ -72,7 +72,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   );
 
   const renderLandscapeMain = () => (
-    <div className={`bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-3 ${wrapperStyle}`}>
+    <div className={`bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-3 ${wrapperStyle}`}>
       <div className="w-32 sm:w-40 h-32 sm:h-40 bg-gray-50 flex-shrink-0">
         <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
       </div>
@@ -97,7 +97,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   );
 
   const renderLandscapeMain02 = () => (
-    <div className={`relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition flex w-full ${largeDesktop ? 'max-w-5xl md:h-72' : 'w-full'} mx-auto ${wrapperStyle}`}>
+    <div className={`relative bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden hover:shadow-md transition flex w-full ${largeDesktop ? 'max-w-5xl md:h-72' : 'w-full'} mx-auto ${wrapperStyle}`}>
       
       {/* Badge */}
       {badge && (
@@ -225,10 +225,10 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderCompact = () => (
          <div 
-           className={`bg-white p-1 w-full max-w-lg mx-auto hover:shadow-md transition mb-1 break-inside-avoid ${wrapperStyle} cursor-pointer`}
+           className={`bg-gray-50 p-0 w-full max-w-lg mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
            onClick={onClick}
          >
-                           <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '5 / 6' }}>
+                                                       <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: '5 / 6' }}>
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
         )}
@@ -250,34 +250,34 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            )}
          </div>
 
-                   <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} style={{ objectPosition: 'center', transform: 'scale(0.92)' }} />
+                                                                               <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} style={{ objectPosition: 'center', transform: 'scale(0.85)' }} />
       </div>
 
-                           <div className="px-4 pt-2">
-                            <p
-             className="text-sm font-medium text-gray-800 mb-0.5 truncate"
-             title={product.name || 'Unnamed Product'}
-           >
-             {product.name || 'Unnamed Product'}
-           </p>
+                                                                                                               <div className="px-1 pt-0 text-center">
+                              <p
+               className="text-sm font-medium text-gray-800 mb-0 truncate"
+               title={product.name || 'Unnamed Product'}
+             >
+               {product.name || 'Unnamed Product'}
+             </p>
 
-           <p className="text-sm text-gray-900 font-semibold">
-             UGX {discountedPrice.toLocaleString()}
-           </p>
-           <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
-           <p className="text-[11px] text-blue-600 italic">
-             CODE: {product.sku || 'N/A'}
-           </p>
-        </div>
+             <p className="text-sm text-gray-900 font-semibold">
+               UGX {discountedPrice.toLocaleString()}
+             </p>
+             <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
+             <p className="text-[11px] text-blue-600 italic mb-1">
+               CODE: {product.sku || 'N/A'}
+             </p>
+          </div>
     </div>
   );
 
   const renderCompactX = () => (
          <div 
-           className={`bg-white p-1 w-full max-w-lg mx-auto hover:shadow-md transition mb-2 break-inside-avoid ${wrapperStyle} cursor-pointer`}
+           className={`bg-gray-50 p-0 w-full max-w-lg mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
            onClick={onClick}
          >
-             <div className="relative w-full h-full sm:h-48 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center">
+                           <div className="relative w-full h-full sm:h-48 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center">
          {/* Badges */}
          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
            {/* Discount Badge */}
@@ -295,14 +295,14 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            )}
          </div>
         
-                 <img {...imageProps} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center', transform: 'scale(0.92)' }} />
+                                                                       <img {...imageProps} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center', transform: 'scale(0.85)' }} />
       </div>
-                           <div className="px-4 pt-2">
-                            <p className="text-sm font-medium text-gray-800 truncate mb-0.5" title={product.name || 'Unnamed Product'}>{product.name || 'Unnamed Product'}</p>
-           <p className="text-sm text-gray-900 font-semibold">UGX {discountedPrice.toLocaleString()}</p>
-           <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
-           <p className="text-[7px] text-blue-600 italic">CODE: {product.sku || "N/A"}</p>
-        </div>
+                                                                                                               <div className="px-1 pt-0 text-center">
+                             <p className="text-sm font-medium text-gray-800 truncate mb-0" title={product.name || 'Unnamed Product'}>{product.name || 'Unnamed Product'}</p>
+            <p className="text-sm text-gray-900 font-semibold">UGX {discountedPrice.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
+            <p className="text-[7px] text-blue-600 italic mb-1">CODE: {product.sku || "N/A"}</p>
+         </div>
     </div>
   );
 

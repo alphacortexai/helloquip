@@ -51,20 +51,20 @@ export default function Home() {
       )}
 
       {/* Main Layout */}
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-100">
         {/* Desktop Layout */}
             <div className="hidden md:block">
               <div className="max-w-7xl mx-auto px-4 py-6">
                 {/* Top Row - Categories, Trending Products, and Featured Deal */}
                 <div className="grid grid-cols-[280px_1fr_300px] gap-4 mb-8">
                   {/* Categories */}
-                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">Categories</h2>
                     <Categories onCategorySelect={setSelectedCategory} />
                   </section>
 
                   {/* Trending Products */}
-                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Trending Products</h2>
                     <TrendingProducts />
                   </section>
@@ -90,12 +90,12 @@ export default function Home() {
 
                 {/* Featured Products */}
                 <div className="space-y-6">
-                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
                     <FeaturedProducts selectedCategory={selectedCategory} />
                   </section>
 
                   {/* New Arrivals */}
-                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">New Arrivals</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                       {/* Placeholder for new arrivals */}
