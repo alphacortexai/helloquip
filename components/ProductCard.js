@@ -250,25 +250,25 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            )}
          </div>
 
-                                                                               <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} style={{ objectPosition: 'center', transform: 'scale(0.85)' }} />
+                                                                                                                                                               <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} style={{ objectPosition: 'center' }} />
       </div>
 
-                                                                                                               <div className="px-1 pt-0 text-center">
-                              <p
-               className="text-sm font-medium text-gray-800 mb-0 truncate"
-               title={product.name || 'Unnamed Product'}
-             >
-               {product.name || 'Unnamed Product'}
-             </p>
+                                                                                                                                                                       <div className="px-0 text-center">
+                               <p
+                className="text-sm font-medium text-gray-800 mb-0.5 truncate pt-2"
+                title={product.name || 'Unnamed Product'}
+              >
+                {product.name || 'Unnamed Product'}
+              </p>
 
-             <p className="text-sm text-gray-900 font-semibold">
-               UGX {discountedPrice.toLocaleString()}
-             </p>
-             <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
-             <p className="text-[11px] text-blue-600 italic mb-1">
-               CODE: {product.sku || 'N/A'}
-             </p>
-          </div>
+              <p className="text-sm text-gray-900 font-semibold mb-0.5">
+                UGX {discountedPrice.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
+              <p className="text-[11px] text-blue-600 italic pb-2">
+                SKU: {product.sku || 'N/A'}
+              </p>
+           </div>
     </div>
   );
 
@@ -277,7 +277,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            className={`bg-gray-50 p-0 w-full max-w-lg mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
            onClick={onClick}
          >
-                           <div className="relative w-full h-full sm:h-48 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center">
+                                                       <div className="relative w-full h-full sm:h-48 rounded-2xl overflow-hidden flex items-center justify-center">
          {/* Badges */}
          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
            {/* Discount Badge */}
@@ -295,13 +295,13 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            )}
          </div>
         
-                                                                       <img {...imageProps} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center', transform: 'scale(0.85)' }} />
+                                                                                                                                               <img {...imageProps} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center' }} />
       </div>
-                                                                                                               <div className="px-1 pt-0 text-center">
-                             <p className="text-sm font-medium text-gray-800 truncate mb-0" title={product.name || 'Unnamed Product'}>{product.name || 'Unnamed Product'}</p>
-            <p className="text-sm text-gray-900 font-semibold">UGX {discountedPrice.toLocaleString()}</p>
+                                                                                                               <div className="px-0 text-center">
+                             <p className="text-sm font-medium text-gray-800 truncate mb-0.5 pt-2" title={product.name || 'Unnamed Product'}>{product.name || 'Unnamed Product'}</p>
+            <p className="text-sm text-gray-900 font-semibold mb-0.5">UGX {discountedPrice.toLocaleString()}</p>
             <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
-            <p className="text-[7px] text-blue-600 italic mb-1">CODE: {product.sku || "N/A"}</p>
+            <p className="text-[7px] text-blue-600 italic pb-2">SKU: {product.sku || "N/A"}</p>
          </div>
     </div>
   );
