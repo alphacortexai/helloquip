@@ -127,7 +127,7 @@ export default function AIChatWidget() {
       {/* Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-20 md:bottom-4 right-4 z-50 bg-blue-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110"
+        className="fixed bottom-24 md:bottom-4 right-4 z-50 bg-blue-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110"
         aria-label="Open AI chat"
       >
         {isOpen ? (
@@ -139,21 +139,24 @@ export default function AIChatWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-32 md:bottom-20 right-2 md:right-4 z-40 w-72 md:w-80 h-80 md:h-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
+        <>
+          {/* Mobile Backdrop */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsOpen(false)} />
+          <div className="fixed inset-0 md:inset-auto md:bottom-20 md:right-4 z-50 w-full md:w-96 h-full md:h-[500px] bg-white md:rounded-lg shadow-xl border border-gray-200 flex flex-col pb-20 md:pb-0">
           {/* Header */}
-          <div className="bg-blue-600 text-white p-4 rounded-t-lg">
+          <div className="bg-blue-600 text-white p-4 md:rounded-t-lg">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold">HelloQuip AI Assistant</h3>
+                <h3 className="font-semibold text-lg md:text-base">HelloQuip AI Assistant</h3>
                 <p className="text-sm opacity-90">
                   {isHumanAvailable ? "🤖 AI + 👨‍💼 Human Available" : "🤖 AI Assistant"}
                 </p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:text-gray-200 transition"
+                className="text-white hover:text-gray-200 transition p-2"
               >
-                <XMarkIcon className="w-5 h-5" />
+                <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -166,13 +169,13 @@ export default function AIChatWidget() {
                 className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-xs px-3 py-2 rounded-lg ${
+                  className={`max-w-[80%] md:max-w-xs px-3 py-2 rounded-lg ${
                     message.sender === "user"
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-line">{message.text}</p>
+                  <p className="text-sm md:text-sm whitespace-pre-line">{message.text}</p>
                   <p className="text-xs opacity-70 mt-1">
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -182,11 +185,11 @@ export default function AIChatWidget() {
             
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg">
+                <div className="bg-gray-100 text-gray-800 px-4 py-3 md:px-3 md:py-2 rounded-lg">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-3 h-3 md:w-2 md:h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-3 h-3 md:w-2 md:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-3 h-3 md:w-2 md:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               </div>
@@ -196,7 +199,7 @@ export default function AIChatWidget() {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 pb-8 md:pb-4 border-t border-gray-200">
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -204,19 +207,20 @@ export default function AIChatWidget() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me anything..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-3 md:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base md:text-sm"
                 disabled={isTyping}
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || isTyping}
-                className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                className="bg-blue-600 text-white px-4 py-3 md:px-3 md:py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex-shrink-0"
               >
-                <PaperAirplaneIcon className="w-4 h-4" />
+                <PaperAirplaneIcon className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             </div>
           </div>
         </div>
+        </>
       )}
     </>
   );

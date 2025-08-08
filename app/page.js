@@ -5,8 +5,6 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
 import AIChatWidget from "@/components/AIChatWidget";
 import dynamic from "next/dynamic";
 
@@ -19,8 +17,6 @@ const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), 
 
 export default function Home() {
   const [allProducts, setAllProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [searching, setSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +29,6 @@ export default function Home() {
           ...doc.data(),
         }));
         setAllProducts(products);
-        setFilteredProducts(products);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
@@ -44,22 +39,7 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const handleSearch = (query) => {
-    const searchTerm = query.toLowerCase();
-    if (searchTerm.trim() === "") {
-      setFilteredProducts(allProducts);
-      setSearching(false);
-      return;
-    }
 
-    const filtered = allProducts.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.description?.toLowerCase().includes(searchTerm)
-    );
-    setFilteredProducts(filtered);
-    setSearching(true);
-  };
 
   return (
     <>
@@ -72,47 +52,7 @@ export default function Home() {
 
       {/* Main Layout */}
       <div className="min-h-screen bg-gray-50">
-        <Navbar onSearch={handleSearch} />
-        {/* Search Results */}
-        {searching ? (
-          <section className="bg-white py-12">
-            <div className="max-w-7xl mx-auto px-4">
-              <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-                Search Results
-              </h1>
-              {filteredProducts.length === 0 ? (
-                <p className="text-center text-gray-500">No products found.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="bg-white rounded-lg overflow-hidden max-w-xs w-full mx-auto shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      <div className="relative w-full h-48">
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="p-4 text-left">
-                        <p className="text-sm text-gray-900 mt-2 font-medium">
-                          {product.name}
-                        </p>
-                        <p className="text-base font-bold text-blue-800">
-                          UGX {product.price?.toLocaleString?.()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        ) : (
-          <>
-            {/* Desktop Layout */}
+        {/* Desktop Layout */}
             <div className="hidden md:block">
               <div className="max-w-7xl mx-auto px-4 py-6">
                 {/* Top Row - Categories, Trending Products, and Featured Deal */}
@@ -210,9 +150,6 @@ export default function Home() {
                 </section>
               </div>
             </div>
-          </>
-        )}
-        <Footer />
         <AIChatWidget />
       </div>
     </>

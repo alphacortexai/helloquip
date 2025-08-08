@@ -1,21 +1,25 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// TODO: TEMPORARY HARDCODED API KEY - REMOVE BEFORE PRODUCTION
+// Replace this with process.env.G_API_KEY when environment variables are working
+const API_KEY = "AIzaSyChOZyn4FgZm41gyg2VEValfDV47IIuw3Q";
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 export async function POST(request) {
   try {
     const { message, conversationHistory } = await request.json();
 
+    // TODO: TEMPORARILY DISABLED - REMOVE THIS CHECK WHEN USING ENV VARIABLE
     // Check if API key is available
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { 
-          response: "I apologize, but the AI service is currently being configured. Please contact our human support team for assistance." 
-        },
-        { status: 200 }
-      );
-    }
+    // if (!process.env.G_API_KEY) {
+    //   return NextResponse.json(
+    //     { 
+    //       response: "I apologize, but the AI service is currently being configured. Please contact our human support team for assistance." 
+    //     },
+    //     { status: 200 }
+    //   );
+    // }
 
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -39,16 +43,9 @@ Important context about HelloQuip:
 - We serve customers across Uganda with delivery to major cities and regions`;
 
     // Build conversation history for Gemini
-    const conversation = [
-      { role: 'user', parts: [{ text: systemPrompt }] },
-      ...conversationHistory.map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      })),
-      { role: 'user', parts: [{ text: message }] }
-    ];
-
-    const result = await model.generateContent(conversation);
+    const prompt = `${systemPrompt}\n\nUser: ${message}`;
+    
+    const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
@@ -57,8 +54,10 @@ Important context about HelloQuip:
   } catch (error) {
     console.error('Gemini API error:', error);
     return NextResponse.json(
-      { error: 'Failed to get response from AI' },
-      { status: 500 }
+      { 
+        response: "I apologize, but I'm having trouble connecting right now. Please try again in a moment or contact our human support team." 
+      },
+      { status: 200 }
     );
   }
 }

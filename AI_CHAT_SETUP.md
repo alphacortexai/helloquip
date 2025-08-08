@@ -29,7 +29,7 @@ Create a `.env.local` file in the root directory with:
 
 ```env
 # Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
+G_API_KEY=your_gemini_api_key_here
 
 # Firebase Configuration (if not already set)
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key_here
@@ -90,7 +90,7 @@ The AI automatically detects when users want to speak to a human by looking for 
 ## Troubleshooting
 
 ### If AI doesn't respond:
-1. Check if `GEMINI_API_KEY` is set in `.env.local`
+1. Check if `G_API_KEY` is set in `.env.local`
 2. Verify the API key is valid
 3. Check browser console for errors
 
