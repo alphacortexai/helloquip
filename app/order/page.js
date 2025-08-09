@@ -1,7 +1,7 @@
-import { Suspense } from "react";
-import dynamic from "next/dynamic";
+"use client";
 
-const OrderClient = dynamic(() => import("./OrderClient"), { ssr: false });
+import { Suspense } from "react";
+import OrderClient from "./OrderClient";
 
 export default function OrderPage() {
   return (
