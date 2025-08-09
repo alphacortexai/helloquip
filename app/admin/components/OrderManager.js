@@ -283,10 +283,12 @@ export default function OrderManager() {
       let pushed = false;
       if (fcmToken) {
         try {
+          const origin = typeof window !== 'undefined' ? window.location.origin : '';
+          const deepLink = `${origin}/order/${orderId}`;
           const res = await fetch('/api/send-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderId}` })
+            body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderId}`, link: deepLink })
           });
           // We still create an in-app notification regardless of push result
         } catch {}

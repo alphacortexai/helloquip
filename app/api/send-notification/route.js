@@ -156,7 +156,7 @@ export async function POST(req) {
       );
     }
 
-    const { fcmToken, title, body, target } = await req.json();
+    const { fcmToken, title, body, target, link } = await req.json();
 
     if (!fcmToken) {
       return new Response(
@@ -165,10 +165,27 @@ export async function POST(req) {
       );
     }
 
+    // Resolve a full URL for link if not explicitly provided
+    let resolvedLink = link || null;
+    try {
+      if (!resolvedLink) {
+        const headers = req.headers;
+        const origin = headers.get?.("origin") || process.env.PUBLIC_BASE_URL || "http://localhost:3000";
+        if (target) {
+          resolvedLink = new URL(target, origin).toString();
+        } else {
+          resolvedLink = origin;
+        }
+      }
+    } catch {}
+
     const message = {
       token: fcmToken,
       notification: { title: title || "", body: body || "" },
-      webpush: { notification: { icon: "/logo.png" } },
+      webpush: {
+        notification: { icon: "/logo.png" },
+        fcmOptions: resolvedLink ? { link: resolvedLink } : undefined,
+      },
       data: target ? { target } : {},
     };
 

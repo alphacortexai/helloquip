@@ -241,10 +241,12 @@ export default function OrderClient() {
 
         if (fcmToken) {
           try {
+            const origin = typeof window !== 'undefined' ? window.location.origin : '';
+            const deepLink = `${origin}/order/${orderRef.id}`;
             const res = await fetch('/api/send-notification', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderRef.id}` })
+              body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderRef.id}`, link: deepLink })
             });
             let info = null;
             try { info = await res.json(); } catch {}
