@@ -231,7 +231,7 @@ export default function OrderClient() {
 
       toast.success("Order placed successfully!");
 
-      // Notify user: try FCM push if token exists, otherwise send in-app message
+      // Notify user: try FCM push if token exists, and ALWAYS send in-app notification
       try {
         const userRef = doc(db, "users", userId);
         const userDoc = await getDoc(userRef);
@@ -239,18 +239,18 @@ export default function OrderClient() {
         const title = "Order Submitted";
         const body = `Your order ${orderRef.id.slice(0,6).toUpperCase()} has been submitted. We'll update you shortly.`;
 
-        let pushed = false;
         if (fcmToken) {
           try {
-            const res = await fetch('/api/send-notification', {
+            await fetch('/api/send-notification', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ fcmToken, title, body })
             });
-            pushed = res.ok;
           } catch {}
         }
-        if (!pushed) {
+
+        // Always create in-app notification
+        try {
           await addDoc(collection(db, "messages"), {
             from: "system",
             to: userId,
@@ -263,6 +263,8 @@ export default function OrderClient() {
             target: `/order/${orderRef.id}`,
             read: false,
           });
+        } catch (e) {
+          console.warn('Failed to write in-app notification', e);
         }
 
         // Also create an admin notification card
