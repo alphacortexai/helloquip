@@ -185,6 +185,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
   const handleProductClick = (id) => {
     setIsNavigating(true);
+    // Update current URL with an anchor to the clicked product so back returns to it
+    try {
+      const anchor = `p-${id}`;
+      const url = new URL(window.location.href);
+      url.hash = anchor;
+      window.history.replaceState(window.history.state, "", url.toString());
+    } catch {}
+
     setTimeout(() => {
       router.push(`/product/${id}`);
     }, 200);
@@ -226,6 +234,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
             <div
               key={id}
+              id={`p-${id}`}
               onClick={() => handleProductClick(id)}
               className="cursor-pointer group"
             >

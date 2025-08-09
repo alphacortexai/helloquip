@@ -216,23 +216,41 @@ export default function ClientLayoutWrapper({ children }) {
 
   // Restore saved scroll position when mounting a pathname
   useEffect(() => {
-    const key = `scroll:${pathname}`;
-    let restored = false;
-    const restore = () => {
-      try {
-        const raw = sessionStorage.getItem(key);
-        const y = raw ? parseInt(raw, 10) : 0;
-        if (!Number.isNaN(y) && y > 0) {
-          window.scrollTo(0, y);
-          restored = true;
+    // If URL has a hash, try to scroll to the anchor element first (precise restore)
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      const id = hash.slice(1);
+      const tryAnchor = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ block: 'center' });
+          return true;
         }
-      } catch {}
-    };
+        return false;
+      };
+      // Try a few times to account for async content
+      const tries = [0, 80, 180, 350, 600, 1000];
+      let done = false;
+      const timers = tries.map((ms) => setTimeout(() => {
+        if (!done && tryAnchor()) done = true;
+      }, ms));
+      return () => timers.forEach(clearTimeout);
+    }
 
-    // Try now, next frame, and shortly after to account for late content
-    restore();
-    if (!restored) requestAnimationFrame(restore);
-    if (!restored) setTimeout(restore, 60);
+    // Fallback to numeric scroll position restore
+    const key = `scroll:${pathname}`;
+    const raw = (() => { try { return sessionStorage.getItem(key); } catch { return null; } })();
+    const targetY = raw ? parseInt(raw, 10) : 0;
+    if (Number.isNaN(targetY) || targetY <= 0) return;
+
+    const attempts = [0, 50, 120, 250, 450, 700, 1000, 1400];
+    let cancelled = false;
+    const tryScroll = (y) => {
+      if (cancelled) return;
+      if (Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y);
+    };
+    const timers = attempts.map((ms) => setTimeout(() => tryScroll(targetY), ms));
+    return () => { cancelled = true; timers.forEach(clearTimeout); };
   }, [pathname]);
 
   return (

@@ -172,6 +172,14 @@ export default function TrendingProducts() {
 
   const handleProductClick = (productId) => {
     setIsNavigating(true);
+    // Add anchor to current URL so back returns to the trending section
+    try {
+      const anchor = `trend-${productId}`;
+      const url = new URL(window.location.href);
+      url.hash = anchor;
+      window.history.replaceState(window.history.state, "", url.toString());
+    } catch {}
+
     setTimeout(() => {
       router.push(`/product/${productId}`);
     }, 200);
@@ -209,7 +217,7 @@ export default function TrendingProducts() {
                 index === currentSlide ? "opacity-100" : "opacity-0"
               }`}
             >
-              <div className="w-full">
+              <div className="w-full" id={`trend-${product.id}`}>
                 <ProductCard
                   product={product}
                   variant="carousel"
