@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
+import { cleanFirebaseUrl } from "@/lib/urlUtils";
 import {
   collection,
   getDocs,
@@ -187,14 +188,20 @@ export default function TrendingProductSelector() {
               key={product.id}
               className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm flex items-start space-x-4"
             >
-              {product.imageUrl && (
-                <img
-                  src={typeof product.imageUrl === 'object' ? product.imageUrl['200x200'] || product.imageUrl.original : product.imageUrl}
-                  alt={product.name}
-                  className="w-16 h-16 object-cover rounded-md flex-shrink-0"
-                  loading="lazy"
-                />
-              )}
+              {(() => {
+                const raw = typeof product.imageUrl === 'object'
+                  ? (product.imageUrl?.original || product.imageUrl?.['680x680'] || product.imageUrl?.['200x200'] || product.imageUrl?.['100x100'])
+                  : product.imageUrl;
+                const src = typeof raw === 'string' ? cleanFirebaseUrl(raw) : raw;
+                return src ? (
+                  <img
+                    src={src}
+                    alt={product.name}
+                    className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                    loading="lazy"
+                  />
+                ) : null;
+              })()}
 
               <div className="flex flex-col flex-grow">
                 <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>

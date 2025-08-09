@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
+import { cleanFirebaseUrl } from "@/lib/urlUtils";
 import {
   collectionGroup,
   getDocs,
@@ -221,13 +222,19 @@ export default function TrendingFromViews() {
                   onChange={() => toggleSelect(productId)}
                   className="h-4 w-4 text-blue-600 rounded"
                 />
-                {product?.imageUrl && (
-                  <img
-                    src={typeof product.imageUrl === 'object' ? (product.imageUrl['200x200'] || product.imageUrl['100x100'] || product.imageUrl.original) : product.imageUrl}
-                    alt={product?.name || 'Product'}
-                    className="w-10 h-10 rounded object-cover"
-                  />
-                )}
+                {(() => {
+                  const raw = typeof product?.imageUrl === 'object'
+                    ? (product?.imageUrl?.original || product?.imageUrl?.['680x680'] || product?.imageUrl?.['200x200'] || product?.imageUrl?.['100x100'])
+                    : product?.imageUrl;
+                  const src = typeof raw === 'string' ? cleanFirebaseUrl(raw) : raw;
+                  return src ? (
+                    <img
+                      src={src}
+                      alt={product?.name || 'Product'}
+                      className="w-10 h-10 rounded object-cover"
+                    />
+                  ) : null;
+                })()}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{product?.name || productId}</p>
                   <p className="text-xs text-gray-500">Views (this week): <span className="font-semibold">{count || 0}</span></p>

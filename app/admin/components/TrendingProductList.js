@@ -70,6 +70,7 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { cleanFirebaseUrl } from "@/lib/urlUtils";
 
 export default function TrendingProductsTab() {
   const [trendingList, setTrendingList] = useState([]);
@@ -145,14 +146,20 @@ export default function TrendingProductsTab() {
               key={item.id}
               className="flex bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm space-x-4"
             >
-              {item.imageUrl && (
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="w-16 h-16 object-cover rounded-md flex-shrink-0"
-                  loading="lazy"
-                />
-              )}
+              {(() => {
+                const raw = typeof item.imageUrl === 'object'
+                  ? (item.imageUrl?.original || item.imageUrl?.['680x680'] || item.imageUrl?.['200x200'] || item.imageUrl?.['100x100'])
+                  : item.imageUrl;
+                const src = typeof raw === 'string' ? cleanFirebaseUrl(raw) : raw;
+                return src ? (
+                  <img
+                    src={src}
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                    loading="lazy"
+                  />
+                ) : null;
+              })()}
               <div className="flex flex-col justify-center flex-grow">
                 <h3 className="font-semibold text-lg truncate">{item.name}</h3>
                 <p className="text-sm text-gray-600 line-clamp-2">

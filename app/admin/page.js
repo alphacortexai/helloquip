@@ -13,6 +13,7 @@ import ShopForm from "./components/ShopForm";
 import TrendingProductSelector from "./components/TrendingProductSelector";
 import TrendingProductList from "./components/TrendingProductList";
 import TrendingFromViews from "./components/TrendingFromViews";
+import ProductSearch from "./components/ProductSearch";
 import EditProducts from "./components/EditProducts";
 import OrderManager from "./components/OrderManager";
 import SubCategoryForm from "./components/SubCategoryForm";
@@ -109,6 +110,15 @@ const tabs = [
     color: "text-pink-600",
     bgColor: "bg-pink-50",
     borderColor: "border-pink-100"
+  },
+  { 
+    id: "productSearch", 
+    icon: <TagIcon className="w-5 h-5" />, 
+    label: "Search Products",
+    description: "Find by name, SKU, shop, attributes",
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-100"
   },
   { 
     id: "trendingFromViews", 
@@ -326,6 +336,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <TrendingProductSelector />;
       case "viewTrending":
         return <TrendingProductList />;
+      case "productSearch":
+        return <ProductSearch />;
       case "trendingFromViews":
         return <TrendingFromViews />;
       case "manageShipments":
