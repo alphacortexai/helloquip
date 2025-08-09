@@ -19,7 +19,7 @@ import EditSubCategoryForm from "./components/EditSubCategoryForm";
 import AdminChatPanel from "./chat/page";
 import SummaryCard from "./components/SummaryCard";
 import DraftsList from "./components/DraftsList";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import QuotationViewer from "./components/QuotationViewer";
 import FeedbackManager from "./components/FeedbackManager";
 import ChatLogsPage from "./chat-logs/page";
@@ -180,7 +180,9 @@ const tabs = [
 ];
 
 function AdminDashboard({ currentAdminUid }) {
-  const [view, setView] = useState(null);
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [view, setView] = useState(initialTab || null);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const router = useRouter();
@@ -218,6 +220,24 @@ function AdminDashboard({ currentAdminUid }) {
   const openChatForUser = (userId) => {
     router.push(`/admin/chat?userId=${userId}`);
   };
+
+  // Keep URL in sync with selected tab so back/forward works
+  useEffect(() => {
+    const currentTab = searchParams.get("tab");
+    if ((view || null) !== (currentTab || null)) {
+      const url = view ? `/admin?tab=${encodeURIComponent(view)}` : "/admin";
+      router.push(url);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  useEffect(() => {
+    const currentTab = searchParams.get("tab");
+    // Only update state if it differs to prevent loops
+    if ((currentTab || null) !== (view || null)) {
+      setView(currentTab || null);
+    }
+  }, [searchParams]);
 
   const renderSection = () => {
     switch (view) {

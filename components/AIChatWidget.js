@@ -17,6 +17,7 @@ export default function AIChatWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const [isHumanAvailable, setIsHumanAvailable] = useState(false);
   const messagesEndRef = useRef(null);
+  const pushedStateRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,6 +26,39 @@ export default function AIChatWidget() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Close chat on browser back if it was opened
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isOpen) {
+        setIsOpen(false);
+        pushedStateRef.current = false;
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isOpen]);
+
+  const openChat = () => {
+    // Push a history state so back button will close the chat instead of leaving the page
+    try {
+      window.history.pushState({ chatOpen: true }, "", window.location.href);
+      pushedStateRef.current = true;
+    } catch {}
+    setIsOpen(true);
+  };
+
+  const closeChat = () => {
+    if (pushedStateRef.current) {
+      pushedStateRef.current = false;
+      // Go back one step to consume the pushed state without leaving the page
+      try {
+        window.history.back();
+        return;
+      } catch {}
+    }
+    setIsOpen(false);
+  };
 
   const callGemini = async (userMessage) => {
     try {
@@ -126,7 +160,7 @@ export default function AIChatWidget() {
     <>
       {/* Chat Toggle Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => (isOpen ? closeChat() : openChat())}
         className="fixed bottom-24 md:bottom-4 right-4 z-50 bg-blue-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110"
         aria-label="Open AI chat"
       >
@@ -141,7 +175,7 @@ export default function AIChatWidget() {
       {isOpen && (
         <>
           {/* Mobile Backdrop */}
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={() => setIsOpen(false)} />
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={closeChat} />
           <div className="fixed inset-0 md:inset-auto md:bottom-20 md:right-4 z-50 w-full md:w-96 h-full md:h-[500px] bg-white md:rounded-lg shadow-xl border border-gray-200 flex flex-col pb-20 md:pb-0">
           {/* Header */}
           <div className="bg-blue-600 text-white p-4 md:rounded-t-lg">
@@ -153,7 +187,7 @@ export default function AIChatWidget() {
                 </p>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={closeChat}
                 className="text-white hover:text-gray-200 transition p-2"
               >
                 <XMarkIcon className="w-6 h-6" />
