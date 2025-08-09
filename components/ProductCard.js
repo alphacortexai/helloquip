@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Helper function to get the appropriate image URL based on variant and size
+  // Helper hey bro function to get the appropriate image URL based on variant and size
   const getImageUrl = (product, variant) => {
     // If imageUrl is an object with resized URLs (new format)
     if (product.imageUrl && typeof product.imageUrl === 'object') {
