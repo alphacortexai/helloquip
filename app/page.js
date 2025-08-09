@@ -65,7 +65,6 @@ export default function Home() {
 
                   {/* Trending Products */}
                   <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Trending Products</h2>
                     <TrendingProducts />
                   </section>
 

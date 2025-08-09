@@ -177,7 +177,7 @@ export default function Categories({ onCategorySelect, isSidebar = false }) {
                     draggable={false}
                   />
                 </div>
-                <span className={`text-xs font-medium line-clamp-1 ${
+                <span className={`text-sm font-medium line-clamp-1 ${
                   selectedCategoryId === cat.id
                     ? "text-blue-700 font-semibold"
                     : "text-gray-700"

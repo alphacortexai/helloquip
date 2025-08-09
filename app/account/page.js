@@ -165,6 +165,30 @@ const AccountDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [userOrders, setUserOrders] = useState([]);
 
+  // Ensure all address values are strings to prevent controlled/uncontrolled input errors
+  const safeAddress = {
+    fullName: address.fullName || "",
+    area: address.area || "",
+    city: address.city || "",
+    phoneNumber: address.phoneNumber || "",
+  };
+
+  // Regions and areas (keep in sync with the order page)
+  const regionsData = [
+    { region: "Kampala", area: [
+      "Bunga","Kampala Central Division","Kampala Nakawa Division","Kasubi","Kireka","Kitintale","Nakasero","Wandegeya","Bakuli","Banda","Biina","Bugolobi","Bukasa","Bukesa","Bukoto","Bulenga","Bunamwaya","Busega","Butabika","Buwate","Buziga","Bwaise","Bweyogerere","Central Business District","Down Town Kampala","Ggaba","Kabalagala","Kabojja","Kabowa","Kabuusu","Kagoma","Kalerwe","Kampala Industrial Area","Kamwokya","Kansanga","Kanyanya","Katwe","Kavule","Kawaala","kawanda / Kagoma","Kawempe","Kazo","Kibiri","Kibuli","Kibuye","Kigowa","Kikaya","Kikoni","Kinawataka","Kira","Kirinya","Kirombe","Kisaasi","Kisenyi","Kisugu","Kitante","Kitebi","Kitende","Kiwatule","Kololo","Komamboga","Kulambiro","Kyaliwajjala","Kyambogo","Kyanja","Kyebando","Kyengera","Lubowa","Lubya","Lugala","Lugoba","Lugogo","Lusaze","Luwafu","Luzira","Lweza","Maganjo","Makerere","Makindye","Masanafu","Mbalwa","Mbuya","Mengo","Mpanga","Mpererwe","Mulago","Munyonyo","Mutundwe","Mutungo","Muyenga","Naalya","Nabisunsa","Nabweru","Naguru","Najjanankumbi","Najjera","Nakawa","Nakivubo","Nalukolongo","Namasuba","Namirembe","Namugongo","Namungoona","Namuwongo","Nankulabye","Nasser Road","Nateete","Ndeeba","Ndejje","Nsambya","Ntinda","Nyanama","Old Kampala","Rubaga","Salaama","Seguku","Sonde","Wakaliga","Wankulukuku","Zana"
+    ]},
+    { region: "Wakiso", area: ["Nansana","Kira Municipality","Kasangati","Kajjansi","Busukuma","Ssabagabo","Kyengera","Kajjansi Town Council"]},
+    { region: "Eastern Region", area: ["Bugembe","Bugiri","Busia","Buwenge","Iganga","Irundu","Jinja","Kagulu","Kamuli","Kidera","Kumi","Mbale","Mbikko","Namungalwa","Pallisa","Serere","Sironko","Soroti","Tororo"]},
+    { region: "Entebbe Area", area: ["Abayita Ababiri","Akright City - Entebbe","Banga","Bugonga","Entebbe Market Area","Entebbe Town","Katabi","Kisubi","Kitala","Kitende","Kitoro","Kitubulu","Kiwafu - entebbe","Lunyo","Manyago","Nakiwogo","Namulanda","Nkumba","Nsamizi"]},
+    { region: "Northern Region", area: ["Adjumani","Arua","Gulu","Kalongo","Kamdini","Kitgum","Koboko","Lira","Moyo","Nebbi","Oyam","Pader","Patongo"]},
+    { region: "Rest of Central Region", area: ["Busunju","Bwikwe","Gayaza","Kajjansi","Kalagi","Kasangati","Kayunga","Kiboga","Kikajjo","lugazi","Luweero","Masaka","Matugga","Mityana","Mpigi","Mubende","Mukono / Town Area","Namanve","Nsangi","Nsasa","Nyendo","Seeta","Wakiso","wampewo"]},
+    { region: "Western Region", area: ["Bushenyi","Bweyale","Hoima","Ibanda","Kabale","Kabarole (Fort Portal)","Kagadi","Kasese","Kisoro","Kyegegwa","Kyenjojo","Masindi","Mbarara"]},
+  ];
+
+  const selectedRegion = regionsData.find((region) => region.region === safeAddress.city);
+  const availableAreas = selectedRegion ? selectedRegion.area : [];
+
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -207,8 +231,8 @@ const AccountDetailsPage = () => {
     setEditing(false);
   };
 
-  // Check only the visible fields for completeness (name and phone only)
-  const isAddressIncomplete = ["fullName", "phoneNumber"].some(
+  // Align completeness with order page (requires all of these fields)
+  const isAddressIncomplete = ["fullName", "area", "city", "phoneNumber"].some(
     (key) => !address[key]?.trim()
   );
 
@@ -251,19 +275,50 @@ const AccountDetailsPage = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
                 name="fullName"
-                value={address.fullName || ""}
-                onChange={handleAddressChange}
+                value={safeAddress.fullName}
+                onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
                 placeholder="Enter your full name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+              <select
+                value={safeAddress.city}
+                onChange={(e) => setAddress({ ...address, city: e.target.value, area: "" })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="">Select a region</option>
+                {regionsData.map((region) => (
+                  <option key={region.region} value={region.region}>
+                    {region.region}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+              <select
+                value={safeAddress.area}
+                onChange={(e) => setAddress({ ...address, area: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                disabled={!safeAddress.city}
+              >
+                <option value="">Select an area</option>
+                {availableAreas.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
               <input
                 type="tel"
                 name="phoneNumber"
-                value={address.phoneNumber || ""}
-                onChange={handleAddressChange}
+                value={safeAddress.phoneNumber}
+                onChange={(e) => setAddress({ ...address, phoneNumber: e.target.value })}
                 placeholder="Enter your phone number"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
@@ -286,6 +341,8 @@ const AccountDetailsPage = () => {
         ) : (
           <div className="text-sm text-gray-700 space-y-1">
             <p>{address.fullName}</p>
+            <p>{address.city}</p>
+            <p>{address.area}</p>
             <p>{address.phoneNumber}</p>
 
             {isAddressIncomplete && (
@@ -295,7 +352,7 @@ const AccountDetailsPage = () => {
                   onClick={() => setEditing(true)}
                   className="text-blue-600 underline hover:text-blue-800"
                 >
-                  add your full name and phone number
+                  add your full name, region, area and phone number
                 </button>{" "}
                 to complete it.
               </p>

@@ -67,6 +67,7 @@ export default function OrderClient() {
   });
   const [paymentMethod, setPaymentMethod] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   // Ensure all address values are strings to prevent controlled/uncontrolled input errors
   const safeAddress = {
@@ -183,6 +184,7 @@ export default function OrderClient() {
   };
 
   const placeOrder = async () => {
+    if (isPlacingOrder) return;
     if (!isAddressComplete(address)) {
       toast.error("Please complete your address information");
       return;
@@ -203,6 +205,7 @@ export default function OrderClient() {
     }
 
     try {
+      setIsPlacingOrder(true);
       const auth = getAuth();
       const currentUser = auth.currentUser;
       const selectedPayment = paymentMethod; // guaranteed 'cod' here
@@ -305,6 +308,8 @@ export default function OrderClient() {
     } catch (error) {
       console.error("Error placing order:", error);
       toast.error("Failed to place order");
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -585,10 +590,10 @@ export default function OrderClient() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <button
                 onClick={placeOrder}
-                disabled={!isAddressComplete(address) || paymentMethod !== 'cod' || cartItems.length === 0}
+                disabled={isPlacingOrder || !isAddressComplete(address) || paymentMethod !== 'cod' || cartItems.length === 0}
                 className="w-full bg-[#2e4493] text-white py-3 px-4 rounded-md hover:bg-[#131a2f] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold mb-4"
               >
-                🛒 Place Order
+                {isPlacingOrder ? '⏳ Placing…' : '🛒 Place Order'}
               </button>
 
               {isAddressComplete(address) ? (
@@ -646,6 +651,19 @@ export default function OrderClient() {
                 Use Cash on Delivery
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global overlay while placing order */}
+      {isPlacingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-5 py-4 flex items-center gap-3">
+            <svg className="h-5 w-5 text-blue-600 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span className="text-sm font-medium text-gray-900">Placing your order…</span>
           </div>
         </div>
       )}
