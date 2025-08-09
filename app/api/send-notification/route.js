@@ -121,7 +121,6 @@ if (!admin.apps.length) {
       const content = readFileSync(resolved, "utf-8");
       serviceAccount = JSON.parse(content);
     } else {
-      // Fallback: try to auto-discover a JSON key under server/firebase/
       const defaultDir = path.join(process.cwd(), "server/firebase");
       if (existsSync(defaultDir)) {
         const jsonFiles = readdirSync(defaultDir).filter((f) => f.endsWith(".json"));
@@ -165,7 +164,6 @@ export async function POST(req) {
       );
     }
 
-    // Resolve a full URL for link if not explicitly provided
     let resolvedLink = link || null;
     try {
       if (!resolvedLink) {
@@ -179,6 +177,10 @@ export async function POST(req) {
       }
     } catch {}
 
+    const dataPayload = {};
+    if (target) dataPayload.target = target;
+    if (resolvedLink) dataPayload.link = resolvedLink;
+
     const message = {
       token: fcmToken,
       notification: { title: title || "", body: body || "" },
@@ -186,7 +188,7 @@ export async function POST(req) {
         notification: { icon: "/logo.png" },
         fcmOptions: resolvedLink ? { link: resolvedLink } : undefined,
       },
-      data: target ? { target } : {},
+      data: dataPayload,
     };
 
     const response = await admin.messaging().send(message);
