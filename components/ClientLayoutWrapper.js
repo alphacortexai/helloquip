@@ -197,6 +197,44 @@ export default function ClientLayoutWrapper({ children }) {
     return () => unsubscribe();
   }, [user]);
 
+  // --- Scroll position save/restore across navigations ---
+  // Save current scroll position for the current pathname
+  useEffect(() => {
+    const saveScrollPosition = () => {
+      try {
+        sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY));
+      } catch {}
+    };
+
+    // Save on unload and when this component unmounts or pathname changes
+    window.addEventListener('beforeunload', saveScrollPosition);
+    return () => {
+      saveScrollPosition();
+      window.removeEventListener('beforeunload', saveScrollPosition);
+    };
+  }, [pathname]);
+
+  // Restore saved scroll position when mounting a pathname
+  useEffect(() => {
+    const key = `scroll:${pathname}`;
+    let restored = false;
+    const restore = () => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        const y = raw ? parseInt(raw, 10) : 0;
+        if (!Number.isNaN(y) && y > 0) {
+          window.scrollTo(0, y);
+          restored = true;
+        }
+      } catch {}
+    };
+
+    // Try now, next frame, and shortly after to account for late content
+    restore();
+    if (!restored) requestAnimationFrame(restore);
+    if (!restored) setTimeout(restore, 60);
+  }, [pathname]);
+
   return (
     <>
       {showNavbar && <Navbar />}
