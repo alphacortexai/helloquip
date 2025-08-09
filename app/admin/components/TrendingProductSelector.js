@@ -76,14 +76,19 @@ export default function TrendingProductSelector() {
           return;
         }
 
+        const imageUrl = typeof product.imageUrl === 'object'
+          ? (product.imageUrl?.['200x200'] || product.imageUrl?.['100x100'] || product.imageUrl?.original)
+          : product.imageUrl;
+
         const trendingData = {
           productId,
           shopId: selectedShopId,
           addedAt: new Date(),
+          source: 'manual',
           // Store essential data for quick access
           name: product.name || "Unnamed",
           price: product.price || 0,
-          imageUrl: product.imageUrl || null,
+          imageUrl: imageUrl || null,
         };
 
         await setDoc(trendingRef, trendingData);

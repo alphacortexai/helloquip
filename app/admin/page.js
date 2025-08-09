@@ -12,6 +12,7 @@ import CategoryList from "./components/CategoryList";
 import ShopForm from "./components/ShopForm";
 import TrendingProductSelector from "./components/TrendingProductSelector";
 import TrendingProductList from "./components/TrendingProductList";
+import TrendingFromViews from "./components/TrendingFromViews";
 import EditProducts from "./components/EditProducts";
 import OrderManager from "./components/OrderManager";
 import SubCategoryForm from "./components/SubCategoryForm";
@@ -108,6 +109,15 @@ const tabs = [
     color: "text-pink-600",
     bgColor: "bg-pink-50",
     borderColor: "border-pink-100"
+  },
+  { 
+    id: "trendingFromViews", 
+    icon: <FireIcon className="w-5 h-5" />, 
+    label: "Auto Trending (Views)",
+    description: "Pick top viewed products",
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-100"
   },
   { 
     id: "manageShipments", 
@@ -316,6 +326,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <TrendingProductSelector />;
       case "viewTrending":
         return <TrendingProductList />;
+      case "trendingFromViews":
+        return <TrendingFromViews />;
       case "manageShipments":
         return <OrderManager />;
       case "manageSubCategories":

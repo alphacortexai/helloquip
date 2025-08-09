@@ -302,7 +302,7 @@
 
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, increment } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
@@ -357,6 +357,31 @@ export default function ProductDetail() {
 
     fetchProduct();
   }, [id]);
+
+  // Increment weekly view count when product is loaded
+  useEffect(() => {
+    if (!product?.id) return;
+    const recordView = async () => {
+      try {
+        const now = new Date();
+        const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const day = d.getUTCDay(); // 0=Sun..6=Sat
+        const diffToMonday = (day === 0 ? -6 : 1) - day; // move to Monday
+        d.setUTCDate(d.getUTCDate() + diffToMonday);
+        const weekKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; // YYYY-MM-DD (Monday)
+
+        const weekDocRef = doc(db, "productViews", product.id, "weeks", weekKey);
+        await setDoc(
+          weekDocRef,
+          { count: increment(1), weekStart: weekKey, updatedAt: serverTimestamp() },
+          { merge: true }
+        );
+      } catch (e) {
+        // best effort; ignore errors
+      }
+    };
+    recordView();
+  }, [product?.id]);
 
   useEffect(() => {
     const auth = getAuth();

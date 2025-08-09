@@ -81,17 +81,42 @@ export default function TrendingProductsTab() {
         const snapshot = await getDocs(collection(db, "trendingProducts"));
         const items = await Promise.all(
           snapshot.docs.map(async (docSnap) => {
-            const data = docSnap.data();
-            const productRef = doc(db, "products", data.productId);
-            const productSnap = await getDoc(productRef);
+            const data = docSnap.data() || {};
+            const productId = data.productId || docSnap.id;
 
-            const shopRef = doc(db, "shops", data.shopId);
-            const shopSnap = await getDoc(shopRef);
+            // Fetch product data if possible
+            let productData = null;
+            try {
+              if (productId) {
+                const productRef = doc(db, "products", productId);
+                const productSnap = await getDoc(productRef);
+                if (productSnap.exists()) {
+                  productData = productSnap.data();
+                }
+              }
+            } catch {}
+
+            // Fetch shop name if shopId is present
+            let shopName = "Unknown Shop";
+            try {
+              if (data.shopId) {
+                const shopRef = doc(db, "shops", data.shopId);
+                const shopSnap = await getDoc(shopRef);
+                if (shopSnap.exists()) {
+                  shopName = shopSnap.data().name || shopName;
+                }
+              }
+            } catch {}
 
             return {
               id: docSnap.id,
-              ...productSnap.data(),
-              shopName: shopSnap.exists() ? shopSnap.data().name : "Unknown Shop",
+              name: productData?.name || data.name || "Unnamed",
+              description: productData?.description,
+              price: productData?.price ?? data.price ?? 0,
+              imageUrl: productData?.imageUrl ?? data.imageUrl ?? null,
+              sku: productData?.sku,
+              shopName,
+              source: data.source,
             };
           })
         );
@@ -133,6 +158,9 @@ export default function TrendingProductsTab() {
                 <p className="text-sm text-gray-600 line-clamp-2">
                   {item.description || "No description available."}
                 </p>
+                {item.source && (
+                  <p className="text-xs mt-1 text-gray-500">Source: {item.source}</p>
+                )}
                 <p className="text-sm mt-2 italic text-gray-500">
                   From shop: <strong>{item.shopName}</strong>
                 </p>
