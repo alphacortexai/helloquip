@@ -31,17 +31,25 @@ messaging.onBackgroundMessage(function (payload) {
 self.addEventListener('notificationclick', function(event) {
   const target = event.notification?.data?.target || '/';
   event.notification.close();
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      for (const client of clientList) {
-        if ('focus' in client) {
-          // Optionally check URL match
-          return client.focus();
+  event.waitUntil((async () => {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // Try to focus and navigate an existing client
+    for (const client of clientList) {
+      if ('focus' in client) {
+        await client.focus();
+      }
+      if (target && 'navigate' in client) {
+        try {
+          await client.navigate(target);
+          return;
+        } catch (e) {
+          // fall through to openWindow
         }
       }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(target);
-      }
-    })
-  );
+    }
+    // No clients or navigation failed: open a new window
+    if (self.clients.openWindow) {
+      await self.clients.openWindow(target);
+    }
+  })());
 });
