@@ -286,25 +286,24 @@ export default function OrderManager() {
           const res = await fetch('/api/send-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fcmToken, title, body })
+            body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderId}` })
           });
-          pushed = res.ok;
+          // We still create an in-app notification regardless of push result
         } catch {}
       }
-      if (!pushed) {
-        await addDoc(collection(db, "messages"), {
-          from: "system",
-          to: updated.userId,
-          title,
-          text: body,
-          timestamp: serverTimestamp(),
-          chatId: `system_${updated.userId}`,
-          type: "notification",
-          orderId,
-          target: `/order/${orderId}`,
-          read: false,
-        });
-      }
+      // Always create in-app notification so it appears in the UI
+      await addDoc(collection(db, "messages"), {
+        from: "system",
+        to: updated.userId,
+        title,
+        text: body,
+        timestamp: serverTimestamp(),
+        chatId: `system_${updated.userId}`,
+        type: "notification",
+        orderId,
+        target: `/order/${orderId}`,
+        read: false,
+      });
     } catch (e) {
       console.warn('Order status notify failed', e);
     }

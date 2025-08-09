@@ -241,12 +241,19 @@ export default function OrderClient() {
 
         if (fcmToken) {
           try {
-            await fetch('/api/send-notification', {
+            const res = await fetch('/api/send-notification', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fcmToken, title, body })
+              body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderRef.id}` })
             });
-          } catch {}
+            let info = null;
+            try { info = await res.json(); } catch {}
+            if (!res.ok) {
+              console.warn('/api/send-notification failed', info || res.statusText);
+            }
+          } catch (e) {
+            console.warn('FCM request error', e);
+          }
         }
 
         // Always create in-app notification

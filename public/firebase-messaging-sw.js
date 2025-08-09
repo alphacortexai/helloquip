@@ -21,8 +21,27 @@ messaging.onBackgroundMessage(function (payload) {
   const notificationTitle = payload.notification?.title || "HelloQuip";
   const notificationOptions = {
     body: payload.notification?.body || "",
-    icon: "/logo.png", // Optional: put a notification icon in public/
+    icon: "/logo.png",
+    data: payload.data || {},
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('notificationclick', function(event) {
+  const target = event.notification?.data?.target || '/';
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          // Optionally check URL match
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(target);
+      }
+    })
+  );
 });

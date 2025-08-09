@@ -100,34 +100,76 @@
 
 // app/api/send-notification/route.js
 import admin from "firebase-admin";
+import { readFileSync, existsSync, readdirSync } from "fs";
+import path from "path";
+
+let initErrorMessage = null;
 
 if (!admin.apps.length) {
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT environment variable");
+  try {
+    let serviceAccount = null;
+
+    const inline = process.env.FIREBASE_SERVICE_ACCOUNT;
+    const filePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+
+    if (inline) {
+      serviceAccount = JSON.parse(inline);
+    } else if (filePath) {
+      const resolved = path.isAbsolute(filePath)
+        ? filePath
+        : path.join(process.cwd(), filePath);
+      const content = readFileSync(resolved, "utf-8");
+      serviceAccount = JSON.parse(content);
+    } else {
+      // Fallback: try to auto-discover a JSON key under server/firebase/
+      const defaultDir = path.join(process.cwd(), "server/firebase");
+      if (existsSync(defaultDir)) {
+        const jsonFiles = readdirSync(defaultDir).filter((f) => f.endsWith(".json"));
+        if (jsonFiles.length > 0) {
+          const candidate = path.join(defaultDir, jsonFiles[0]);
+          const content = readFileSync(candidate, "utf-8");
+          serviceAccount = JSON.parse(content);
+        } else {
+          initErrorMessage = "Missing FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_PATH (no JSON found in server/firebase)";
+        }
+      } else {
+        initErrorMessage = "Missing FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_PATH (server/firebase not found)";
+      }
+    }
+
+    if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    }
+  } catch (e) {
+    initErrorMessage = `Failed to initialize Firebase Admin: ${e.message}`;
   }
-
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
 }
 
 export async function POST(req) {
   try {
-    const { fcmToken, title, body } = await req.json();
+    if (!admin.apps.length) {
+      return new Response(
+        JSON.stringify({ success: false, error: initErrorMessage || "Firebase Admin not initialized" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const { fcmToken, title, body, target } = await req.json();
+
+    if (!fcmToken) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing fcmToken" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const message = {
       token: fcmToken,
-      notification: {
-        title,
-        body,
-      },
-      webpush: {
-        notification: {
-          icon: "/icon.png",
-        },
-      },
+      notification: { title: title || "", body: body || "" },
+      webpush: { notification: { icon: "/logo.png" } },
+      data: target ? { target } : {},
     };
 
     const response = await admin.messaging().send(message);
@@ -137,7 +179,7 @@ export async function POST(req) {
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("EError sending notification:", error);
+    console.error("Error sending notification:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
