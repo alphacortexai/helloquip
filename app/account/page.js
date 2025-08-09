@@ -150,6 +150,8 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Image from "next/image";
+import Link from "next/link";
+import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 
 const AccountDetailsPage = () => {
   const [user, setUser] = useState(null);
@@ -161,6 +163,7 @@ const AccountDetailsPage = () => {
   });
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userOrders, setUserOrders] = useState([]);
 
   useEffect(() => {
     const auth = getAuth();
@@ -173,6 +176,18 @@ const AccountDetailsPage = () => {
           const userData = docSnap.data();
           setAddress(userData.address || address);
         }
+        // Subscribe to this user's orders
+        try {
+          const q = query(
+            collection(db, "orders"),
+            where("userId", "==", user.uid),
+            orderBy("createdAt", "desc")
+          );
+          onSnapshot(q, (snap) => {
+            const orders = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            setUserOrders(orders);
+          });
+        } catch {}
         setLoading(false);
       }
     });
@@ -277,6 +292,31 @@ const AccountDetailsPage = () => {
               </p>
             )}
           </div>
+        )}
+      </div>
+
+      {/* Orders Section */}
+      <div className="pt-4 border-t space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">My Orders</h2>
+          <Link href="/order?tab=submitted" className="text-sm text-blue-600 hover:underline">Go to Orders</Link>
+        </div>
+        {userOrders.length === 0 ? (
+          <p className="text-sm text-gray-500">You have no submitted orders yet.</p>
+        ) : (
+          <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+            {userOrders.slice(0,5).map((o) => (
+              <li key={o.id} className="p-3 flex items-center justify-between"> 
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900">Order #{o.id.slice(0,6).toUpperCase()}</p>
+                  <p className="text-gray-600">{new Date(o.createdAt).toLocaleString()}</p>
+                </div>
+                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${o.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : o.status === 'shipped' ? 'bg-blue-100 text-blue-700' : o.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                  {o.status || 'pending'}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

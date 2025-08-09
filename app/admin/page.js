@@ -23,6 +23,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import QuotationViewer from "./components/QuotationViewer";
 import FeedbackManager from "./components/FeedbackManager";
 import ChatLogsPage from "./chat-logs/page";
+import AdminNotifications from "./components/AdminNotifications";
+import { db } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
 import {
   CubeIcon,
@@ -39,6 +42,7 @@ import {
   UserGroupIcon,
   UserCircleIcon,
   CogIcon,
+  BellIcon,
 } from "@heroicons/react/24/outline";
 
 const tabs = [
@@ -92,9 +96,9 @@ const tabs = [
     icon: <FireIcon className="w-5 h-5" />, 
     label: "Set Trending",
     description: "Select trending products",
-    color: "text-red-600",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-100"
+    color: "text-[#2e4493]",
+    bgColor: "bg-[#e5f3fa]",
+    borderColor: "border-[#e5f3fa]"
   },
   { 
     id: "viewTrending", 
@@ -110,9 +114,9 @@ const tabs = [
     icon: <TruckIcon className="w-5 h-5" />, 
     label: "Shipments",
     description: "Manage orders & shipping",
-    color: "text-teal-600",
-    bgColor: "bg-teal-50",
-    borderColor: "border-teal-100"
+    color: "text-sky-600",
+    bgColor: "bg-sky-50",
+    borderColor: "border-sky-100"
   },
   { 
     id: "manageSubCategories", 
@@ -177,6 +181,15 @@ const tabs = [
     bgColor: "bg-blue-50",
     borderColor: "border-blue-100"
   },
+  { 
+    id: "notifications", 
+    icon: <BellIcon className="w-5 h-5" />, 
+    label: "Notifications",
+    description: "Admin alerts & new orders",
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -186,6 +199,10 @@ function AdminDashboard({ currentAdminUid }) {
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const router = useRouter();
+  const [unreadAdminCount, setUnreadAdminCount] = useState(0);
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const [adminNotifications, setAdminNotifications] = useState([]);
+  const adminNotifRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -216,9 +233,9 @@ function AdminDashboard({ currentAdminUid }) {
         break;
     }
   };
-
+  
   const openChatForUser = (userId) => {
-    router.push(`/admin/chat?userId=${userId}`);
+    router.push(`/admin/chat?userId=${userId}`); 
   };
 
   // Keep URL in sync with selected tab so back/forward works
@@ -238,6 +255,50 @@ function AdminDashboard({ currentAdminUid }) {
       setView(currentTab || null);
     }
   }, [searchParams]);
+
+  // Listen for unread admin notifications
+  useEffect(() => {
+    const q = query(
+      collection(db, "adminNotifications"),
+      where("read", "==", false)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setUnreadAdminCount(snap.size);
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch recent admin notifications for header dropdown
+  useEffect(() => {
+    const q = query(
+      collection(db, "adminNotifications"),
+      orderBy("timestamp", "desc"),
+      limit(10)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setAdminNotifications(items);
+    });
+    return () => unsub();
+  }, []);
+
+  // Close admin notif dropdown on outside click
+  useEffect(() => {
+    function handleOutside(e) {
+      if (adminNotifRef.current && !adminNotifRef.current.contains(e.target)) {
+        setAdminDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const markAllAdminNotifsRead = async () => {
+    const unread = adminNotifications.filter((n) => !n.read);
+    for (const n of unread) {
+      try { await updateDoc(doc(db, 'adminNotifications', n.id), { read: true }); } catch {}
+    }
+  };
 
   const renderSection = () => {
     switch (view) {
@@ -271,6 +332,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <FeedbackManager />
       case "chatLogs":
         return <ChatLogsPage />;
+      case "notifications":
+        return <AdminNotifications />;
       default:
         return null;
     }
@@ -289,7 +352,7 @@ function AdminDashboard({ currentAdminUid }) {
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
                   {view ? "Admin Panel" : "HelloQuip Admin"}
-                </h1>
+        </h1>
                 <p className="text-xs text-gray-500">
                   {view ? "Manage your store" : "Store management system"}
                 </p>
@@ -300,6 +363,64 @@ function AdminDashboard({ currentAdminUid }) {
               <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
                 <UserGroupIcon className="w-3 h-3" />
                 <span>Admin</span>
+              </div>
+
+              {/* Admin Notifications Dropdown */}
+              <div className="relative" ref={adminNotifRef}>
+                <button
+                  onClick={() => setAdminDropdownOpen((o) => !o)}
+                  className="relative inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 hover:bg-gray-50"
+                  aria-label="Admin notifications"
+                >
+                  <BellIcon className="w-5 h-5 text-gray-700" />
+                  {unreadAdminCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                      {unreadAdminCount}
+                    </span>
+                  )}
+                </button>
+                {adminDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+                      <span className="text-sm font-semibold">Admin Notifications</span>
+                      <button onClick={markAllAdminNotifsRead} className="text-xs text-blue-600 hover:underline">Mark all read</button>
+                    </div>
+                    <div className="max-h-80 overflow-auto">
+                      {adminNotifications.length === 0 ? (
+                        <div className="p-4 text-sm text-gray-500">No notifications</div>
+                      ) : (
+                        <ul className="divide-y divide-gray-100">
+                          {adminNotifications.map((n) => (
+                            <li key={n.id} className="p-3">
+                              <button
+                                className="text-left w-full"
+                                onClick={async () => {
+                                  try { await updateDoc(doc(db, 'adminNotifications', n.id), { read: true }); } catch {}
+                                  setAdminDropdownOpen(false);
+                                  const target = n.orderId ? `/admin?tab=manageShipments&orderId=${n.orderId}` : '/admin?tab=manageShipments';
+                                  router.push(target);
+                                }}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{n.title || 'New Notification'}</p>
+                                    <p className="text-sm text-gray-600">{n.text}</p>
+                                    {n.timestamp?.toDate && (
+                                      <p className="text-xs text-gray-400 mt-1">{n.timestamp.toDate().toLocaleString()}</p>
+                                    )}
+                                  </div>
+                                  {!n.read && (
+                                    <span className="text-[10px] px-2 py-1 rounded-full bg-red-100 text-red-700 ml-2">new</span>
+                                  )}
+                                </div>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Account Settings Dropdown */}
@@ -346,19 +467,19 @@ function AdminDashboard({ currentAdminUid }) {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {view ? (
-          <>
+      {view ? (
+        <>
             {/* Back Button */}
             <div className="mb-4">
-              <button
-                onClick={() => setView(null)}
+          <button
+            onClick={() => setView(null)}
                 className="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
-              >
+          >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Back to Dashboard
-              </button>
+          </button>
             </div>
 
             {/* Section Content */}
@@ -372,11 +493,11 @@ function AdminDashboard({ currentAdminUid }) {
                 </p>
               </div>
               <div className="p-4">
-                {renderSection()}
-              </div>
+              {renderSection()}
             </div>
-          </>
-        ) : (
+            </div>
+        </>
+      ) : (
           <>
             {/* Welcome Section */}
             <div className="mb-6">
@@ -399,16 +520,21 @@ function AdminDashboard({ currentAdminUid }) {
 
             {/* Dashboard Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-6">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setView(tab.id)}
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setView(tab.id)}
                   className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${tab.bgColor} ${tab.borderColor} hover:border-opacity-100`}
                 >
+                  {tab.id === 'notifications' && unreadAdminCount > 0 && (
+                    <span className="absolute top-2 right-2 bg-red-600 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                      {unreadAdminCount}
+                    </span>
+                  )}
                   <div className="flex flex-col items-center text-center">
                     <div className={`w-8 h-8 ${tab.bgColor} rounded-lg flex items-center justify-center mb-2 group-hover:scale-105 transition-transform`}>
                       <div className={tab.color}>
-                        {tab.icon}
+              {tab.icon}
                       </div>
                     </div>
                     
@@ -420,9 +546,9 @@ function AdminDashboard({ currentAdminUid }) {
                       {tab.description}
                     </p>
                   </div>
-                </button>
-              ))}
-            </div>
+            </button>
+          ))}
+        </div>
 
             {/* Summary Cards */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">

@@ -216,9 +216,10 @@ export default function RegisterClient() {
     const userRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userRef);
     if (!docSnap.exists()) {
-      router.push("/complete-profile");
+      router.push(`/complete-profile`);
     } else {
-      router.push(redirect);
+      try { sessionStorage.setItem('forceScrollTop', '1'); } catch {}
+      router.push(redirect || '/');
     }
   };
 
@@ -256,7 +257,8 @@ export default function RegisterClient() {
 
   useEffect(() => {
     if (auth.currentUser) {
-      router.push(redirect);
+      try { sessionStorage.setItem('forceScrollTop', '1'); } catch {}
+      router.push(redirect || '/');
     }
   }, [auth, redirect, router]);
 

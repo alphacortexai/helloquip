@@ -300,7 +300,7 @@
 
 "use client";
 
-import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -316,14 +316,12 @@ export default function ProductDetail() {
   const router = useRouter();
   const { id } = useParams();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [activeImage, setActiveImage] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const autoAddHandledRef = useState(false)[0];
 
   const fallbackImage = "https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/placeholder.jpg?alt=media&token=7b4e6ab8-7a01-468c-b5f7-a19d31290045";
 
@@ -368,38 +366,11 @@ export default function ProductDetail() {
     return () => unsubscribe();
   }, []);
 
-  // If redirected after login with autoAdd flag, add to order automatically once
-  useEffect(() => {
-    const autoAdd = searchParams.get("autoAdd") === "1";
-    if (!autoAdd) return;
-    if (!user || !product) return;
-    if (autoAddHandledRef) return;
-    // Prevent re-entry
-    // Note: using state ref trick; set to true by redefining variable
-    // We will perform add, then navigate to order
-    (async () => {
-      try {
-        // Reuse handleAddToOrder logic inline to avoid toast issues before render
-        const itemRef = doc(db, "carts", user.uid, "items", product.id);
-        const itemSnap = await getDoc(itemRef);
-        if (!itemSnap.exists()) {
-          await setDoc(itemRef, {
-            ...product,
-            quantity,
-            addedAt: serverTimestamp(),
-          });
-        }
-      } catch (e) {
-        // swallow
-      } finally {
-        router.push("/order");
-      }
-    })();
-  }, [searchParams, user, product, quantity, router]);
+  // (Reverted) No auto-add on return; just return to the product page
 
   const handleAddToOrder = async () => {
     if (!user) {
-      router.push(`/register?redirect=/product/${product.id}?autoAdd=1`);
+      router.push(`/register?redirect=/product/${product.id}`);
       return;
     }
 

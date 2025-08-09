@@ -133,7 +133,7 @@ export default function Categories({ onCategorySelect, isSidebar = false }) {
                   <div
                     className={`w-[60px] h-[60px] bg-gray-100 rounded-[18px] overflow-hidden mx-auto shadow-md ${
                       selectedCategoryId === cat.id
-                        ? "border-2 border-teal-400"
+                        ? "border-2 border-sky-400"
                         : ""
                     }`}
                   >

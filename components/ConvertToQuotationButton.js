@@ -195,6 +195,13 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
 
     try {
       if (!userId) throw new Error("User not authenticated");
+      if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        throw new Error("Your cart is empty. Add items before generating a quotation.");
+      }
+      const required = [address?.fullName, address?.city, address?.area, address?.phoneNumber];
+      if (required.some((v) => !v || String(v).trim() === "")) {
+        throw new Error("Please complete your shipping address to generate a quotation.");
+      }
 
       const quotationData = {
         userId,

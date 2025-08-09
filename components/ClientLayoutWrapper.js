@@ -177,7 +177,7 @@ export default function ClientLayoutWrapper({ children }) {
     return () => unsubscribe();
   }, [user]);
 
-  // Listen for unread messages count for the current user
+  // Listen for unread messages count for the current user (exclude system/notification)
   useEffect(() => {
     if (!user) {
       setUnreadMessages(0);
@@ -188,7 +188,12 @@ export default function ClientLayoutWrapper({ children }) {
       let count = 0;
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.to === user.uid && !data.read) {
+        if (
+          data.to === user.uid &&
+          !data.read &&
+          data.type !== "system" &&
+          data.type !== "notification"
+        ) {
           count++;
         }
       });
@@ -216,6 +221,16 @@ export default function ClientLayoutWrapper({ children }) {
 
   // Restore saved scroll position when mounting a pathname
   useEffect(() => {
+    // If a previous navigation requested forcing scroll to top (e.g., after login), do that and skip restoration
+    try {
+      const forceTop = sessionStorage.getItem('forceScrollTop');
+      if (forceTop === '1') {
+        sessionStorage.removeItem('forceScrollTop');
+        window.scrollTo(0, 0);
+        return;
+      }
+    } catch {}
+
     // If URL has a hash, try to scroll to the anchor element first (precise restore)
     const hash = window.location.hash;
     if (hash && hash.length > 1) {

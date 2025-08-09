@@ -420,7 +420,7 @@ export default function CategoryPage() {
               onClick={() => setSelectedSubCategory(null)}
               className={`px-3 py-1 rounded-full text-xs border whitespace-nowrap transition-all ${
                 selectedSubCategory === null
-                  ? "bg-teal-600 text-white border-teal-700"
+                 ? "bg-sky-600 text-white border-sky-700"
                   : "bg-gray-100 text-gray-700 border-gray-300"
               }`}
             >
@@ -437,7 +437,7 @@ export default function CategoryPage() {
                 }
                 className={`px-3 py-1 rounded-full text-xs border whitespace-nowrap transition-all ${
                   selectedSubCategory === subcat.id
-                    ? "bg-teal-600 text-white border-teal-700"
+                   ? "bg-sky-600 text-white border-sky-700"
                     : "bg-gray-100 text-gray-700 border-gray-300"
                 }`}
               >

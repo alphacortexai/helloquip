@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter, usePathname } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import SearchBar from "@/components/SearchBar";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, doc, updateDoc } from "firebase/firestore";
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
@@ -16,6 +16,8 @@ export default function Navbar() {
   const [cartCount, setCartCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [notifications, setNotifications] = useState(0);
+  const [openNotifications, setOpenNotifications] = useState(false);
+  const [notificationItems, setNotificationItems] = useState([]);
   const dropdownRef = useRef();
 
   const showSearch = ["/category", "/shop", "/search"].some((path) => pathname.startsWith(path)) || pathname === "/";
@@ -41,19 +43,24 @@ export default function Navbar() {
     return () => unsubscribe();
   }, [user]);
 
-  // Listen for unread messages sent to this user
+  // Listen for unread messages sent to this user (exclude system/notification)
   useEffect(() => {
     if (!user) {
       setUnreadMessages(0);
       return;
     }
 
-    const q = collection(db, "messages");
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const qMsgs = collection(db, "messages");
+    const unsubscribe = onSnapshot(qMsgs, (snapshot) => {
       let count = 0;
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.to === user.uid && !data.read) {
+        if (
+          data.to === user.uid &&
+          !data.read &&
+          data.type !== "system" &&
+          data.type !== "notification"
+        ) {
           count++;
         }
       });
@@ -62,6 +69,43 @@ export default function Navbar() {
 
     return () => unsubscribe();
   }, [user]);
+
+  // Listen for notifications (system/notification messages addressed to user)
+  useEffect(() => {
+    if (!user) {
+      setNotifications(0);
+      setNotificationItems([]);
+      return;
+    }
+    const qNotifs = query(
+      collection(db, "messages"),
+      where("to", "==", user.uid),
+      where("type", "in", ["system", "notification"]) // Firestore 'in' supports up to 10 values
+    );
+    const unsubscribe = onSnapshot(qNotifs, (snapshot) => {
+      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const unread = items.filter((i) => !i.read).length;
+      setNotificationItems(items.sort((a,b) => (a.timestamp?.toMillis?.()||0) - (b.timestamp?.toMillis?.()||0)).reverse());
+      setNotifications(unread);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Mark notifications as read when dropdown opens
+  useEffect(() => {
+    const markRead = async () => {
+      if (!user || !openNotifications) return;
+      const unread = notificationItems.filter((n) => !n.read);
+      for (const n of unread) {
+        try {
+          await updateDoc(doc(db, "messages", n.id), { read: true });
+        } catch (e) {
+          console.warn("Failed to mark notification read", e);
+        }
+      }
+    };
+    markRead();
+  }, [openNotifications, user, notificationItems]);
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -93,7 +137,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <h1
-                className="text-3xl md:text-3xl font-extrabold text-blue-600 cursor-pointer hover:text-blue-700 transition-colors pr-0.5"
+                className="text-3xl md:text-3xl font-extrabold text-[#2e4493] cursor-pointer hover:text-[#11a2d7] transition-colors pr-0.5"
                 onClick={() => router.push("/")}
               >
                 HelloQuip
@@ -110,7 +154,7 @@ export default function Navbar() {
             {/* User Actions */}
             <div className="flex items-center gap-0 relative" ref={dropdownRef}>
               {/* Notifications */}
-              <button className="relative text-gray-600 hover:text-blue-600 focus:outline-none p-2 hover:bg-blue-50 rounded-lg transition-colors">
+              <button onClick={() => setOpenNotifications((o) => !o)} className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors">
                 <BellIcon className="h-6 w-6" />
                 {notifications > 0 && (
                   <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center pointer-events-none">
@@ -118,12 +162,41 @@ export default function Navbar() {
                   </span>
                 )}
               </button>
+              {openNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-auto">
+                  <div className="p-3 border-b border-gray-100 font-semibold">Notifications</div>
+                  {notificationItems.length === 0 ? (
+                    <div className="p-4 text-sm text-gray-500">No notifications</div>
+                  ) : (
+                    <ul className="divide-y divide-gray-100">
+                      {notificationItems.slice(0,20).map((n) => (
+                        <li key={n.id} className="p-3 text-sm">
+                          <button
+                            className="text-left w-full"
+                            onClick={() => {
+                              setOpenNotifications(false);
+                              const target = n.target || (n.orderId ? `/order/${n.orderId}` : "/order?tab=submitted");
+                              router.push(target);
+                            }}
+                          >
+                            <p className="font-medium text-gray-800">{n.title || 'Update'}</p>
+                            <p className="text-gray-600">{n.text || n.body}</p>
+                            {n.timestamp && (
+                              <p className="text-xs text-gray-400 mt-1">{new Date(n.timestamp.toMillis()).toLocaleString()}</p>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               {/* Cart Icon */}
               {user && cartCount > 0 && (
                 <button
                   onClick={() => router.push("/order")}
-                  className="relative text-gray-600 hover:text-blue-600 focus:outline-none p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors"
                   aria-label="View cart"
                 >
                   <ShoppingCartIcon className="h-6 w-6" />
@@ -137,7 +210,7 @@ export default function Navbar() {
               {user && unreadMessages > 0 && (
                 <button
                   onClick={() => router.push("/messenger")}
-                  className="relative text-gray-600 hover:text-blue-600 focus:outline-none p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors"
                   aria-label="View messages"
                 >
                   <ChatBubbleLeftEllipsisIcon className="h-6 w-6" />
@@ -152,7 +225,7 @@ export default function Navbar() {
                 <>
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
-                    className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="flex items-center gap-2 p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors"
                   >
                     <img
                       src={user.photoURL || "/default-avatar.png"}
@@ -190,7 +263,7 @@ export default function Navbar() {
                             setMenuOpen(false);
                             router.push("/account");
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#e5f3fa] hover:text-[#2e4493] rounded-lg transition-colors"
                         >
                           Account Details
                         </button>
@@ -199,7 +272,7 @@ export default function Navbar() {
                             setMenuOpen(false);
                             router.push("/order");
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#e5f3fa] hover:text-[#2e4493] rounded-lg transition-colors"
                         >
                           My Orders
                         </button>
@@ -216,7 +289,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => router.push("/register")}
-                  className="bg-blue-600 text-white hover:bg-blue-700 transition-colors px-4 py-2 text-sm rounded-lg font-medium"
+                  className="bg-[#2e4493] text-white hover:bg-[#131a2f] transition-colors px-4 py-2 text-sm rounded-lg font-medium"
                 >
                   Sign In
                 </button>

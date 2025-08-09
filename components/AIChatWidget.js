@@ -178,7 +178,7 @@ export default function AIChatWidget() {
           <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={closeChat} />
           <div className="fixed inset-0 md:inset-auto md:bottom-20 md:right-4 z-50 w-full md:w-96 h-full md:h-[500px] bg-white md:rounded-lg shadow-xl border border-gray-200 flex flex-col pb-20 md:pb-0">
           {/* Header */}
-          <div className="bg-blue-600 text-white p-4 md:rounded-t-lg">
+          <div className="bg-[#2e4493] text-white p-4 md:rounded-t-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-lg md:text-base">HelloQuip AI Assistant</h3>
@@ -188,7 +188,7 @@ export default function AIChatWidget() {
               </div>
               <button
                 onClick={closeChat}
-                className="text-white hover:text-gray-200 transition p-2"
+                className="text-white hover:text-[#e5f3fa] transition p-2"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>

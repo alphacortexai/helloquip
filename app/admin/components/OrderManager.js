@@ -215,7 +215,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 const statuses = ["Pending", "Confirmed", "Shipping", "Delivered", "Canceled"];
@@ -238,8 +238,23 @@ export default function OrderManager() {
     fetchOrders();
   }, []);
 
+  // If navigated with an orderId query param, auto-select it
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    const orderId = url.searchParams.get('orderId');
+    if (!orderId) return;
+    const found = orders.find((o) => o.id === orderId);
+    if (found) setSelected(found);
+  }, [orders]);
+
   const updateStatus = async (orderId, newStatus) => {
     const orderRef = doc(db, "orders", orderId);
+    const current = orders.find((o) => o.id === orderId);
+    const prev = current?.status || "";
+    if (prev === newStatus) {
+      return; // No-op: avoid sending duplicate notifications
+    }
     await updateDoc(orderRef, { status: newStatus });
     setOrders((prev) =>
       prev.map((order) =>
@@ -248,6 +263,50 @@ export default function OrderManager() {
     );
     if (selected?.id === orderId) {
       setSelected((prev) => ({ ...prev, status: newStatus }));
+    }
+
+    // Try notify user of status change with 3s delay
+    try {
+      const updated = current;
+      if (!updated) return;
+      // Delay before sending
+      await new Promise((res) => setTimeout(res, 3000));
+      const userRef = doc(db, "users", updated.userId);
+      const userSnap = await getDoc(userRef);
+      const fcmToken = userSnap.exists() ? userSnap.data().fcmToken : null;
+      const title = "Order Status Updated";
+      const total = (updated.totalAmount != null ? updated.totalAmount : (updated.items||[]).reduce((sum, it) => sum + ((it.discount>0? it.price*(1-it.discount/100):it.price)*(it.quantity||1)), 0));
+      const items = (updated.items || []).map((it) => `${it.name} x ${it.quantity||1}`);
+      const summary = items.length > 3 ? `${items.slice(0,3).join(", ")} and ${items.length-3} more` : items.join(", ");
+      const shortId = orderId.slice(0,6).toUpperCase();
+      const body = `Your order ${shortId} (${summary}, UGX ${Number(total||0).toLocaleString()}) changed from ${prev || 'previous'} to ${newStatus}.`;
+      let pushed = false;
+      if (fcmToken) {
+        try {
+          const res = await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fcmToken, title, body })
+          });
+          pushed = res.ok;
+        } catch {}
+      }
+      if (!pushed) {
+        await addDoc(collection(db, "messages"), {
+          from: "system",
+          to: updated.userId,
+          title,
+          text: body,
+          timestamp: serverTimestamp(),
+          chatId: `system_${updated.userId}`,
+          type: "notification",
+          orderId,
+          target: `/order/${orderId}`,
+          read: false,
+        });
+      }
+    } catch (e) {
+      console.warn('Order status notify failed', e);
     }
   };
 
@@ -273,7 +332,7 @@ export default function OrderManager() {
             >
               <p className="font-semibold">Order #{order.id.slice(-5)}</p>
               <p className="text-sm text-gray-500">
-                {order.userName || "No Name"} —{" "}
+                {(order.userName || order.address?.fullName || "No Name")} —{" "}
                 <span className="text-blue-600">{order.status}</span>
               </p>
             </button>
@@ -293,6 +352,11 @@ export default function OrderManager() {
               <strong>Status:</strong>{" "}
               <span className="text-blue-600">{selected.status}</span>
             </p>
+            {selected.paymentMethod && (
+              <p className="mt-1">
+                <strong>Payment:</strong> {selected.paymentMethod.toUpperCase()} ({selected.paymentStatus || 'pending'})
+              </p>
+            )}
 
             <hr className="my-4" />
 
@@ -339,7 +403,7 @@ export default function OrderManager() {
                   onClick={() => updateStatus(selected.id, status)}
                   className={`px-2 py-1 text-sm rounded-md ${
                     status === selected.status
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[#2e4493] text-white"
                       : "bg-gray-200 hover:bg-gray-300"
                   }`}
                 >
@@ -347,6 +411,29 @@ export default function OrderManager() {
                 </button>
               ))}
             </div>
+
+            {/* Payment Actions for COD */}
+            {selected.paymentMethod === 'cod' && (
+              <div className="mt-4">
+                <h4 className="font-semibold mb-2 text-sm">Payment</h4>
+                <button
+                  onClick={async () => {
+                    try {
+                      await updateDoc(doc(db, 'orders', selected.id), { paymentStatus: 'paid' });
+                      setSelected((prev) => ({ ...prev, paymentStatus: 'paid' }));
+                      setOrders((prev) => prev.map((o) => o.id === selected.id ? { ...o, paymentStatus: 'paid' } : o));
+                    } catch (e) {
+                      console.warn('Failed to update payment status', e);
+                    }
+                  }}
+                  className={`px-3 py-2 text-xs rounded-md ${selected.paymentStatus === 'paid' ? 'bg-green-600 text-white' : 'bg-[#2e4493] text-white hover:bg-[#131a2f]'}`}
+                  disabled={selected.paymentStatus === 'paid'}
+                  title={selected.paymentStatus === 'paid' ? 'Payment already marked as received' : 'Mark cash as received'}
+                >
+                  {selected.paymentStatus === 'paid' ? 'Cash Received' : 'Mark Cash Received'}
+                </button>
+              </div>
+            )}
 
             <button
               onClick={() => openChatForUser(selected.userId)}

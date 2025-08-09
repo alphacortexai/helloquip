@@ -23,6 +23,7 @@ export default function CompleteProfile() {
       createdAt: new Date()
     });
 
+    try { sessionStorage.setItem('forceScrollTop', '1'); } catch {}
     router.push("/"); // Done
   };
 
