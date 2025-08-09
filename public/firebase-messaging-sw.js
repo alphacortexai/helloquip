@@ -30,9 +30,22 @@ messaging.onBackgroundMessage(function (payload) {
 
 self.addEventListener('notificationclick', function(event) {
   const data = event.notification?.data || {};
-  const targetUrl = data.link || data.target || '/';
+  // If this notification was sent from admin user messenger (no navigation desired), do nothing
+  const isAdminManual = data.source === 'adminManual';
+  const targetUrl = isAdminManual ? null : (data.link || data.target || '/');
   event.notification.close();
   event.waitUntil((async () => {
+    if (!targetUrl) {
+      // Explicitly avoid navigation for adminManual notifications
+      const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clientsList) {
+        if ('focus' in client) {
+          await client.focus();
+          return;
+        }
+      }
+      return;
+    }
     const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of clientList) {
       if ('focus' in client) {

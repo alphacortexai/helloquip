@@ -155,7 +155,7 @@ export async function POST(req) {
       );
     }
 
-    const { fcmToken, title, body, target, link } = await req.json();
+    const { fcmToken, title, body, target, link, data: extraData } = await req.json();
 
     if (!fcmToken) {
       return new Response(
@@ -164,20 +164,31 @@ export async function POST(req) {
       );
     }
 
-    let resolvedLink = link || null;
+    const isAdminManual = !!(extraData && extraData.source === 'adminManual');
+    const hostedBase = 'https://helloquip.vercel.app';
+
+    let resolvedLink = null;
     try {
-      if (!resolvedLink) {
+      if (isAdminManual) {
+        // Respect provided link or origin for admin manual notifications
         const headers = req.headers;
-        const origin = headers.get?.("origin") || process.env.PUBLIC_BASE_URL || "http://localhost:3000";
-        if (target) {
-          resolvedLink = new URL(target, origin).toString();
+        const origin = headers.get?.("origin") || process.env.PUBLIC_BASE_URL || hostedBase;
+        const base = origin || hostedBase;
+        if (link) {
+          resolvedLink = link;
+        } else if (target) {
+          resolvedLink = new URL(target, base).toString();
         } else {
-          resolvedLink = origin;
+          resolvedLink = base;
         }
+      } else {
+        // Force links to use the production domain for all other FCMs
+        const base = hostedBase;
+        resolvedLink = new URL(target || '/', base).toString();
       }
     } catch {}
 
-    const dataPayload = {};
+    const dataPayload = { ...(extraData || {}) };
     if (target) dataPayload.target = target;
     if (resolvedLink) dataPayload.link = resolvedLink;
 
