@@ -102,6 +102,7 @@
 import admin from "firebase-admin";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import path from "path";
+import { getFirestore } from "firebase-admin/firestore";
 
 let initErrorMessage = null;
 
@@ -156,7 +157,7 @@ export async function POST(req) {
       );
     }
 
-    const { fcmToken, title, body, target, link, data: extraData } = await req.json();
+    const { fcmToken, title, body, target, link, data: extraData, userId, notificationType = "fcm" } = await req.json();
 
     console.log("📱 FCM Request:", { 
       hasToken: !!fcmToken, 
@@ -164,7 +165,9 @@ export async function POST(req) {
       title, 
       body,
       target,
-      link 
+      link,
+      userId,
+      notificationType
     });
 
     if (!fcmToken) {
@@ -234,6 +237,39 @@ export async function POST(req) {
     const response = await admin.messaging().send(message);
 
     console.log("✅ FCM sent successfully:", response);
+
+    // Now add the FCM message ID and user ID to the data payload for tracking
+    dataPayload.fcmMessageId = response;
+    dataPayload.userId = userId;
+
+    // Save notification to Firestore for tracking
+    if (userId) {
+      try {
+        const db = getFirestore();
+        const notificationData = {
+          userId,
+          title: title || "",
+          body: body || "",
+          target: target || "",
+          link: resolvedLink || "",
+          type: notificationType,
+          fcmToken: fcmToken.substring(0, 20) + "...", // Store partial token for reference
+          fcmMessageId: response, // FCM message ID for tracking
+          status: "sent",
+          read: false,
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          readAt: null,
+          data: dataPayload,
+          source: extraData?.source || "system"
+        };
+
+        await db.collection("notifications").add(notificationData);
+        console.log("📝 Notification saved to Firestore for tracking");
+      } catch (trackingError) {
+        console.warn("⚠️ Failed to save notification for tracking:", trackingError.message);
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: true, response }),
       { status: 200, headers: { "Content-Type": "application/json" } }

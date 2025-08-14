@@ -73,7 +73,25 @@ export default function UserMessenger() {
       const tgt = notifTarget.trim();
       if (tgt) docData.target = tgt;
 
-      await addDoc(collection(db, "messages"), docData);
+      const messageRef = await addDoc(collection(db, "messages"), docData);
+
+      // Track this notification in the notifications collection
+      const notificationData = {
+        userId: selectedUser.id,
+        title: t || "Admin Notification",
+        body: notifBody.trim(),
+        target: tgt || "",
+        type: "in_app",
+        status: "sent",
+        read: false,
+        sentAt: serverTimestamp(),
+        readAt: null,
+        source: "admin_manual",
+        adminSender: "admin", // Track that this was sent by admin
+        messageId: messageRef.id // Use the actual document ID
+      };
+      await addDoc(collection(db, "notifications"), notificationData);
+
       setNotifTitle("");
       setNotifBody("");
       setNotifTarget("");
@@ -106,6 +124,8 @@ export default function UserMessenger() {
           target: notifTarget || undefined,
           link,
           data: { source: 'adminManual' },
+          userId: selectedUser.id, // Add userId for tracking
+          notificationType: "fcm"
         }),
       });
       const info = await res.json().catch(() => ({}));

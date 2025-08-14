@@ -295,7 +295,15 @@ export default function OrderManager() {
           const res = await fetch('/api/send-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderId}`, link: deepLink })
+            body: JSON.stringify({ 
+              fcmToken, 
+              title, 
+              body, 
+              target: `/order/${orderId}`, 
+              link: deepLink,
+              userId: updated.userId,
+              notificationType: "fcm"
+            })
           });
           
           const result = await res.json();
@@ -311,7 +319,7 @@ export default function OrderManager() {
         console.warn("⚠️ No FCM token found for user:", updated.userId);
       }
       // Always create in-app notification so it appears in the UI
-      await addDoc(collection(db, "messages"), {
+      const messageData = {
         from: "system",
         to: updated.userId,
         title,
@@ -322,7 +330,26 @@ export default function OrderManager() {
         orderId,
         target: `/order/${orderId}`,
         read: false,
-      });
+      };
+      
+      const messageRef = await addDoc(collection(db, "messages"), messageData);
+
+      // Track this in-app notification in the notifications collection
+      const notificationData = {
+        userId: updated.userId,
+        title,
+        body,
+        target: `/order/${orderId}`,
+        type: "in_app",
+        status: "sent",
+        read: false,
+        sentAt: serverTimestamp(),
+        readAt: null,
+        source: "order_status_update",
+        orderId,
+        messageId: messageRef.id // Use the actual document ID
+      };
+      await addDoc(collection(db, "notifications"), notificationData);
     } catch (e) {
       console.warn('Order status notify failed', e);
     }

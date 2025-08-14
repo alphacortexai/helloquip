@@ -26,6 +26,7 @@ import FeedbackManager from "./components/FeedbackManager";
 import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
 import DisplaySettings from "./components/DisplaySettings";
+import NotificationTracker from "./components/NotificationTracker";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -211,6 +212,15 @@ const tabs = [
     bgColor: "bg-gray-50",
     borderColor: "border-gray-100"
   },
+  {
+    id: "notificationTracker",
+    icon: <BellIcon className="w-5 h-5" />,
+    label: "Notification Tracker",
+    description: "Track FCM and in-app notifications",
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -359,6 +369,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <UserMessenger />;
       case "displaySettings":
         return <DisplaySettings />;
+      case "notificationTracker":
+        return <NotificationTracker />;
       default:
         return null;
     }

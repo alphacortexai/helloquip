@@ -1,7 +1,7 @@
 // public/firebase-messaging-sw.js
 
-importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js");
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyBeQ9zNaX7jzbXH5sh540BaCjSDDBtclLc",
@@ -28,38 +28,43 @@ messaging.onBackgroundMessage(function (payload) {
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// Handle notification clicks
 self.addEventListener('notificationclick', function(event) {
-  const data = event.notification?.data || {};
-  // If this notification was sent from admin user messenger (no navigation desired), do nothing
-  const isAdminManual = data.source === 'adminManual';
-  const targetUrl = isAdminManual ? null : (data.link || data.target || '/');
+  console.log('[firebase-messaging-sw.js] Notification click received:', event);
+  
   event.notification.close();
-  event.waitUntil((async () => {
-    if (!targetUrl) {
-      // Explicitly avoid navigation for adminManual notifications
-      const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      for (const client of clientsList) {
-        if ('focus' in client) {
-          await client.focus();
-          return;
-        }
-      }
-      return;
-    }
-    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of clientList) {
-      if ('focus' in client) {
-        await client.focus();
-      }
-      if (targetUrl && 'navigate' in client) {
-        try {
-          await client.navigate(targetUrl);
-          return;
-        } catch (e) {}
-      }
-    }
-    if (self.clients.openWindow) {
-      await self.clients.openWindow(targetUrl);
-    }
-  })());
+
+  // Extract data from the notification
+  const data = event.notification.data;
+  const fcmMessageId = data?.fcmMessageId;
+  const userId = data?.userId;
+  const link = data?.link;
+
+  if (fcmMessageId && userId) {
+    // Mark the FCM notification as read
+    fetch('/api/mark-fcm-read', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fcmMessageId,
+        userId
+      })
+    }).catch(error => {
+      console.error('Error marking FCM notification as read:', error);
+    });
+  }
+
+  // Open the target URL if available
+  if (link) {
+    event.waitUntil(
+      clients.openWindow(link)
+    );
+  } else {
+    // Default behavior - open the app
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  }
 });

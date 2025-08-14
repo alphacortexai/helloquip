@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter, usePathname } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import SearchBar from "@/components/SearchBar";
-import { collection, onSnapshot, query, where, orderBy, doc, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from "firebase/firestore";
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
@@ -98,7 +98,25 @@ export default function Navbar() {
       const unread = notificationItems.filter((n) => !n.read);
       for (const n of unread) {
         try {
+          // Mark as read in messages collection
           await updateDoc(doc(db, "messages", n.id), { read: true });
+          
+          // Also mark as read in notifications collection if it exists
+          // We need to find the corresponding notification by messageId
+          const notificationsQuery = query(
+            collection(db, "notifications"),
+            where("userId", "==", user.uid),
+            where("messageId", "==", n.id)
+          );
+          const notificationsSnapshot = await getDocs(notificationsQuery);
+          if (!notificationsSnapshot.empty) {
+            const notificationDoc = notificationsSnapshot.docs[0];
+            await updateDoc(doc(db, "notifications", notificationDoc.id), {
+              read: true,
+              readAt: new Date(),
+            });
+            console.log("✅ Synced read status to notifications collection:", notificationDoc.id);
+          }
         } catch (e) {
           console.warn("Failed to mark notification read", e);
         }
