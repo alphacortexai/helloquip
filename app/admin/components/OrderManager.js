@@ -280,18 +280,35 @@ export default function OrderManager() {
       const summary = items.length > 3 ? `${items.slice(0,3).join(", ")} and ${items.length-3} more` : items.join(", ");
       const shortId = orderId.slice(0,6).toUpperCase();
       const body = `Your order ${shortId} (${summary}, UGX ${Number(total||0).toLocaleString()}) changed from ${prev || 'previous'} to ${newStatus}.`;
-      let pushed = false;
       if (fcmToken) {
         try {
           const origin = typeof window !== 'undefined' ? window.location.origin : '';
           const deepLink = `${origin}/order/${orderId}`;
+          console.log("📱 Attempting to send FCM notification:", {
+            orderId,
+            userId: updated.userId,
+            tokenLength: fcmToken?.length,
+            title,
+            body: body.substring(0, 50) + "..."
+          });
+          
           const res = await fetch('/api/send-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderId}`, link: deepLink })
           });
-          // We still create an in-app notification regardless of push result
-        } catch {}
+          
+          const result = await res.json();
+          if (result.success) {
+            console.log("✅ FCM notification sent successfully");
+          } else {
+            console.error("❌ FCM notification failed:", result.error, result.code);
+          }
+        } catch (fcmError) {
+          console.error("❌ FCM request failed:", fcmError.message);
+        }
+      } else {
+        console.warn("⚠️ No FCM token found for user:", updated.userId);
       }
       // Always create in-app notification so it appears in the UI
       await addDoc(collection(db, "messages"), {

@@ -77,6 +77,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
   const fetchProducts = useCallback(
     async (startAfterDoc = null, reset = false) => {
+      console.log("🔄 fetchProducts called:", { startAfterDoc: !!startAfterDoc, reset, loading, hasMore });
       setLoading(true);
       try {
         const constraints = [orderBy("name")]; // No category filtering anymore
@@ -94,6 +95,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           id: doc.id,
           ...doc.data(),
         }));
+
+        console.log("📦 Fetched products:", fetchedProducts.length, "from database");
 
         // Filter by similarity
         let filteredProducts = fetchedProducts;
@@ -128,27 +131,34 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
               tagMatch
             );
           });
+
+          console.log("🔍 After filtering:", filteredProducts.length, "products remain");
         }
 
         if (reset) {
           setProducts(filteredProducts);
+          console.log("🔄 Reset: Set products to", filteredProducts.length);
         } else {
           setProducts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
             const newUnique = filteredProducts.filter((p) => !existingIds.has(p.id));
+            const totalProducts = prev.length + newUnique.length;
+            console.log("➕ Added", newUnique.length, "new products. Total now:", totalProducts);
             return [...prev, ...newUnique];
           });
         }
 
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         setLastVisible(lastVisibleDoc);
-        setHasMore(querySnapshot.docs.length === batchSize);
+        const hasMoreProducts = querySnapshot.docs.length === batchSize;
+        setHasMore(hasMoreProducts);
+        console.log("📊 Has more products:", hasMoreProducts, "Last visible:", !!lastVisibleDoc);
       } catch (err) {
-        console.error("Error fetching products:", err);
+        console.error("❌ Error fetching products:", err);
       }
       setLoading(false);
     },
-    [keyword, tags, manufacturer, name] // removed selectedCategory from dependencies
+    [keyword, tags, manufacturer, name] // Removed loading and hasMore from dependencies
   );
 
   // Fetch trending product IDs on component mount
@@ -156,7 +166,16 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     fetchTrendingProductIds();
   }, [fetchTrendingProductIds]);
 
+  // Only reset when search criteria actually change
   useEffect(() => {
+    const searchCriteria = {
+      keyword: keyword || "",
+      name: name || "",
+      manufacturer: manufacturer || "",
+      tags: JSON.stringify(tags || [])
+    };
+    
+    console.log("🔄 Component reset triggered by:", searchCriteria);
     setProducts([]);
     setLastVisible(null);
     setHasMore(true);
@@ -165,28 +184,46 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     keyword || "",
     name || "",
     manufacturer || "",
-    JSON.stringify(tags || []),
-    fetchProducts,
+    JSON.stringify(tags || [])
   ]);
 
   useEffect(() => {
-    if (loading || !hasMore) return;
+    if (loading || !hasMore) {
+      console.log("🚫 Scroll listener not added:", { loading, hasMore });
+      return;
+    }
 
     const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 500
-      ) {
+      const windowHeight = window.innerHeight;
+      const scrollY = window.scrollY;
+      const documentHeight = document.body.offsetHeight;
+      const threshold = 2000; // Increased to 2000px for much earlier triggering
+      const shouldLoadMore = windowHeight + scrollY >= documentHeight - threshold;
+      
+      console.log("📱 Scroll check:", {
+        windowHeight,
+        scrollY,
+        documentHeight,
+        threshold,
+        shouldLoadMore,
+        hasMore,
+        loading
+      });
+
+      if (shouldLoadMore) {
+        console.log("🚀 Triggering load more products");
         fetchProducts(lastVisible);
       }
     };
 
     if (!scrollListenerAdded.current) {
+      console.log("👂 Adding scroll listener");
       window.addEventListener("scroll", handleScroll);
       scrollListenerAdded.current = true;
     }
 
     return () => {
+      console.log("👋 Removing scroll listener");
       window.removeEventListener("scroll", handleScroll);
       scrollListenerAdded.current = false;
     };

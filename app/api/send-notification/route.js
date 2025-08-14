@@ -149,6 +149,7 @@ if (!admin.apps.length) {
 export async function POST(req) {
   try {
     if (!admin.apps.length) {
+      console.error("❌ Firebase Admin not initialized:", initErrorMessage);
       return new Response(
         JSON.stringify({ success: false, error: initErrorMessage || "Firebase Admin not initialized" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -157,9 +158,28 @@ export async function POST(req) {
 
     const { fcmToken, title, body, target, link, data: extraData } = await req.json();
 
+    console.log("📱 FCM Request:", { 
+      hasToken: !!fcmToken, 
+      tokenLength: fcmToken?.length,
+      title, 
+      body,
+      target,
+      link 
+    });
+
     if (!fcmToken) {
+      console.error("❌ Missing FCM token");
       return new Response(
         JSON.stringify({ success: false, error: "Missing fcmToken" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate FCM token format
+    if (typeof fcmToken !== 'string' || fcmToken.length < 100) {
+      console.error("❌ Invalid FCM token format:", { length: fcmToken?.length, type: typeof fcmToken });
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid FCM token format" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -186,7 +206,9 @@ export async function POST(req) {
         const base = hostedBase;
         resolvedLink = new URL(target || '/', base).toString();
       }
-    } catch {}
+    } catch (e) {
+      console.warn("⚠️ Link resolution failed:", e.message);
+    }
 
     const dataPayload = { ...(extraData || {}) };
     if (target) dataPayload.target = target;
@@ -202,16 +224,42 @@ export async function POST(req) {
       data: dataPayload,
     };
 
+    console.log("📤 Sending FCM message:", {
+      token: fcmToken.substring(0, 20) + "...",
+      title: message.notification.title,
+      body: message.notification.body,
+      hasLink: !!resolvedLink
+    });
+
     const response = await admin.messaging().send(message);
 
+    console.log("✅ FCM sent successfully:", response);
     return new Response(
       JSON.stringify({ success: true, response }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error("❌ FCM Error Details:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      errorType: error.constructor.name
+    });
+    
+    // Handle specific FCM error codes
+    let errorMessage = error.message;
+    if (error.code === 'messaging/invalid-registration-token') {
+      errorMessage = "Invalid FCM token - user may need to refresh";
+    } else if (error.code === 'messaging/registration-token-not-registered') {
+      errorMessage = "FCM token not registered - user device not found";
+    } else if (error.code === 'messaging/quota-exceeded') {
+      errorMessage = "FCM quota exceeded";
+    } else if (error.code === 'messaging/unauthorized') {
+      errorMessage = "FCM unauthorized - check service account permissions";
+    }
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: errorMessage, code: error.code }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
