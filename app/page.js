@@ -5,7 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
-import AIChatWidget from "@/components/AIChatWidget";
+
 import dynamic from "next/dynamic";
 
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
@@ -19,6 +19,32 @@ export default function Home() {
   const [allProducts, setAllProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
+
+  // Add Chatbase script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.innerHTML = `
+      (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="YjfFX_pbiOV68QfZ3kplW";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+    `;
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup script when component unmounts
+      const existingScript = document.querySelector('script[src*="chatbase.co"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
+  // Alternative: If the script doesn't work, you can use this iframe instead
+  // Replace the useEffect above with this iframe in the JSX:
+  // <iframe
+  //   src="https://www.chatbase.co/chatbot-iframe/YjfFX_pbiOV68QfZ3kplW"
+  //   width="100%"
+  //   style={{ height: "100%", minHeight: "700px" }}
+  //   frameBorder="0"
+  // />
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -149,7 +175,7 @@ export default function Home() {
                 </section>
               </div>
             </div>
-        <AIChatWidget />
+
       </div>
     </>
   );

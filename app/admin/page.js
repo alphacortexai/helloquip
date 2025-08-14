@@ -18,13 +18,11 @@ import EditProducts from "./components/EditProducts";
 import OrderManager from "./components/OrderManager";
 import SubCategoryForm from "./components/SubCategoryForm";
 import EditSubCategoryForm from "./components/EditSubCategoryForm";
-import AdminChatPanel from "./chat/page";
 import SummaryCard from "./components/SummaryCard";
 import DraftsList from "./components/DraftsList";
 import { useRouter, useSearchParams } from "next/navigation";
 import QuotationViewer from "./components/QuotationViewer";
 import FeedbackManager from "./components/FeedbackManager";
-import ChatLogsPage from "./chat-logs/page";
 import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
 import { db } from "@/lib/firebase";
@@ -37,7 +35,6 @@ import {
   ListBulletIcon,
   BuildingStorefrontIcon,
   FireIcon,
-  ChatBubbleLeftRightIcon,
   TruckIcon,
   ChatBubbleLeftIcon,
   ChartBarIcon,
@@ -157,15 +154,7 @@ const tabs = [
     bgColor: "bg-emerald-50",
     borderColor: "border-emerald-100"
   },
-  { 
-    id: "chats", 
-    icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />, 
-    label: "Chat",
-    description: "Customer support chat",
-    color: "text-violet-600",
-    bgColor: "bg-violet-50",
-    borderColor: "border-violet-100"
-  },
+
   { 
     id: "drafts", 
     icon: <ChartBarIcon className="w-5 h-5" />, 
@@ -193,15 +182,7 @@ const tabs = [
     bgColor: "bg-rose-50",
     borderColor: "border-rose-100"
   },
-  { 
-    id: "chatLogs", 
-    icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />, 
-    label: "Chat Logs",
-    description: "Monitor AI conversations",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-100"
-  },
+
   { 
     id: "notifications", 
     icon: <BellIcon className="w-5 h-5" />, 
@@ -213,7 +194,7 @@ const tabs = [
   },
   { 
     id: "userMessenger", 
-    icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />, 
+    icon: <ChatBubbleLeftIcon className="w-5 h-5" />, 
     label: "User Messenger",
     description: "Message or notify a user",
     color: "text-blue-600",
@@ -264,9 +245,7 @@ function AdminDashboard({ currentAdminUid }) {
     }
   };
   
-  const openChatForUser = (userId) => {
-    router.push(`/admin/chat?userId=${userId}`); 
-  };
+  
 
   // Keep URL in sync with selected tab so back/forward works
   useEffect(() => {
@@ -358,14 +337,12 @@ function AdminDashboard({ currentAdminUid }) {
         return <EditSubCategoryForm />;
       case "drafts":
         return <DraftsList />;
-      case "chats":
-         return <AdminChatPanel />;
+
       case "quatations":
         return <QuotationViewer />
       case "feedback":
         return <FeedbackManager />
-      case "chatLogs":
-        return <ChatLogsPage />;
+
       case "notifications":
         return <AdminNotifications />;
       case "userMessenger":
