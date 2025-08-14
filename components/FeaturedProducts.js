@@ -16,9 +16,10 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
+import { useDisplaySettings } from "@/lib/useDisplaySettings";
 
 // Helper to decode URL and pick preferred size
-const getPreferredImageUrl = (imageUrl) => {
+const getPreferredImageUrl = (imageUrl, customResolution = null) => {
   if (!imageUrl) return null;
 
   // If it's a string, decode and return
@@ -30,10 +31,17 @@ const getPreferredImageUrl = (imageUrl) => {
     }
   }
 
-  // If it's an object with sizes, prefer 680x680 or original or first
+  // If it's an object with sizes, use custom resolution or fallback
   if (typeof imageUrl === "object") {
-    const preferred =
-      imageUrl["200x200"] || imageUrl["original"] || Object.values(imageUrl)[0];
+    let preferred;
+    
+    if (customResolution && imageUrl[customResolution]) {
+      preferred = imageUrl[customResolution];
+    } else {
+      // Fallback to 200x200 or original or first available
+      preferred = imageUrl["200x200"] || imageUrl["original"] || Object.values(imageUrl)[0];
+    }
+    
     try {
       return decodeURIComponent(preferred);
     } catch {
@@ -45,6 +53,7 @@ const getPreferredImageUrl = (imageUrl) => {
 };
 
 export default function FeaturedProducts({ selectedCategory, keyword, tags, manufacturer, name }) {
+  const { featuredCardResolution, loading: settingsLoading } = useDisplaySettings();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -198,7 +207,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }, 200);
   };
 
-  if (products.length === 0 && !loading) {
+  if (products.length === 0 && !loading && !settingsLoading) {
     return (
       <div>
         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
@@ -249,7 +258,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                   sku,
                   price,
                   discount,
-                  image: getPreferredImageUrl(imageUrl),
+                  image: getPreferredImageUrl(imageUrl, featuredCardResolution), // Fixed: Now uses dynamic resolution
                 }}
               />
             </div>

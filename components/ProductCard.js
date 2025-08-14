@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick }) => {
+const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Helper hey bro function to get the appropriate image URL based on variant and size
@@ -15,6 +15,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
         case 'mobilecarousel':
           return product.imageUrl['200x200'] || product.imageUrl['100x100'] || product.imageUrl.original;
         case 'compact':
+          if (customResolution && product.imageUrl[customResolution]) {
+            return product.imageUrl[customResolution];
+          }
           return product.imageUrl['100x100'] || product.imageUrl['90x90'] || product.imageUrl.original;
         default:
           return product.imageUrl['680x680'] || product.imageUrl['200x200'] || product.imageUrl.original;

@@ -25,6 +25,7 @@ import QuotationViewer from "./components/QuotationViewer";
 import FeedbackManager from "./components/FeedbackManager";
 import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
+import DisplaySettings from "./components/DisplaySettings";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -192,7 +193,7 @@ const tabs = [
     bgColor: "bg-red-50",
     borderColor: "border-red-100"
   },
-  { 
+    { 
     id: "userMessenger", 
     icon: <ChatBubbleLeftIcon className="w-5 h-5" />, 
     label: "User Messenger",
@@ -200,6 +201,15 @@ const tabs = [
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     borderColor: "border-blue-100"
+  },
+  { 
+    id: "displaySettings", 
+    icon: <CogIcon className="w-5 h-5" />, 
+    label: "Display Settings",
+    description: "Configure product display options",
+    color: "text-gray-600",
+    bgColor: "bg-gray-50",
+    borderColor: "border-gray-100"
   },
 ];
 
@@ -347,6 +357,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <AdminNotifications />;
       case "userMessenger":
         return <UserMessenger />;
+      case "displaySettings":
+        return <DisplaySettings />;
       default:
         return null;
     }
