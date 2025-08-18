@@ -11,6 +11,7 @@ import {
   query,
   where,
   orderBy,
+  getDoc,
 } from "firebase/firestore";
 import {
   ref,
@@ -46,6 +47,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const [productCode, setProductCode] = useState("");
   const [isDraft, setIsDraft] = useState(existingProduct?.isDraft || false);
   const [loading, setLoading] = useState(false);
+  const [userNames, setUserNames] = useState({});
 
   const generateUniqueSKU = async () => {
     let unique = false;
@@ -136,10 +138,41 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         ...doc.data()
       }));
       setShops(shopsData);
+
+      // Fetch user names for all unique createdBy IDs
+      const uniqueUserIds = [...new Set(shopsData.map(shop => shop.createdBy).filter(Boolean))];
+      await fetchUserNames(uniqueUserIds);
     } catch (error) {
       console.error("Error fetching shops:", error);
     }
   };
+
+         const fetchUserNames = async (userIds) => {
+         try {
+           const names = {};
+           for (const userId of userIds) {
+             try {
+               // Get the user document directly by ID (since user ID is the document ID)
+               const userDocRef = doc(db, "users", userId);
+               const userDocSnap = await getDoc(userDocRef);
+               
+               if (userDocSnap.exists()) {
+                 const userData = userDocSnap.data();
+                 // Get the name field from the user document
+                 names[userId] = userData.name || userId;
+               } else {
+                 names[userId] = userId; // Fallback to ID if user not found
+               }
+             } catch (error) {
+               console.warn(`Error fetching user ${userId}:`, error);
+               names[userId] = userId; // Fallback to ID
+             }
+           }
+           setUserNames(names);
+         } catch (error) {
+           console.error("Error fetching user names:", error);
+         }
+       };
 
   const fetchSubCategories = async () => {
     if (!category) {
@@ -274,22 +307,54 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    const requiredFields = {
+      name: name.trim(),
+      description: description.trim(),
+      price: price,
+      category: category,
+      selectedShop: selectedShop
+    };
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value)
+      .map(([key]) => key);
+    
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+    
+    if (!existingProduct && !image) {
+      alert('Please select a main image for the product');
+      return;
+    }
+    
     setLoading(true);
+
+    console.log("🚀 Form submission started");
+    console.log("📝 Existing product:", existingProduct);
+    console.log("📝 Form data:", {
+      name, description, price, category, subCategory, selectedShop,
+      image: image?.name, imageUrl, extraImages: extraImages.length
+    });
 
     try {
       let mainImageUrl = existingProduct?.imageUrl || null;
       let extraImageUrlsArray = existingProduct?.extraImageUrls || [];
 
       if (image) {
-        console.log("Uploading image:", image.name, image.size);
+        console.log("📤 Uploading new image:", image.name, image.size);
         const imageRef = ref(storage, `products/${Date.now()}_${image.name}`);
         const snapshot = await uploadBytes(imageRef, image);
         const originalUrl = await getDownloadURL(snapshot.ref);
         mainImageUrl = generateResizedUrls(originalUrl);
-        console.log("Image uploaded successfully:", mainImageUrl);
+        console.log("✅ Image uploaded successfully:", mainImageUrl);
       }
 
       if (extraImages.length > 0) {
+        console.log("📤 Uploading extra images:", extraImages.length);
         extraImageUrlsArray = [];
         const uploadPromises = extraImages.map(async (img, index) => {
           const imageRef = ref(storage, `products/extra/${Date.now()}_${index}_${img.name}`);
@@ -298,6 +363,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
           return generateResizedUrls(originalUrl);
         });
         extraImageUrlsArray = await Promise.all(uploadPromises);
+        console.log("✅ Extra images uploaded successfully");
       }
 
       const selectedShopData = shops.find(shop => shop.id === selectedShop);
@@ -327,20 +393,32 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         productCode: productCode.trim(),
         slug: generateSlug(name),
         isDraft,
-        createdAt: existingProduct ? existingProduct.createdAt : new Date(),
         updatedAt: new Date(),
         status: isDraft ? "draft" : "active"
       };
 
-      if (existingProduct) {
-        await updateDoc(doc(db, "products", existingProduct.id), productData);
-      } else {
-        await addDoc(collection(db, "products"), productData);
+      // Only add createdAt for new products, not for updates
+      if (!existingProduct) {
+        productData.createdAt = new Date();
       }
 
+      console.log("💾 Saving product data:", productData);
+
+      if (existingProduct) {
+        console.log("🔄 Updating existing product:", existingProduct.id);
+        await updateDoc(doc(db, "products", existingProduct.id), productData);
+        console.log("✅ Product updated successfully");
+      } else {
+        console.log("🆕 Creating new product");
+        await addDoc(collection(db, "products"), productData);
+        console.log("✅ Product created successfully");
+      }
+
+      console.log("🎉 Form submission completed successfully");
       onSuccess();
     } catch (error) {
-      console.error("Error saving product:", error);
+      console.error("❌ Error saving product:", error);
+      alert(`Error saving product: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -388,9 +466,11 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
             className="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
           >
             <option value="">Select shop</option>
-            {shops.map((shop) => (
-              <option key={shop.id} value={shop.id}>{shop.name}</option>
-            ))}
+                     {shops.map((shop) => (
+           <option key={shop.id} value={shop.id}>
+             {shop.name} {shop.createdBy && `(by ${userNames[shop.createdBy] || shop.createdBy})`}
+           </option>
+         ))}
           </select>
         </div>
       </div>
@@ -642,10 +722,13 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Images</h3>
         
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Main Image *</label>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Main Image {!existingProduct ? '*' : ''}
+          </label>
           <input
             type="file"
             accept="image/*"
+            required={!existingProduct}
             onChange={(e) => {
               const file = e.target.files[0];
               if (file) {
@@ -658,8 +741,19 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+          {existingProduct && existingProduct.imageUrl && !imagePreview && (
+            <div className="mt-2">
+              <p className="text-xs text-gray-500 mb-2">Current image:</p>
+              <img 
+                src={typeof existingProduct.imageUrl === 'object' ? existingProduct.imageUrl.original : existingProduct.imageUrl} 
+                alt="Current Product Image" 
+                className="max-w-sm h-auto rounded-md" 
+              />
+            </div>
+          )}
           {imagePreview && (
             <div className="mt-2">
+              <p className="text-xs text-gray-500 mb-2">New image preview:</p>
               <img src={imagePreview} alt="Main Image Preview" className="max-w-sm h-auto rounded-md" />
             </div>
           )}

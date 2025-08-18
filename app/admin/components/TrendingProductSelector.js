@@ -21,14 +21,47 @@ export default function TrendingProductSelector() {
   const [selectedShopId, setSelectedShopId] = useState("");
   const [trendingProductIds, setTrendingProductIds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [userNames, setUserNames] = useState({});
 
   useEffect(() => {
     const fetchShops = async () => {
       const snapshot = await getDocs(collection(db, "shops"));
-      setShops(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const shopsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setShops(shopsData);
+
+      // Fetch user names for all unique createdBy IDs
+      const uniqueUserIds = [...new Set(shopsData.map(shop => shop.createdBy).filter(Boolean))];
+      await fetchUserNames(uniqueUserIds);
     };
     fetchShops();
   }, []);
+
+         const fetchUserNames = async (userIds) => {
+         try {
+           const names = {};
+           for (const userId of userIds) {
+             try {
+               // Get the user document directly by ID (since user ID is the document ID)
+               const userDocRef = doc(db, "users", userId);
+               const userDocSnap = await getDoc(userDocRef);
+               
+               if (userDocSnap.exists()) {
+                 const userData = userDocSnap.data();
+                 // Get the name field from the user document
+                 names[userId] = userData.name || userId;
+               } else {
+                 names[userId] = userId; // Fallback to ID if user not found
+               }
+             } catch (error) {
+               console.warn(`Error fetching user ${userId}:`, error);
+               names[userId] = userId; // Fallback to ID
+             }
+           }
+           setUserNames(names);
+         } catch (error) {
+           console.error("Error fetching user names:", error);
+         }
+       };
 
   useEffect(() => {
     const fetchTrendingProducts = async () => {
@@ -174,11 +207,11 @@ export default function TrendingProductSelector() {
         className="w-full max-w-sm p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
       >
         <option value="">Select a shop</option>
-        {shops.map((shop) => (
-          <option key={shop.id} value={shop.id}>
-            {shop.name}
-          </option>
-        ))}
+                 {shops.map((shop) => (
+           <option key={shop.id} value={shop.id}>
+             {shop.name} {shop.createdBy && `(by ${userNames[shop.createdBy] || shop.createdBy})`}
+           </option>
+         ))}
       </select>
 
       {products.length > 0 && (

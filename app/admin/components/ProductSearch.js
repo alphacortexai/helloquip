@@ -11,6 +11,8 @@ import {
   orderBy,
   limit,
   startAfter,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 
 function normalizeText(v) {
@@ -52,25 +54,58 @@ function getThumbUrl(imageUrl) {
 }
 
 export default function ProductSearch() {
+  const [results, setResults] = useState([]);
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
   const [shops, setShops] = useState([]);
+  const [userNames, setUserNames] = useState({});
   const [selectedShopId, setSelectedShopId] = useState("");
   const [term, setTerm] = useState("");
   const [attributeTerm, setAttributeTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [detail, setDetail] = useState(null);
 
   // Load shops for filter
   useEffect(() => {
     (async () => {
       try {
         const snap = await getDocs(collection(db, "shops"));
-        setShops(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const shopsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setShops(shopsData);
+
+        // Fetch user names for all unique createdBy IDs
+        const uniqueUserIds = [...new Set(shopsData.map(shop => shop.createdBy).filter(Boolean))];
+        await fetchUserNames(uniqueUserIds);
       } catch {}
     })();
   }, []);
+
+                    const fetchUserNames = async (userIds) => {
+         try {
+           const names = {};
+           for (const userId of userIds) {
+             try {
+               // Get the user document directly by ID (since user ID is the document ID)
+               const userDocRef = doc(db, "users", userId);
+               const userDocSnap = await getDoc(userDocRef);
+               
+               if (userDocSnap.exists()) {
+                 const userData = userDocSnap.data();
+                 // Get the name field from the user document
+                 names[userId] = userData.name || userId;
+               } else {
+                 names[userId] = userId; // Fallback to ID if user not found
+               }
+             } catch (error) {
+               console.warn(`Error fetching user ${userId}:`, error);
+               names[userId] = userId; // Fallback to ID
+             }
+           }
+           setUserNames(names);
+         } catch (error) {
+           console.error("Error fetching user names:", error);
+         }
+       };
 
   const baseQuery = useMemo(() => {
     const base = [collection(db, "products")];
@@ -148,9 +183,11 @@ export default function ProductSearch() {
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
           >
             <option value="">All shops</option>
-            {shops.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
+                     {shops.map(s => (
+           <option key={s.id} value={s.id}>
+             {s.name} {s.createdBy && `(by ${userNames[s.createdBy] || s.createdBy})`}
+           </option>
+         ))}
           </select>
         </div>
       </div>

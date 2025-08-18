@@ -10,6 +10,8 @@ import LogoutButton from "./components/LogoutButton";
 import CategoryForm from "@/components/CategoryForm";
 import CategoryList from "./components/CategoryList";
 import ShopForm from "./components/ShopForm";
+import ShopManager from "./components/ShopManager";
+import CreateShopForm from "./components/CreateShopForm";
 import TrendingProductSelector from "./components/TrendingProductSelector";
 import TrendingProductList from "./components/TrendingProductList";
 import TrendingFromViews from "./components/TrendingFromViews";
@@ -92,6 +94,15 @@ const tabs = [
     color: "text-orange-600",
     bgColor: "bg-orange-50",
     borderColor: "border-orange-100"
+  },
+  { 
+    id: "manageShops", 
+    icon: <BuildingStorefrontIcon className="w-5 h-5" />, 
+    label: "Manage Shops",
+    description: "Edit and delete shops",
+    color: "text-teal-600",
+    bgColor: "bg-teal-50",
+    borderColor: "border-teal-100"
   },
   { 
     id: "selectTrending", 
@@ -340,7 +351,9 @@ function AdminDashboard({ currentAdminUid }) {
       case "manageCategories":
         return <CategoryList />;
       case "createShop":
-        return <ShopForm currentUserId={currentAdminUid} />;
+        return <CreateShopForm currentUserId={currentAdminUid} />;
+      case "manageShops":
+        return <ShopManager currentAdminUid={currentAdminUid} />;
       case "selectTrending":
         return <TrendingProductSelector />;
       case "viewTrending":
