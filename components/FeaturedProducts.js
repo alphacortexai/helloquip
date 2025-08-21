@@ -264,10 +264,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       )}
 
       <div className="max-w-7xl mx-auto px-1">
-        <div className="text-gray-500 text-sm font-semibold text-center uppercase mb-2">
+        <div className="text-white text-sm font-semibold text-center uppercase mb-2">
           {selectedCategory || "Similar Products"}
           {(keyword || name || manufacturer || (tags?.length > 0)) && (
-            <span className="block text-xs text-gray-600">
+            <span className="block text-xs text-gray-200">
               Filtered by:{" "}
               {[keyword, name, manufacturer, ...(tags || [])]
                 .filter(Boolean)

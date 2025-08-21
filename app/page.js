@@ -77,7 +77,7 @@ export default function Home() {
       )}
 
       {/* Main Layout */}
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-blue-600">
         {/* Desktop Layout */}
             <div className="hidden md:block">
               <div className="max-w-7xl mx-auto px-4 py-6">
@@ -115,7 +115,7 @@ export default function Home() {
 
                 {/* Featured Products */}
                 <div className="space-y-6">
-                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
+                  <section className="bg-white rounded-2xl shadow-sm p-6">
                     <FeaturedProducts selectedCategory={selectedCategory} />
                   </section>
 
