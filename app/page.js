@@ -77,7 +77,7 @@ export default function Home() {
       )}
 
       {/* Main Layout */}
-      <div className="min-h-screen bg-blue-600">
+      <div className="min-h-screen bg-[#2e4493]">
         {/* Desktop Layout */}
             <div className="hidden md:block">
               <div className="max-w-7xl mx-auto px-4 py-6">
