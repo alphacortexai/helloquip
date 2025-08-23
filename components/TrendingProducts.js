@@ -100,6 +100,7 @@ export default function TrendingProducts() {
 
         const fullProducts = (await Promise.all(productPromises)).filter(Boolean);
         setProducts(fullProducts);
+        setLoading(false); // Add this line to fix endless loading
         
       } catch (error) {
         console.warn("Network failed, trying cache…", error);
@@ -144,9 +145,9 @@ export default function TrendingProducts() {
         } catch (cacheErr) {
           console.error("No cache found for trending products:", cacheErr);
           setProducts([]); // Set empty array if both network and cache fail
+        } finally {
+          setLoading(false);
         }
-      } finally {
-        setLoading(false);
       }
     };
 

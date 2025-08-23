@@ -22,9 +22,10 @@ function cleanFirebaseUrl(url) {
   }
 }
 
-export default function Categories({ onCategorySelect, isSidebar = false }) {
+export default function Categories({ onCategorySelect, isSidebar = false, onLoadComplete }) {
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
+  const [loading, setLoading] = useState(true);
 
   const allCategory = {
     id: "all",
@@ -36,6 +37,7 @@ export default function Categories({ onCategorySelect, isSidebar = false }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        setLoading(true);
         const querySnapshot = await getDocs(collection(db, "categories"));
         const fetched = [];
         querySnapshot.forEach((doc) => {
@@ -47,11 +49,34 @@ export default function Categories({ onCategorySelect, isSidebar = false }) {
         setCategories([allCategory, ...fetched]);
       } catch (err) {
         console.error("Error loading categories:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchCategories();
   }, []);
+
+  // Call onLoadComplete when component is fully loaded
+  useEffect(() => {
+    if (!loading && categories.length > 0 && onLoadComplete) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        onLoadComplete();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, categories.length, onLoadComplete]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center text-gray-400 text-sm">
+        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500 mr-2"></div>
+        Loading categories...
+      </div>
+    );
+  }
 
   const handleCategoryClick = (cat) => {
     setSelectedCategoryId(cat.id);

@@ -19,6 +19,8 @@ export default function Home() {
   const [allProducts, setAllProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
+  const [featuredProductsLoaded, setFeaturedProductsLoaded] = useState(false);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   
   // Add Chatbase script
   useEffect(() => {
@@ -65,14 +67,36 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  // Check if all components are loaded (excluding trending products carousel)
+  const allComponentsLoaded = featuredProductsLoaded && categoriesLoaded;
 
+  // Hide loading spinner only when all components are ready
+  const showLoading = loading || !allComponentsLoaded;
+
+  // Scroll to top when loading completes
+  useEffect(() => {
+    if (allComponentsLoaded && !loading) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [allComponentsLoaded, loading]);
 
   return (
     <>
-      {/* Loading Spinner */}
-      {loading && (
+      {/* Loading Spinner - Show until ALL components are loaded */}
+      {showLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Loading main page components...</p>
+            <div className="mt-2 text-sm text-gray-500">
+              {!featuredProductsLoaded && <div>Featured Products...</div>}
+              {!categoriesLoaded && <div>Categories...</div>}
+            </div>
+          </div>
         </div>
       )}
 
@@ -89,7 +113,10 @@ export default function Home() {
                   {/* Categories */}
                   <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
                     <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
-                    <Categories onCategorySelect={setSelectedCategory} />
+                    <Categories 
+                      onCategorySelect={setSelectedCategory} 
+                      onLoadComplete={() => setCategoriesLoaded(true)}
+                    />
                   </section>
 
                   {/* Trending Products */}
@@ -119,7 +146,10 @@ export default function Home() {
                 {/* Featured Products */}
                 <div className="space-y-4">
                   <section className="bg-white rounded-2xl shadow-sm p-4">
-                    <FeaturedProducts selectedCategory={selectedCategory} />
+                    <FeaturedProducts 
+                      selectedCategory={selectedCategory} 
+                      onLoadComplete={() => setFeaturedProductsLoaded(true)}
+                    />
                   </section>
 
                   {/* New Arrivals */}
@@ -146,7 +176,10 @@ export default function Home() {
               <div className="px-1 py-1">
                 {/* Mobile Categories */}
                 <div className="bg-white rounded-xl py-3 mb-1">
-                  <Categories onCategorySelect={setSelectedCategory} />
+                  <Categories 
+                    onCategorySelect={setSelectedCategory} 
+                    onLoadComplete={() => setCategoriesLoaded(true)}
+                  />
                 </div>
 
                 {/* Trending Products */}
@@ -158,7 +191,10 @@ export default function Home() {
                 {/* Featured Products */}
                 <section className="mb-1">
                   <h2 className="hidden text-xl font-bold text-gray-800 mb-3 px-2">Featured Products</h2>
-                  <FeaturedProducts selectedCategory={selectedCategory} />
+                  <FeaturedProducts 
+                    selectedCategory={selectedCategory} 
+                    onLoadComplete={() => setFeaturedProductsLoaded(true)}
+                  />
                 </section>
 
                 {/* Promotional Banner */}
