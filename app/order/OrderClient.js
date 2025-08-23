@@ -235,77 +235,81 @@ export default function OrderClient() {
 
       toast.success("Order placed successfully!");
 
-      // Notify user: try FCM push if token exists, and ALWAYS send in-app notification
-      try {
-        const userRef = doc(db, "users", userId);
-        const userDoc = await getDoc(userRef);
-        const fcmToken = userDoc.exists() ? userDoc.data().fcmToken : null;
-        const title = "Order Submitted";
-        const body = `Your order ${orderRef.id.slice(0,6).toUpperCase()} has been submitted. We'll update you shortly.`;
-
-        if (fcmToken) {
-          try {
-            const origin = typeof window !== 'undefined' ? window.location.origin : '';
-            const deepLink = `${origin}/order/${orderRef.id}`;
-            const res = await fetch('/api/send-notification', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderRef.id}`, link: deepLink })
-            });
-            let info = null;
-            try { info = await res.json(); } catch {}
-            if (!res.ok) {
-              console.warn('/api/send-notification failed', info || res.statusText);
-            }
-          } catch (e) {
-            console.warn('FCM request error', e);
-          }
-        }
-
-        // Always create in-app notification
-        try {
-          await addDoc(collection(db, "messages"), {
-            from: "system",
-            to: userId,
-            title,
-            text: body,
-            timestamp: serverTimestamp(),
-            chatId: `system_${userId}`,
-            type: "notification",
-            orderId: orderRef.id,
-            target: `/order/${orderRef.id}`,
-            read: false,
-          });
-        } catch (e) {
-          console.warn('Failed to write in-app notification', e);
-        }
-
-        // Also create an admin notification card
-        try {
-          const auth2 = getAuth();
-          const currentUser2 = auth2.currentUser;
-          const customerName = address.fullName || currentUser2?.displayName || currentUser2?.email || "Customer";
-          const shortId = orderRef.id.slice(0,6).toUpperCase();
-          const itemsSummary = cartItems.map((it) => `${it.name} x ${it.quantity||1}`).slice(0,3);
-          const extra = cartItems.length > 3 ? ` and ${cartItems.length-3} more` : "";
-          const adminTitle = `New order submitted by ${customerName}`;
-          const adminText = `${customerName} submitted order ${shortId} (${itemsSummary.join(", ")}${extra}) totaling UGX ${calculateTotal(cartItems).toLocaleString()}.`;
-          await addDoc(collection(db, "adminNotifications"), {
-            type: "order_submitted",
-            orderId: orderRef.id,
-            userId,
-            title: adminTitle,
-            text: adminText,
-            totalAmount: calculateTotal(cartItems),
-            timestamp: serverTimestamp(),
-            read: false,
-            target: `/admin?tab=manageShipments`,
-          });
-        } catch {}
-      } catch (notifyErr) {
-        console.warn('Notification failed:', notifyErr);
-      }
+      // Immediately redirect user - notifications will happen in background
       router.push("/");
+
+      // Send notifications in background (non-blocking)
+      (async () => {
+        try {
+          const userRef = doc(db, "users", userId);
+          const userDoc = await getDoc(userRef);
+          const fcmToken = userDoc.exists() ? userDoc.data().fcmToken : null;
+          const title = "Order Submitted";
+          const body = `Your order ${orderRef.id.slice(0,6).toUpperCase()} has been submitted. We'll update you shortly.`;
+
+          if (fcmToken) {
+            try {
+              const origin = typeof window !== 'undefined' ? window.location.origin : '';
+              const deepLink = `${origin}/order/${orderRef.id}`;
+              const res = await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fcmToken, title, body, target: `/order/${orderRef.id}`, link: deepLink })
+              });
+              let info = null;
+              try { info = await res.json(); } catch {}
+              if (!res.ok) {
+                console.warn('/api/send-notification failed', info || res.statusText);
+              }
+            } catch (e) {
+              console.warn('FCM request error', e);
+            }
+          }
+
+          // Always create in-app notification
+          try {
+            await addDoc(collection(db, "messages"), {
+              from: "system",
+              to: userId,
+              title,
+              text: body,
+              timestamp: serverTimestamp(),
+              chatId: `system_${userId}`,
+              type: "notification",
+              orderId: orderRef.id,
+              target: `/order/${orderRef.id}`,
+              read: false,
+            });
+          } catch (e) {
+            console.warn('Failed to write in-app notification', e);
+          }
+
+          // Also create an admin notification card
+          try {
+            const auth2 = getAuth();
+            const currentUser2 = auth2.currentUser;
+            const customerName = address.fullName || currentUser2?.displayName || currentUser2?.email || "Customer";
+            const shortId = orderRef.id.slice(0,6).toUpperCase();
+            const itemsSummary = cartItems.map((it) => `${it.name} x ${it.quantity||1}`).slice(0,3);
+            const extra = cartItems.length > 3 ? ` and ${cartItems.length-3} more` : "";
+            const adminTitle = `New order submitted by ${customerName}`;
+            const adminText = `${customerName} submitted order ${shortId} (${itemsSummary.join(", ")}${extra}) totaling UGX ${calculateTotal(cartItems).toLocaleString()}.`;
+            await addDoc(collection(db, "adminNotifications"), {
+              type: "order_submitted",
+              orderId: orderRef.id,
+              userId,
+              title: adminTitle,
+              text: adminText,
+              totalAmount: calculateTotal(cartItems),
+              timestamp: serverTimestamp(),
+              read: false,
+              target: `/admin?tab=manageShipments`,
+            });
+          } catch {}
+        } catch (notifyErr) {
+          console.warn('Background notification failed:', notifyErr);
+        }
+      })();
     } catch (error) {
       console.error("Error placing order:", error);
       toast.error("Failed to place order");
