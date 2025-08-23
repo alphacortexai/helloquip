@@ -27,6 +27,7 @@ export default function Home() {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
+
   // Check if we're on client side
   useEffect(() => {
     setIsClient(true);
@@ -72,6 +73,8 @@ export default function Home() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isClient]);
+
+
 
   // Restore scroll position when returning to main page
   useEffect(() => {
@@ -140,6 +143,108 @@ export default function Home() {
   // Show loading spinner only when components are loading
   const showLoading = loading || !allComponentsLoaded;
 
+  // Internet connection check before loading main page components
+  const [isOnline, setIsOnline] = useState(true);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    console.log('🔍 Starting internet connection check...');
+
+    // Set checking to false immediately so UI loads normally
+    setIsCheckingConnection(false);
+
+    // Simple connection test with timeout
+    const testConnection = () => {
+      console.log('🌐 Testing internet connection...');
+      
+      // Use a simple image request that's likely to fail when offline
+      const img = new Image();
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Connection test timeout - assuming offline');
+        setIsOnline(false);
+      }, 3000);
+
+      img.onload = () => {
+        console.log('✅ Internet connection confirmed');
+        clearTimeout(timeoutId);
+        setIsOnline(true);
+      };
+
+      img.onerror = () => {
+        console.log('❌ Internet connection test failed');
+        clearTimeout(timeoutId);
+        setIsOnline(false);
+      };
+
+      // Try to load a small image from a reliable source
+      img.src = 'https://www.google.com/favicon.ico?' + Date.now();
+    };
+
+    // Check initial connection status
+    if (navigator.onLine) {
+      console.log('📡 Navigator reports online, testing connection...');
+      testConnection();
+    } else {
+      console.log('📡 Navigator reports offline');
+      setIsOnline(false);
+    }
+
+    let onlineTimer = null;
+
+    const handleOnline = () => {
+      console.log('🌐 Internet connection restored');
+      setIsOnline(true);
+      
+      // Clear any online timers
+      if (onlineTimer) {
+        clearTimeout(onlineTimer);
+        onlineTimer = null;
+      }
+
+      // Wait a bit for connection to stabilize, then reload
+      onlineTimer = setTimeout(() => {
+        if (navigator.onLine) {
+          console.log('🔄 Reloading page after internet restoration...');
+          window.location.reload();
+        }
+      }, 2000); // 2 second delay to ensure stable connection
+    };
+
+    const handleOffline = () => {
+      console.log('📡 Internet connection lost');
+      setIsOnline(false);
+    };
+
+    // Add event listeners
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (onlineTimer) clearTimeout(onlineTimer);
+    };
+  }, [isClient]);
+
+  // 15-second timeout for loading (only when online)
+  useEffect(() => {
+    if (!isClient || !isOnline || isCheckingConnection) return;
+
+    const timeout = setTimeout(() => {
+      if (showLoading) {
+        console.log('⏰ Loading timeout reached (15s), forcing completion');
+        setFeaturedProductsLoaded(true);
+        setCategoriesLoaded(true);
+        setLoading(false);
+      }
+    }, 15000); // 15 seconds
+
+    return () => clearTimeout(timeout);
+  }, [isClient, showLoading, isOnline, isCheckingConnection]);
+
   // Don't render anything until client-side
   if (!isClient) {
     return (
@@ -152,8 +257,20 @@ export default function Home() {
     );
   }
 
+
+
+
+
   return (
     <>
+      {/* Debug Info - Remove this later */}
+      <div className="fixed top-4 right-4 bg-black text-white p-2 rounded text-xs z-50">
+        <div>isClient: {isClient ? 'true' : 'false'}</div>
+        <div>isOnline: {isOnline ? 'true' : 'false'}</div>
+        <div>isChecking: {isCheckingConnection ? 'true' : 'false'}</div>
+        <div>showLoading: {showLoading ? 'true' : 'false'}</div>
+      </div>
+
       {/* Loading Spinner */}
       {showLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
@@ -164,16 +281,12 @@ export default function Home() {
               {!featuredProductsLoaded && <div>Featured Products...</div>}
               {!categoriesLoaded && <div>Categories...</div>}
             </div>
-            {/* Refresh button for manual cache refresh */}
-            <button
-              onClick={refreshData}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-            >
-              🔄 Refresh Data
-            </button>
+
           </div>
         </div>
       )}
+
+
 
       {/* Main Layout */}
       <div className="min-h-screen bg-[#2e4493] overflow-hidden">
@@ -287,6 +400,37 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Offline Dialog Overlay */}
+      {!isOnline && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8 max-w-md w-full text-center transform transition-all duration-300 scale-100">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">No Internet Connection</h2>
+              <p className="text-gray-600 mb-6">
+                Please check your internet connection and try again. The app requires an internet connection to function properly.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                🔄 Retry Connection
+              </button>
+              <p className="text-xs text-gray-500">
+                The page will automatically reload when your connection is restored.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

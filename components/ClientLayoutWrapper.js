@@ -268,6 +268,10 @@ export default function ClientLayoutWrapper({ children }) {
     return () => { cancelled = true; timers.forEach(clearTimeout); };
   }, [pathname]);
 
+
+
+
+
   return (
     <>
       {showNavbar && <Navbar />}
