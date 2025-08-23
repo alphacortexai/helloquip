@@ -84,6 +84,8 @@ export default function Home() {
     }
   }, [isClient, featuredProductsLoaded, categoriesLoaded, restoreScrollPosition]);
 
+
+
   useEffect(() => {
     if (!isClient) return;
 

@@ -219,7 +219,7 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
     {/* Main Preview */}
     <div
     className="w-full relative cursor-pointer"
-    style={{ paddingBottom: '75%' }} // 3/4 = 75% padding-bottom for aspect ratio
+    style={{ paddingBottom: '100%' }} // Changed from 75% to 100% for taller images
     onClick={handleImageClick}
     >
     {activeImage ? (
