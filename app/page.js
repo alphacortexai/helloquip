@@ -229,193 +229,48 @@ export default function Home() {
     };
   }, [isClient]);
 
-  // Screenshot prevention
+  // Basic mobile screenshot prevention only
   useEffect(() => {
     if (!isClient) return;
-
-    // Prevent right-click context menu
-    const preventContextMenu = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // Prevent keyboard shortcuts for screenshots
-    const preventScreenshotKeys = (e) => {
-      // Prevent Print Screen key
-      if (e.key === 'PrintScreen') {
-        e.preventDefault();
-        return false;
-      }
-      
-      // Prevent Ctrl+Shift+I (DevTools)
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-        e.preventDefault();
-        return false;
-      }
-      
-      // Prevent Ctrl+Shift+C (DevTools)
-      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        return false;
-      }
-      
-      // Prevent F12 key
-      if (e.key === 'F12') {
-        e.preventDefault();
-        return false;
-      }
-      
-      // Prevent Ctrl+U (View Source)
-      if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-        return false;
-      }
-    };
-
-    // Prevent drag and drop of images
-    const preventDrag = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // Prevent selection of text
-    const preventSelection = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // Mobile-specific screenshot prevention
-    const preventMobileScreenshot = (e) => {
-      // Prevent long press (context menu on mobile)
-      e.preventDefault();
-      return false;
-    };
-
-    // Prevent mobile screenshot gestures
-    const preventMobileGestures = (e) => {
-      // Prevent pinch to zoom (can be used for screenshots)
-      if (e.touches && e.touches.length > 1) {
-        e.preventDefault();
-        return false;
-      }
-    };
 
     // Detect mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-      console.log('📱 Mobile device detected - applying enhanced screenshot protection');
+      console.log('📱 Mobile device detected - applying basic screenshot protection');
       
-      // Add mobile-specific event listeners
-      document.addEventListener('touchstart', preventMobileScreenshot, { passive: false });
-      document.addEventListener('touchmove', preventMobileGestures, { passive: false });
-      document.addEventListener('touchend', preventMobileScreenshot, { passive: false });
+      // Only prevent context menu, allow all touch events for scrolling
+      const preventMobileContextMenu = (e) => {
+        // Only prevent context menu, allow scrolling
+        if (e.type === 'contextmenu') {
+          e.preventDefault();
+          return false;
+        }
+      };
+
+      // Only add context menu prevention, don't block touch events
+      document.addEventListener('contextmenu', preventMobileContextMenu);
       
-      // Prevent mobile context menu
-      document.addEventListener('contextmenu', preventMobileScreenshot);
-      
-      // Disable viewport zooming (can help with screenshots)
-      const viewport = document.querySelector('meta[name="viewport"]');
-      if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-      }
+      // Add minimal CSS for mobile
+      const style = document.createElement('style');
+      style.textContent = `
+        /* Mobile-only: prevent long press context menu */
+        @media (max-width: 768px) {
+          body {
+            -webkit-touch-callout: none !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Cleanup function
+      return () => {
+        document.removeEventListener('contextmenu', preventMobileContextMenu);
+        if (style.parentNode) {
+          style.parentNode.removeChild(style);
+        }
+      };
     }
-
-    // Add event listeners
-    document.addEventListener('contextmenu', preventContextMenu);
-    document.addEventListener('keydown', preventScreenshotKeys);
-    document.addEventListener('dragstart', preventDrag);
-    document.addEventListener('selectstart', preventSelection);
-
-    // Add CSS to prevent selection
-    const style = document.createElement('style');
-    style.textContent = `
-      * {
-        -webkit-user-select: none !important;
-        -moz-user-select: none !important;
-        -ms-user-select: none !important;
-        user-select: none !important;
-        -webkit-touch-callout: none !important;
-        -webkit-user-drag: none !important;
-        -khtml-user-select: none !important;
-      }
-      
-      /* Allow selection in input fields and textareas */
-      input, textarea, [contenteditable="true"] {
-        -webkit-user-select: text !important;
-        -moz-user-select: text !important;
-        -ms-user-select: none !important;
-        user-select: text !important;
-      }
-      
-      /* Prevent image dragging */
-      img {
-        -webkit-user-drag: none !important;
-        -khtml-user-drag: none !important;
-        -moz-user-drag: none !important;
-        -o-user-drag: none !important;
-        user-drag: none !important;
-        pointer-events: none !important;
-      }
-      
-      /* Disable text selection on specific elements */
-      .no-select {
-        -webkit-user-select: none !important;
-        -moz-user-select: none !important;
-        -ms-user-select: none !important;
-        user-select: none !important;
-      }
-      
-      /* Mobile-specific protections */
-      @media (max-width: 768px) {
-        body {
-          -webkit-touch-callout: none !important;
-          -webkit-user-select: none !important;
-          -khtml-user-select: none !important;
-          -moz-user-select: none !important;
-          -ms-user-select: none !important;
-          user-select: none !important;
-          touch-action: manipulation !important;
-        }
-        
-        /* Prevent mobile text selection */
-        p, h1, h2, h3, h4, h5, h6, span, div {
-          -webkit-touch-callout: none !important;
-          -webkit-user-select: none !important;
-          -khtml-user-select: none !important;
-          -moz-user-select: none !important;
-          -ms-user-select: none !important;
-          user-select: none !important;
-        }
-        
-        /* Allow selection only in form inputs */
-        input, textarea, select {
-          -webkit-user-select: text !important;
-          -moz-user-select: text !important;
-          -ms-user-select: text !important;
-          user-select: text !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-
-    // Cleanup function
-    return () => {
-      document.removeEventListener('contextmenu', preventContextMenu);
-      document.removeEventListener('keydown', preventScreenshotKeys);
-      document.removeEventListener('dragstart', preventDrag);
-      document.removeEventListener('selectstart', preventSelection);
-      
-      if (isMobile) {
-        document.removeEventListener('touchstart', preventMobileScreenshot);
-        document.removeEventListener('touchmove', preventMobileGestures);
-        document.removeEventListener('touchend', preventMobileScreenshot);
-      }
-      
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
-    };
   }, [isClient]);
 
   // 15-second timeout for loading (only when online)
