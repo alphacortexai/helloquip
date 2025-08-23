@@ -1,9 +1,6 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
-import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
-import { CartProvider } from "@/components/CartContext";
-import NotificationSetup from "@/components/NotificationSetup";
-import SessionProvider from "@/components/SessionProvider";
+import ClientWrapper from "@/components/ClientWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,12 +13,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider>
-          <CartProvider>
-            <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
-            <NotificationSetup />
-          </CartProvider>
-        </SessionProvider>
+        <ClientWrapper>{children}</ClientWrapper>
       </body>
     </html>
   );

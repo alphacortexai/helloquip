@@ -38,6 +38,7 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     const fetchCategories = async () => {
       try {
         setLoading(true);
+        
         const querySnapshot = await getDocs(collection(db, "categories"));
         const fetched = [];
         querySnapshot.forEach((doc) => {
@@ -46,7 +47,8 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
             fetched.push({ id: doc.id, ...data });
           }
         });
-        setCategories([allCategory, ...fetched]);
+        const allCategories = [allCategory, ...fetched];
+        setCategories(allCategories);
       } catch (err) {
         console.error("Error loading categories:", err);
       } finally {
