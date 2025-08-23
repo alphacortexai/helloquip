@@ -263,7 +263,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-1">
+      <div className="max-w-7xl mx-auto px-0">
         <div className="text-white text-sm font-semibold text-center uppercase mb-2">
           {selectedCategory || "Similar Products"}
           {(keyword || name || manufacturer || (tags?.length > 0)) && (
@@ -276,7 +276,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 p-0 m-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
             <div
               key={id}

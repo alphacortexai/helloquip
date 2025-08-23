@@ -77,30 +77,30 @@ export default function Home() {
       )}
 
       {/* Main Layout */}
-      <div className="min-h-screen bg-[#2e4493]">
+      <div className="min-h-screen bg-[#2e4493] overflow-hidden">
         {/* Desktop Layout */}
             <div className="hidden md:block">
-              <div className="max-w-7xl mx-auto px-4 py-6">
+              <div className="max-w-7xl mx-auto px-1 py-3">
                 {/* Top Row - Categories, Trending Products, and Featured Deal */}
-                <div className="grid grid-cols-[280px_1fr_300px] gap-4 mb-8">
+                <div className="grid grid-cols-[280px_1fr_300px] gap-3 mb-4">
                   {/* Categories */}
-                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Categories</h2>
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
+                    <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
                     <Categories onCategorySelect={setSelectedCategory} />
                   </section>
 
                   {/* Trending Products */}
-                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
                     <TrendingProducts />
                   </section>
 
                   {/* Featured Deal */}
-                  <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white h-[444px]">
+                  <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
                     <div className="h-full flex flex-col justify-center items-center text-center">
                       <div>
-                        <h3 className="text-2xl font-bold mb-4">Featured Deal</h3>
-                        <p className="text-lg mb-6">Get up to 50% off on selected medical equipment</p>
-                        <ul className="space-y-2 text-sm mb-8 inline-block text-left">
+                        <h3 className="text-2xl font-bold mb-3">Featured Deal</h3>
+                        <p className="text-lg mb-4">Get up to 50% off on selected medical equipment</p>
+                        <ul className="space-y-1 text-sm mb-6 inline-block text-left">
                           <li>• Premium quality equipment</li>
                           <li>• Fast delivery nationwide</li>
                           <li>• Professional support</li>
@@ -114,24 +114,24 @@ export default function Home() {
                 </div>
 
                 {/* Featured Products */}
-                <div className="space-y-6">
-                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                <div className="space-y-4">
+                  <section className="bg-white rounded-2xl shadow-sm p-4">
                     <FeaturedProducts selectedCategory={selectedCategory} />
                   </section>
 
                   {/* New Arrivals */}
-                  <section className="bg-gray-50 rounded-2xl shadow-sm p-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">New Arrivals</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">New Arrivals</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {/* Placeholder for new arrivals */}
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-6 text-gray-500">
                         <p>New products coming soon...</p>
                       </div>
                     </div>
                   </section>
 
                   {/* Customer Testimonials */}
-                  <section className="bg-white rounded-2xl shadow-sm p-6">
+                  <section className="bg-white rounded-2xl shadow-sm p-4">
                     <Testimonials />
                   </section>
                 </div>
@@ -140,29 +140,29 @@ export default function Home() {
 
             {/* Mobile Layout */}
             <div className="block md:hidden">
-              <div className="px-2 py-1">
+              <div className="px-1 py-1">
                 {/* Mobile Categories */}
-                <div className="bg-white rounded-xl py-4 mb-1">
+                <div className="bg-white rounded-xl py-3 mb-1">
                   <Categories onCategorySelect={setSelectedCategory} />
                 </div>
 
                 {/* Trending Products */}
                 <section className="bg-white rounded-xl mb-1">
-                  <h2 className="hidden text-xl font-bold text-gray-800 mb-4 px-2">Trending Products</h2>
+                  <h2 className="hidden text-xl font-bold text-gray-800 mb-3 px-2">Trending Products</h2>
                   <TrendingProducts />
                 </section>
 
                 {/* Featured Products */}
                 <section className="mb-1">
-                  <h2 className="hidden text-xl font-bold text-gray-800 mb-4 px-2">Featured Products</h2>
+                  <h2 className="hidden text-xl font-bold text-gray-800 mb-3 px-2">Featured Products</h2>
                   <FeaturedProducts selectedCategory={selectedCategory} />
                 </section>
 
                 {/* Promotional Banner */}
-                <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white mb-6">
+                <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">
                   <div className="text-center">
                     <h3 className="text-xl font-bold mb-2">Special Offers</h3>
-                    <p className="text-sm mb-4">Get up to 50% off on selected medical equipment</p>
+                    <p className="text-sm mb-3">Get up to 50% off on selected medical equipment</p>
                     <button className="bg-white text-blue-600 px-6 py-2 rounded-full text-sm font-semibold">
                       Shop Now
                     </button>
@@ -170,7 +170,7 @@ export default function Home() {
                 </section>
 
                 {/* Customer Testimonials */}
-                <section className="bg-white rounded-xl p-6 mb-6">
+                <section className="bg-white rounded-xl p-4 mb-4">
                   <Testimonials />
                 </section>
               </div>

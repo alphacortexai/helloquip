@@ -228,7 +228,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderCompact = () => (
          <div 
-           className={`bg-gray-50 p-0 w-full max-w-lg mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
+           className={`bg-gray-50 p-0 w-full mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
            onClick={onClick}
          >
                                                        <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: '5 / 6' }}>
@@ -277,7 +277,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderCompactX = () => (
          <div 
-           className={`bg-gray-50 p-0 w-full max-w-lg mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
+           className={`bg-gray-50 p-0 w-full mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl ${wrapperStyle} cursor-pointer`}
            onClick={onClick}
          >
                                                        <div className="relative w-full h-full sm:h-48 rounded-2xl overflow-hidden flex items-center justify-center">
