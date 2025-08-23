@@ -7,6 +7,7 @@ import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
+import { useScrollPosition } from "@/lib/useScrollPosition";
 
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
   loading: () => <div className="text-center py-10">Loading trending products...</div>,
@@ -18,35 +19,18 @@ const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), 
 
 export default function Home() {
   const { loading: settingsLoading } = useDisplaySettings();
+  const { restoreScrollPosition } = useScrollPosition();
   const [allProducts, setAllProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
   const [featuredProductsLoaded, setFeaturedProductsLoaded] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
-  
-  // Cache for products to avoid reloading on navigation back
-  const [productsCache, setProductsCache] = useState(new Map());
-  const [hasInitialized, setHasInitialized] = useState(false);
-  const [componentsNeverReload, setComponentsNeverReload] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   // Check if we're on client side
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // Check if components are already cached and don't need loading
-  const areComponentsCached = () => {
-    if (!isClient) return false;
-    
-    try {
-      const mainProductsCached = sessionStorage.getItem('mainPageProducts');
-      return mainProductsCached !== null;
-    } catch (error) {
-      console.warn('Error checking cache:', error);
-      return false;
-    }
-  };
 
   // Function to clear cache and refresh data
   const refreshData = () => {
@@ -57,8 +41,6 @@ export default function Home() {
     try {
       sessionStorage.removeItem('mainPageProducts');
       sessionStorage.removeItem('mainPageProductsTimestamp');
-      setHasInitialized(false);
-      setComponentsNeverReload(false);
       setLoading(true);
     } catch (error) {
       console.warn('Error clearing cache:', error);
@@ -91,31 +73,16 @@ export default function Home() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isClient]);
 
-  // Add Chatbase script
+  // Restore scroll position when returning to main page
   useEffect(() => {
-    const script = document.createElement('script');
-    script.innerHTML = `
-      (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="YjfFX_pbiOV68QfZ3kplW";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
-    `;
-    document.head.appendChild(script);
-
-    return () => {
-      // Cleanup script when component unmounts
-      const existingScript = document.querySelector('script[src*="chatbase.co"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
-    };
-  }, []);
-
-  // Alternative: If the script doesn't work, you can use this iframe instead
-  // Replace the useEffect above with this iframe in the JSX:
-  // <iframe
-  //   src="https://www.chatbase.co/chatbot-iframe/YjfFX_pbiOV68QfZ3kplW"
-  //   width="100%"
-  //   style={{ height: "100%", minHeight: "700px" }}
-  //   frameBorder="0"
-  // />
+    if (isClient && featuredProductsLoaded && categoriesLoaded) {
+      // Small delay to ensure products are rendered
+      const timer = setTimeout(() => {
+        restoreScrollPosition();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isClient, featuredProductsLoaded, categoriesLoaded, restoreScrollPosition]);
 
   useEffect(() => {
     if (!isClient) return;
@@ -125,16 +92,15 @@ export default function Home() {
       const cachedProducts = sessionStorage.getItem('mainPageProducts');
       const cachedTimestamp = sessionStorage.getItem('mainPageProductsTimestamp');
       
-      // Use cache if it's less than 30 minutes old (much longer for persistent experience)
+      // Use cache if it's less than 30 minutes old
       const isCacheValid = cachedProducts && cachedTimestamp && 
-        (Date.now() - parseInt(cachedTimestamp)) < 30 * 60 * 1000; // 30 minutes
+        (Date.now() - parseInt(cachedTimestamp)) < 30 * 60 * 1000;
       
-      if (isCacheValid && !hasInitialized) {
+      if (isCacheValid) {
         try {
           const parsed = JSON.parse(cachedProducts);
           setAllProducts(parsed);
           setLoading(false);
-          setHasInitialized(true);
           console.log('📦 Using cached products:', parsed.length);
           return;
         } catch (error) {
@@ -160,37 +126,17 @@ export default function Home() {
         console.error("Error fetching products:", error);
       } finally {
         setLoading(false);
-        setHasInitialized(true);
       }
     };
 
     fetchProducts();
-  }, [hasInitialized, isClient]);
+  }, [isClient]);
 
-  // Check if all components are loaded (excluding trending products carousel)
+  // Check if all components are loaded
   const allComponentsLoaded = featuredProductsLoaded && categoriesLoaded;
 
-  // Hide loading spinner only when all components are ready
-  // After first load, never show loading again
-  // Also skip loading if components are already cached
-  const showLoading = (!componentsNeverReload && !areComponentsCached() && (loading || !allComponentsLoaded));
-
-  // Mark components as never needing to reload after first successful load
-  useEffect(() => {
-    if (allComponentsLoaded && !loading && !componentsNeverReload) {
-      console.log('🎯 All components loaded successfully - marking as never reload');
-      setComponentsNeverReload(true);
-    }
-  }, [allComponentsLoaded, loading, componentsNeverReload]);
-
-  // If components are cached, mark them as loaded immediately
-  useEffect(() => {
-    if (isClient && areComponentsCached() && !componentsNeverReload) {
-      console.log('🎯 Components found in cache - marking as never reload');
-      setComponentsNeverReload(true);
-      setLoading(false);
-    }
-  }, [isClient, componentsNeverReload]);
+  // Show loading spinner only when components are loading
+  const showLoading = loading || !allComponentsLoaded;
 
   // Don't render anything until client-side
   if (!isClient) {
@@ -206,7 +152,7 @@ export default function Home() {
 
   return (
     <>
-      {/* Loading Spinner - Show until ALL components are loaded */}
+      {/* Loading Spinner */}
       {showLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="text-center">
@@ -226,9 +172,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Scroll Restoration Indicator */}
-      {/* Removed general scroll restoration indicator */}
 
       {/* Main Layout */}
       <div className="min-h-screen bg-[#2e4493] overflow-hidden">
