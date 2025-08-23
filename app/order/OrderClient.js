@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import CenteredCard from "@/components/CenteredCard";
 import ContactButtons from "@/components/ContactButtons";
 import ConvertToQuotationButton from "@/components/ConvertToQuotationButton";
+import RequestQuoteButton from "@/components/RequestQuoteButton";
 
 function cleanFirebaseUrl(url) {
   if (!url || typeof url !== "string") return "";
@@ -597,15 +598,22 @@ export default function OrderClient() {
               </button>
 
               {isAddressComplete(address) ? (
-                <ConvertToQuotationButton
-                  cartItems={cartItems}
-                  address={address}
-                  userId={userId}
-                  userData={{
-                    fullName: address.fullName,
-                    phoneNumber: address.phoneNumber,
-                  }}
-                />
+                <>
+                  <ConvertToQuotationButton
+                    cartItems={cartItems}
+                    address={address}
+                    userId={userId}
+                    userData={{
+                      fullName: address.fullName,
+                      phoneNumber: address.phoneNumber,
+                    }}
+                  />
+                  <RequestQuoteButton
+                    cartItems={cartItems}
+                    address={address}
+                    userId={userId}
+                  />
+                </>
               ) : (
                 <p className="text-red-500 text-sm text-center">Please complete your address to generate a quotation.</p>
               )}

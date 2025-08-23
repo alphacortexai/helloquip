@@ -1,37 +1,91 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { Search } from "lucide-react"; // optional icon from Lucide
+import { Search } from "lucide-react";
+import Image from "next/image";
+
+// Helper function to get preferred image URL
+const getPreferredImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  
+  if (typeof imageUrl === "string") {
+    try {
+      return decodeURIComponent(imageUrl);
+    } catch {
+      return imageUrl;
+    }
+  }
+  
+  if (typeof imageUrl === "object") {
+    const preferred = imageUrl["200x200"] || imageUrl["original"] || Object.values(imageUrl)[0];
+    try {
+      return decodeURIComponent(preferred);
+    } catch {
+      return preferred;
+    }
+  }
+  
+  return null;
+};
 
 export default function SearchBar() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [allProductNames, setAllProductNames] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchRef = useRef(null);
 
   useEffect(() => {
-    const fetchProductNames = async () => {
-      const snapshot = await getDocs(collection(db, "products"));
-      const names = snapshot.docs.map((doc) => doc.data().name.toLowerCase());
-      setAllProductNames(names);
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const snapshot = await getDocs(collection(db, "products"));
+        const products = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setAllProducts(products);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    fetchProductNames();
+    fetchProducts();
   }, []);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setSuggestions([]);
     } else {
-      const filtered = allProductNames
-        .filter((name) => name.includes(searchTerm.toLowerCase()))
-        .slice(0, 5);
+      const filtered = allProducts
+        .filter((product) => 
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .slice(0, 6); // Show up to 6 suggestions with images
       setSuggestions(filtered);
     }
-  }, [searchTerm, allProductNames]);
+  }, [searchTerm, allProducts]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsFocused(false);
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -42,22 +96,29 @@ export default function SearchBar() {
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    setSearchTerm(suggestion);
+  const handleSuggestionClick = (product) => {
+    setSearchTerm(product.name);
     setSuggestions([]);
     setIsFocused(false);
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+    router.push(`/search?q=${encodeURIComponent(product.name)}`);
+  };
+
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
+    if (e.target.value.trim() === "") {
+      setSuggestions([]);
+    }
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto mt-0">
+    <div className="relative w-full max-w-md mx-auto mt-0" ref={searchRef}>
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
           placeholder="Search for medical equipments & products..."
           className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 100)}
         />
@@ -66,18 +127,90 @@ export default function SearchBar() {
         </button>
       </form>
 
+      {/* Search Suggestions Dropdown */}
       {isFocused && searchTerm && suggestions.length > 0 && (
-        <ul className="absolute z-10 bg-white w-full border border-gray-200 rounded-md mt-1 shadow">
-          {suggestions.map((s, i) => (
+        <ul className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions">
+          {suggestions.map((product) => (
             <li
-              key={i}
-              className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-              onMouseDown={() => handleSuggestionClick(s)}
+              key={product.id}
+              className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors search-suggestion-item"
+              onMouseDown={() => handleSuggestionClick(product)}
+              onTouchStart={() => handleSuggestionClick(product)}
             >
-              {s}
+              <div className="flex items-center space-x-3">
+                {/* Product Image */}
+                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden search-suggestion-image">
+                  {product.image || product.imageUrl ? (
+                    <Image
+                      src={getPreferredImageUrl(product.image || product.imageUrl)}
+                      alt={product.name}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  {/* Fallback icon when no image */}
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs bg-gray-100" style={{ display: product.image || product.imageUrl ? 'none' : 'flex' }}>
+                    🏥
+                  </div>
+                </div>
+                
+                {/* Product Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {product.name}
+                  </p>
+                  {product.sku && (
+                    <p className="text-xs text-gray-500">
+                      SKU: {product.sku}
+                    </p>
+                  )}
+                  {product.price && (
+                    <p className="text-xs text-gray-500">
+                      UGX {product.price.toLocaleString()}
+                    </p>
+                  )}
+                  {product.description && (
+                    <p className="text-xs text-gray-400 truncate">
+                      {product.description}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Arrow indicator */}
+                <div className="flex-shrink-0 text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
             </li>
           ))}
+          
+          {/* View All Results Link */}
+          <li className="px-3 py-2 border-t border-gray-200 bg-gray-50 search-suggestion-item">
+            <button
+              onClick={handleSubmit}
+              className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-1"
+            >
+              View all results for "{searchTerm}"
+            </button>
+          </li>
         </ul>
+      )}
+
+      {/* Loading State */}
+      {isFocused && searchTerm && isLoading && (
+        <div className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg p-4">
+          <div className="flex items-center justify-center text-gray-500">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+            Loading suggestions...
+          </div>
+        </div>
       )}
     </div>
   );

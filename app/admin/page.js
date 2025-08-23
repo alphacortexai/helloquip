@@ -24,6 +24,7 @@ import SummaryCard from "./components/SummaryCard";
 import DraftsList from "./components/DraftsList";
 import { useRouter, useSearchParams } from "next/navigation";
 import QuotationViewer from "./components/QuotationViewer";
+import QuoteRequestManager from "./components/QuoteRequestManager";
 import FeedbackManager from "./components/FeedbackManager";
 import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
@@ -185,6 +186,15 @@ const tabs = [
     color: "text-slate-600",
     bgColor: "bg-slate-50",
     borderColor: "border-slate-100"
+  },
+  { 
+    id: "quoteRequests", 
+    icon: <Cog6ToothIcon className="w-5 h-5" />, 
+    label: "Quote Requests",
+    description: "Manage quote requests from users",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-100"
   },
   { 
     id: "feedback", 
@@ -372,7 +382,9 @@ function AdminDashboard({ currentAdminUid }) {
         return <DraftsList />;
 
       case "quatations":
-        return <QuotationViewer />
+        return <QuotationViewer />;
+      case "quoteRequests":
+        return <QuoteRequestManager />;
       case "feedback":
         return <FeedbackManager />
 

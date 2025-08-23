@@ -19,7 +19,7 @@ export default function Home() {
   const [allProducts, setAllProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
-
+  
   // Add Chatbase script
   useEffect(() => {
     const script = document.createElement('script');
@@ -75,6 +75,9 @@ export default function Home() {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
         </div>
       )}
+
+      {/* Scroll Restoration Indicator */}
+      {/* Removed general scroll restoration indicator */}
 
       {/* Main Layout */}
       <div className="min-h-screen bg-[#2e4493] overflow-hidden">

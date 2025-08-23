@@ -49,6 +49,30 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const [loading, setLoading] = useState(false);
   const [userNames, setUserNames] = useState({});
 
+  // Helper function to get preferred image URL
+  const getPreferredImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    if (typeof imageUrl === "string") {
+      try {
+        return decodeURIComponent(imageUrl);
+      } catch {
+        return imageUrl;
+      }
+    }
+    
+    if (typeof imageUrl === "object") {
+      const preferred = imageUrl["200x200"] || imageUrl["original"] || Object.values(imageUrl)[0];
+      try {
+        return decodeURIComponent(preferred);
+      } catch {
+        return preferred;
+      }
+    }
+    
+    return null;
+  };
+
   const generateUniqueSKU = async () => {
     let unique = false;
     let sku = '';
@@ -741,20 +765,54 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          {existingProduct && existingProduct.imageUrl && !imagePreview && (
-            <div className="mt-2">
-              <p className="text-xs text-gray-500 mb-2">Current image:</p>
-              <img 
-                src={typeof existingProduct.imageUrl === 'object' ? existingProduct.imageUrl.original : existingProduct.imageUrl} 
-                alt="Current Product Image" 
-                className="max-w-sm h-auto rounded-md" 
-              />
+          {existingProduct && existingProduct.imageUrl && (
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs font-medium text-gray-700 mb-2">Current Product Image:</p>
+              <div className="flex items-center gap-3">
+                <img 
+                  src={getPreferredImageUrl(existingProduct.imageUrl)} 
+                  alt="Current Product Image" 
+                  className="w-24 h-24 object-cover rounded-lg border border-gray-300" 
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500">
+                    <strong>Image URL:</strong> {typeof existingProduct.imageUrl === 'object' ? 'Multiple sizes available' : existingProduct.imageUrl}
+                  </p>
+                  {typeof existingProduct.imageUrl === 'object' && (
+                    <div className="mt-1 text-xs text-gray-400">
+                      <p>Available sizes: {Object.keys(existingProduct.imageUrl).join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Fallback for image errors */}
+              <div className="w-24 h-24 flex items-center justify-center text-gray-400 text-xs bg-gray-100 rounded-lg border border-gray-300" style={{ display: 'none' }}>
+                🏥
+              </div>
             </div>
           )}
           {imagePreview && (
-            <div className="mt-2">
-              <p className="text-xs text-gray-500 mb-2">New image preview:</p>
-              <img src={imagePreview} alt="Main Image Preview" className="max-w-sm h-auto rounded-md" />
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs font-medium text-blue-700 mb-2">New Image Preview:</p>
+              <div className="flex items-center gap-3">
+                <img 
+                  src={imagePreview} 
+                  alt="New Image Preview" 
+                  className="w-24 h-24 object-cover rounded-lg border border-blue-300" 
+                />
+                <div className="flex-1">
+                  <p className="text-xs text-blue-600">
+                    <strong>File:</strong> {image?.name || 'New image'}
+                  </p>
+                  <p className="text-xs text-blue-500">
+                    <strong>Size:</strong> {image ? `${(image.size / 1024 / 1024).toFixed(2)} MB` : 'Unknown'}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -768,6 +826,82 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
             onChange={handleExtraImagesChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+          
+          {/* Display existing extra images */}
+          {existingProduct && existingProduct.extraImageUrls && existingProduct.extraImageUrls.length > 0 && (
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs font-medium text-gray-700 mb-2">Current Extra Images:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {existingProduct.extraImageUrls.map((imgUrl, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={getPreferredImageUrl(imgUrl)}
+                      alt={`Extra image ${index + 1}`}
+                      className="w-full h-20 object-cover rounded-lg border border-gray-300"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    {/* Fallback for image errors */}
+                    <div className="w-full h-20 flex items-center justify-center text-gray-400 text-xs bg-gray-100 rounded-lg border border-gray-300" style={{ display: 'none' }}>
+                      🏥
+                    </div>
+                    {/* Remove button overlay */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newExtraImageUrls = [...existingProduct.extraImageUrls];
+                        newExtraImageUrls.splice(index, 1);
+                        setExtraImageUrls(newExtraImageUrls);
+                      }}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Total: {existingProduct.extraImageUrls.length} extra images
+              </p>
+            </div>
+          )}
+          
+          {/* Display new extra images being added */}
+          {extraImages.length > 0 && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs font-medium text-blue-700 mb-2">New Extra Images to Add:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {extraImages.map((file, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`New extra image ${index + 1}`}
+                      className="w-full h-20 object-cover rounded-lg border border-blue-300"
+                    />
+                    {/* Remove button overlay */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newExtraImages = [...extraImages];
+                        newExtraImages.splice(index, 1);
+                        setExtraImages(newExtraImages);
+                      }}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                Total: {extraImages.length} new images to add
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

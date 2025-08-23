@@ -17,6 +17,7 @@ import {
 import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
+import { getScrollManager } from "@/lib/scrollPositionManager";
 
 // Helper to decode URL and pick preferred size
 const getPreferredImageUrl = (imageUrl, customResolution = null) => {
@@ -63,6 +64,255 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const scrollListenerAdded = useRef(false);
   const router = useRouter();
   const batchSize = 24;
+  const scrollManager = useRef(null);
+
+  // Initialize scroll manager for featured products only
+  useEffect(() => {
+    scrollManager.current = getScrollManager();
+  }, []);
+
+  // Restore scroll position when returning to featured products
+  useEffect(() => {
+    if (!scrollManager.current) return;
+
+    // Check if we're returning to a specific featured product
+    const checkForReturn = () => {
+      const hash = window.location.hash;
+      console.log('🔍 Checking for return to featured product, hash:', hash);
+      
+      // Also check if we have a saved position with element ID
+      const savedPosition = scrollManager.current.positions.get('featuredProducts');
+      console.log('💾 Saved position:', savedPosition);
+      
+      let targetElementId = null;
+      
+      if (hash && hash.startsWith('#p-')) {
+        targetElementId = hash.substring(1);
+        console.log('✅ Hash indicates return to featured product:', targetElementId);
+      } else if (savedPosition?.elementId && savedPosition.elementId.startsWith('p-')) {
+        targetElementId = savedPosition.elementId;
+        console.log('✅ Saved position indicates return to featured product:', targetElementId);
+      }
+      
+      if (targetElementId) {
+        console.log('🎯 Target element ID:', targetElementId);
+        
+        // Function to attempt scrolling to the target element
+        const attemptScroll = () => {
+          const element = document.getElementById(targetElementId);
+          
+          if (element) {
+            console.log('🎯 Scrolling to featured product element');
+            
+            // Check if we're on mobile
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            
+            if (isMobile) {
+              console.log('📱 Mobile device detected, using mobile-specific scroll');
+              
+              // For mobile, use a more reliable approach
+              const rect = element.getBoundingClientRect();
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+              const elementTop = rect.top + scrollTop;
+              
+              // Calculate target scroll position to center the element
+              const targetScrollY = elementTop - (window.innerHeight / 2) + (rect.height / 2);
+              
+              // Ensure we don't scroll beyond document bounds
+              const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+              const finalScrollY = Math.max(0, Math.min(targetScrollY, maxScrollY));
+              
+              console.log('📱 Mobile scroll calculation:', {
+                elementTop,
+                targetScrollY,
+                finalScrollY,
+                maxScrollY,
+                viewportHeight: window.innerHeight,
+                elementHeight: rect.height
+              });
+              
+              // Use smooth scroll with mobile-optimized settings
+              window.scrollTo({
+                top: finalScrollY,
+                behavior: 'smooth'
+              });
+              
+              // Alternative: try scrollIntoView with mobile-friendly options
+              setTimeout(() => {
+                try {
+                  element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                  });
+                } catch (e) {
+                  console.log('📱 scrollIntoView failed, using fallback');
+                  // Fallback: use window.scrollTo again
+                  window.scrollTo({
+                    top: finalScrollY,
+                    behavior: 'auto'
+                  });
+                }
+              }, 100);
+              
+            } else {
+              // Desktop: use standard scrollIntoView
+              element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+              });
+            }
+            
+            // Highlight the returned-to product briefly
+            element.style.transition = 'all 0.3s ease';
+            element.style.transform = 'scale(1.02)';
+            element.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.3)';
+            
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+              if (element) {
+                element.style.transform = 'scale(1)';
+                element.style.boxShadow = '';
+              }
+            }, 3000);
+          } else {
+            console.log('⚠️ Element not found, using fallback scroll restoration');
+            
+            // For mobile, try a few more times with delays
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            
+            if (isMobile) {
+              console.log('📱 Mobile: Element not found, retrying with delays...');
+              
+              // Try to find element multiple times on mobile
+              let retryCount = 0;
+              const maxRetries = 3;
+              
+              const retryScroll = () => {
+                retryCount++;
+                const element = document.getElementById(targetElementId);
+                
+                if (element) {
+                  console.log(`📱 Mobile: Element found on retry ${retryCount}, scrolling...`);
+                  
+                  // Use mobile-optimized scroll
+                  const rect = element.getBoundingClientRect();
+                  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                  const elementTop = rect.top + scrollTop;
+                  const targetScrollY = elementTop - (window.innerHeight / 2) + (rect.height / 2);
+                  
+                  // Ensure we don't scroll beyond document bounds
+                  const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+                  const finalScrollY = Math.max(0, Math.min(targetScrollY, maxScrollY));
+                  
+                  console.log(`📱 Mobile retry ${retryCount} scroll calculation:`, {
+                    elementTop,
+                    targetScrollY,
+                    finalScrollY,
+                    maxScrollY
+                  });
+                  
+                  window.scrollTo({
+                    top: finalScrollY,
+                    behavior: 'smooth'
+                  });
+                  
+                  // Highlight the element
+                  element.style.transition = 'all 0.3s ease';
+                  element.style.transform = 'scale(1.02)';
+                  element.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.3)';
+                  
+                  setTimeout(() => {
+                    if (element) {
+                      element.style.transform = 'scale(1)';
+                      element.style.boxShadow = '';
+                    }
+                  }, 3000);
+                  
+                } else if (retryCount < maxRetries) {
+                  console.log(`📱 Mobile: Retry ${retryCount} failed, trying again in 500ms...`);
+                  setTimeout(retryScroll, 500);
+                } else {
+                  console.log('📱 Mobile: Max retries reached, using fallback scroll restoration');
+                  scrollManager.current.restorePosition('featuredProducts');
+                }
+              };
+              
+              // Start retry process
+              setTimeout(retryScroll, 300);
+              
+            } else {
+              // Desktop: use fallback immediately
+              scrollManager.current.restorePosition('featuredProducts');
+            }
+          }
+        };
+        
+        // Wait 1 second for products to load, then attempt scroll
+        console.log('⏳ Waiting 1 second for products to load before scroll restoration...');
+        
+        // Check if we're on mobile for timing adjustments
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        const delay = isMobile ? 1500 : 1000; // Mobile needs more time
+        
+        console.log(`⏳ Waiting ${delay}ms for products to load (${isMobile ? 'mobile' : 'desktop'})...`);
+        setTimeout(() => attemptScroll(), delay);
+      }
+    };
+
+    // Check after component mounts
+    const timer = setTimeout(checkForReturn, 100);
+    
+    // Also monitor hash changes
+    const handleHashChange = () => {
+      console.log('🔗 Hash changed to:', window.location.hash);
+      if (window.location.hash && window.location.hash.startsWith('#p-')) {
+        console.log('🔄 Hash change detected, checking for return...');
+        checkForReturn();
+      }
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [products, loading]); // Added products and loading as dependencies
+
+  // Save scroll position periodically while viewing featured products
+  useEffect(() => {
+    if (!scrollManager.current) return;
+
+    const savePosition = () => {
+      scrollManager.current.savePosition('featuredProducts');
+    };
+
+    // Save position every 3 seconds while scrolling
+    let scrollTimer;
+    const handleScroll = () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(savePosition, 3000);
+    };
+
+    // Save position when user stops scrolling
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Save position before page unload
+    window.addEventListener('beforeunload', savePosition);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeunload', savePosition);
+      clearTimeout(scrollTimer);
+      
+      // Save final position
+      if (scrollManager.current) {
+        scrollManager.current.savePosition('featuredProducts');
+      }
+    };
+  }, []);
 
   // Fetch trending product IDs
   const fetchTrendingProductIds = useCallback(async () => {
@@ -230,18 +480,56 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }, [fetchProducts, lastVisible, loading, hasMore]);
 
   const handleProductClick = (id) => {
-    setIsNavigating(true);
-    // Update current URL with an anchor to the clicked product so back returns to it
+    // Save scroll position BEFORE navigating
+    if (scrollManager.current) {
+      // Get the current scroll position
+      const currentScrollY = window.scrollY;
+      
+      // Get the product element to calculate its position
+      const productElement = document.getElementById(`p-${id}`);
+      if (productElement) {
+        // Calculate the element's position relative to the viewport
+        const rect = productElement.getBoundingClientRect();
+        const elementTop = rect.top + currentScrollY;
+        const targetScrollY = elementTop - (window.innerHeight / 2) + (rect.height / 2);
+        
+        console.log('📍 Saving scroll position for featured product:', {
+          productId: id,
+          currentScrollY,
+          elementTop,
+          targetScrollY,
+          elementHeight: rect.height,
+          viewportHeight: window.innerHeight
+        });
+        
+        // Save the position that will center this product
+        scrollManager.current.savePosition('featuredProducts', {
+          scrollY: targetScrollY,
+          scrollX: 0,
+          elementId: `p-${id}`,
+          timestamp: Date.now()
+        });
+      } else {
+        console.warn('⚠️ Product element not found for ID:', id);
+        // Fallback: save current scroll position
+        scrollManager.current.savePosition('featuredProducts');
+      }
+    }
+    
+    // Update URL with anchor for precise restoration
     try {
       const anchor = `p-${id}`;
       const url = new URL(window.location.href);
       url.hash = anchor;
       window.history.replaceState(window.history.state, "", url.toString());
-    } catch {}
+      console.log('🔗 Updated URL with anchor:', anchor);
+    } catch (error) {
+      console.warn('⚠️ Could not update URL with anchor:', error);
+    }
 
-    setTimeout(() => {
-      router.push(`/product/${id}`);
-    }, 200);
+    // Now navigate to the product detail page
+    setIsNavigating(true);
+    router.push(`/product/${id}`);
   };
 
   if (products.length === 0 && !loading && !settingsLoading) {
@@ -273,6 +561,32 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 .filter(Boolean)
                 .join(", ")}
             </span>
+          )}
+          
+          {/* Debug: Test scroll restoration */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                console.log('🧪 Testing scroll restoration...');
+                if (scrollManager.current) {
+                  const savedPosition = scrollManager.current.positions.get('featuredProducts');
+                  console.log('💾 Saved position:', savedPosition);
+                  
+                  if (savedPosition?.elementId) {
+                    const element = document.getElementById(savedPosition.elementId);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      console.log('✅ Scrolled to element:', savedPosition.elementId);
+                    } else {
+                      console.warn('⚠️ Element not found:', savedPosition.elementId);
+                    }
+                  }
+                }
+              }}
+              className="ml-4 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+            >
+              Test Scroll
+            </button>
           )}
         </div>
 

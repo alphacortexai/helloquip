@@ -47,7 +47,7 @@ export default function TrendingProducts() {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const scrollContainerRef = useRef(null);
-
+  
   useEffect(() => {
     const fetchTrendingProducts = async () => {
       try {
@@ -163,26 +163,26 @@ export default function TrendingProducts() {
 
   useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        left: currentSlide * scrollContainerRef.current.offsetWidth,
-        behavior: "smooth",
-      });
+      // When resetting to first slide, use 'auto' behavior to avoid any visible scroll
+      if (currentSlide === 0) {
+        // Just jump directly to the first card without any visible movement
+        scrollContainerRef.current.scrollTo({
+          left: 0,
+          behavior: "auto"
+        });
+      } else {
+        // Normal smooth scrolling for other slides
+        scrollContainerRef.current.scrollTo({
+          left: currentSlide * scrollContainerRef.current.offsetWidth,
+          behavior: "smooth",
+        });
+      }
     }
-  }, [currentSlide]);
+  }, [currentSlide, products.length]);
 
   const handleProductClick = (productId) => {
     setIsNavigating(true);
-    // Add anchor to current URL so back returns to the trending section
-    try {
-      const anchor = `trend-${productId}`;
-      const url = new URL(window.location.href);
-      url.hash = anchor;
-      window.history.replaceState(window.history.state, "", url.toString());
-    } catch {}
-
-    setTimeout(() => {
-      router.push(`/product/${productId}`);
-    }, 200);
+    router.push(`/product/${productId}`);
   };
 
   if (loading) {

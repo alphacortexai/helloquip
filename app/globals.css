@@ -31,3 +31,51 @@ main {
 .overflow-x-auto::-webkit-scrollbar {
   display: none;
 }
+
+/* Search suggestions mobile optimizations */
+@media (max-width: 768px) {
+  .search-suggestions {
+    max-height: 60vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .search-suggestion-item {
+    padding: 12px 16px;
+    min-height: 60px;
+  }
+  
+  .search-suggestion-image {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Touch-friendly search suggestions */
+.search-suggestion-item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Smooth transitions for search suggestions */
+.search-suggestions-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.search-suggestions-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.search-suggestions-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.search-suggestions-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 200ms, transform 200ms;
+}

@@ -372,12 +372,32 @@ export default function EditProducts({ currentAdminUid }) {
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className={`p-4 border rounded-lg flex justify-between items-center shadow-sm ${
+                  className={`p-4 border rounded-lg flex items-center gap-4 shadow-sm ${
                     selectedShopId === "other" 
                       ? "bg-red-50 border-red-200" 
                       : "bg-gray-50 border-gray-200"
                   }`}
                 >
+                  {/* Product Image */}
+                  <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                    {product.imageUrl ? (
+                      <img
+                        src={typeof product.imageUrl === 'object' ? product.imageUrl.original || product.imageUrl['200x200'] : product.imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    {/* Fallback icon when no image */}
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm bg-gray-100" style={{ display: product.imageUrl ? 'none' : 'flex' }}>
+                      🏥
+                    </div>
+                  </div>
+
+                  {/* Product Information */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold truncate">{product.name}</p>
@@ -390,12 +410,19 @@ export default function EditProducts({ currentAdminUid }) {
                     <p className="text-sm text-gray-500 truncate">
                       {product.categoryName || product.category} — UGX {product.price}
                     </p>
+                    {product.sku && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        SKU: {product.sku}
+                      </p>
+                    )}
                     {selectedShopId === "other" && (
                       <p className="text-xs text-red-600 mt-1">
                         Shop ID: {product.shopId || "Not assigned"}
                       </p>
                     )}
                   </div>
+
+                  {/* Action Buttons */}
                   <div className="flex space-x-2 ml-4 flex-shrink-0">
                     <button
                       onClick={() => handleEdit(product)}
