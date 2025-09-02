@@ -55,7 +55,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const renderDefault = () => (
     <div className={`${commonClasses} p-4 ${wrapperStyle}`}>
       <img {...imageProps} className="w-full h-48 object-cover rounded-xl mb-3" />
-      <h2 className="text-lg font-semibold">{product.name}</h2>
+      <h2 className="hidden md:block text-lg font-semibold">{product.name}</h2>
       <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-600 mt-1">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2">UGX {discountedPrice.toLocaleString()}</p>
@@ -66,7 +66,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     <div className={`${commonClasses} p-4 flex gap-4 items-center ${wrapperStyle}`}>
       <img {...imageProps} className="w-32 h-32 object-cover rounded-xl flex-shrink-0" />
       <div>
-        <h2 className="text-lg font-semibold">{product.name}</h2>
+        <h2 className="hidden md:block text-lg font-semibold">{product.name}</h2>
         <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
         <p className="text-gray-600 mt-1 line-clamp-2">{product.description}</p>
         <p className="text-blue-600 font-bold mt-2">UGX {discountedPrice.toLocaleString()}</p>
@@ -81,7 +81,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       </div>
       <div className="flex flex-col justify-between p-4 w-full">
         <div>
-          <h3 className="text-sm sm:text-base font-medium text-gray-800 line-clamp-2">{product.name || 'Unnamed Product'}</h3>
+          <h3 className="hidden md:block text-sm sm:text-base font-medium text-gray-800 line-clamp-2">{product.name || 'Unnamed Product'}</h3>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{product.description || 'No description available'}</p>
         </div>
         <div className="flex items-end justify-between mt-3">
@@ -115,7 +115,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
       <div className={`flex flex-col justify-between ${largeDesktop ? 'p-8' : 'p-5'} w-full`}>
         <div>
-          <h3 className={`text-[18px] sm:text-base font-semibold text-gray-800 line-clamp-2 ${largeDesktop ? 'md:text-2xl' : ''}`}>
+          <h3 className={`hidden md:block text-[18px] sm:text-base font-semibold text-gray-800 line-clamp-2 ${largeDesktop ? 'md:text-2xl' : ''}`}>
             {product.name || 'Unnamed Product'}
           </h3>
           {/* <p className="text-sm text-gray-500 mt-1 line-clamp-2">
@@ -159,7 +159,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       {/* Content area with more padding */}
       <div className="flex flex-col justify-between p-8 w-full">
         <div>
-          <h3 className="text-xl font-semibold text-gray-800 line-clamp-2 mb-3">
+          <h3 className="hidden md:block text-xl font-semibold text-gray-800 line-clamp-2 mb-3">
             {product.name || 'Unnamed Product'}
           </h3>
           <p className="text-sm text-gray-500 italic mb-4">
@@ -198,7 +198,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       {/* Content area on the right - centered vertically */}
       <div className="flex flex-col justify-center w-full text-right pr-3">
         <div>
-          <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-0">
+          <h3 className="hidden md:block text-sm font-semibold text-gray-800 line-clamp-2 mb-0">
             {product.name || 'Unnamed Product'}
           </h3>
           <p className="text-[9px] text-gray-500 italic mt-0.5">
@@ -219,7 +219,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const renderPortrait = () => (
     <div className={`${commonClasses} p-4 w-48 ${wrapperStyle}`}>
       <img {...imageProps} className="w-full h-56 object-cover rounded-xl mb-3" />
-      <h2 className="text-base font-semibold">{product.name}</h2>
+      <h2 className="hidden md:block text-base font-semibold">{product.name}</h2>
       <p className="text-[7px] text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-500 text-sm mt-1 line-clamp-3">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2 text-sm">UGX {discountedPrice.toLocaleString()}</p>

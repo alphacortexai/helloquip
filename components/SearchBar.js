@@ -37,6 +37,7 @@ export default function SearchBar() {
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isClickShieldActive, setIsClickShieldActive] = useState(false);
   const router = useRouter();
   const searchRef = useRef(null);
 
@@ -96,11 +97,28 @@ export default function SearchBar() {
     }
   };
 
-  const handleSuggestionClick = (product) => {
+  const handleSuggestionClick = (e, product) => {
+    // Prevent input blur before we handle navigation
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
     setSearchTerm(product.name);
+    // Activate a temporary shield to block underlying clicks
+    setIsClickShieldActive(true);
+    // Optionally hide suggestions immediately for snappier feel
     setSuggestions([]);
     setIsFocused(false);
-    router.push(`/search?q=${encodeURIComponent(product.name)}`);
+
+    // Delay navigation by ~1s to avoid accidental underlying taps
+    const target = `/search?q=${encodeURIComponent(product.name)}`;
+    setTimeout(() => {
+      router.push(target);
+    }, 1000);
+
+    // Remove shield shortly after navigation trigger
+    setTimeout(() => {
+      setIsClickShieldActive(false);
+    }, 1100);
   };
 
   const handleInputChange = (e) => {
@@ -112,6 +130,10 @@ export default function SearchBar() {
 
   return (
     <div className="relative w-full max-w-md mx-auto mt-0" ref={searchRef}>
+      {/* Click shield to prevent accidental taps on elements behind dropdown */}
+      {isClickShieldActive && (
+        <div className="fixed inset-0 z-[9999]" style={{ background: 'transparent' }}></div>
+      )}
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
@@ -120,7 +142,7 @@ export default function SearchBar() {
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 100)}
+          
         />
         <button type="submit" className="absolute left-3 top-1.5 text-gray-500 hover:text-gray-700">
           <Search className="w-4 h-4" />
@@ -131,63 +153,59 @@ export default function SearchBar() {
       {isFocused && searchTerm && suggestions.length > 0 && (
         <ul className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions">
           {suggestions.map((product) => (
-            <li
-              key={product.id}
-              className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors search-suggestion-item"
-              onMouseDown={() => handleSuggestionClick(product)}
-              onTouchStart={() => handleSuggestionClick(product)}
-            >
-              <div className="flex items-center space-x-3">
-                {/* Product Image */}
-                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden search-suggestion-image">
-                  {product.image || product.imageUrl ? (
-                    <Image
-                      src={getPreferredImageUrl(product.image || product.imageUrl)}
-                      alt={product.name}
-                      width={48}
-                      height={48}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  {/* Fallback icon when no image */}
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs bg-gray-100" style={{ display: product.image || product.imageUrl ? 'none' : 'flex' }}>
-                    🏥
+            <li key={product.id} className="p-0 border-b border-gray-100 last:border-b-0">
+              <button
+                type="button"
+                className="w-full px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors text-left pointer-events-auto"
+                onMouseDown={(e) => handleSuggestionClick(e, product)}
+                onTouchStart={(e) => handleSuggestionClick(e, product)}
+              >
+                <div className="flex items-center space-x-3">
+                  {/* Product Image */}
+                  <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden search-suggestion-image">
+                    {(product.image || product.imageUrl) ? (
+                      <Image
+                        src={getPreferredImageUrl(product.image || product.imageUrl)}
+                        alt={product.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover pointer-events-none"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    {/* Fallback icon when no image */}
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs bg-gray-100" style={{ display: (product.image || product.imageUrl) ? 'none' : 'flex' }}>
+                      🏥
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {product.name}
+                    </p>
+                    {product.sku && (
+                      <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                    )}
+                    {product.price && (
+                      <p className="text-xs text-gray-500">UGX {product.price.toLocaleString()}</p>
+                    )}
+                    {product.description && (
+                      <p className="text-xs text-gray-400 truncate">{product.description}</p>
+                    )}
+                  </div>
+
+                  {/* Arrow indicator */}
+                  <div className="flex-shrink-0 text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </div>
-                
-                {/* Product Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {product.name}
-                  </p>
-                  {product.sku && (
-                    <p className="text-xs text-gray-500">
-                      SKU: {product.sku}
-                    </p>
-                  )}
-                  {product.price && (
-                    <p className="text-xs text-gray-500">
-                      UGX {product.price.toLocaleString()}
-                    </p>
-                  )}
-                  {product.description && (
-                    <p className="text-xs text-gray-400 truncate">
-                      {product.description}
-                    </p>
-                  )}
-                </div>
-                
-                {/* Arrow indicator */}
-                <div className="flex-shrink-0 text-gray-400">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </div>
+              </button>
             </li>
           ))}
           

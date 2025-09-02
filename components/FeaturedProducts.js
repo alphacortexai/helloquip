@@ -237,7 +237,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }
 
   return (
-    <section className="bg-gray/70 py-3 relative">
+    <section className="bg-gray/70 pt-0 md:pt-3 pb-3 relative">
       {isNavigating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
@@ -245,7 +245,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       )}
 
       <div className="max-w-7xl mx-auto px-0">
-        <div className="text-white text-sm font-semibold text-center uppercase mb-2">
+        <div className="hidden md:block text-white text-sm font-semibold text-center uppercase mb-2">
           {selectedCategory || "Similar Products"}
           {(keyword || name || manufacturer || (tags?.length > 0)) && (
             <span className="block text-xs text-gray-200">

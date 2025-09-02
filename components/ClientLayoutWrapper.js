@@ -275,7 +275,7 @@ export default function ClientLayoutWrapper({ children }) {
   return (
     <>
       {showNavbar && <Navbar />}
-      <main>{children}</main>
+      <main className="pt-2 md:pt-3">{children}</main>
       <Toaster richColors position="top-center" />
 
       {/* Mobile Bottom Navigation */}
