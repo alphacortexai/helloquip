@@ -40,6 +40,20 @@ export default function SearchBar() {
   const [isClickShieldActive, setIsClickShieldActive] = useState(false);
   const [isTouchScrolling, setIsTouchScrolling] = useState(false);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const listboxId = "search-suggestions-listbox";
+  const hideTimerRef = useRef(null);
+
+  const startAutoHide = (delayMs = 2000) => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    hideTimerRef.current = setTimeout(() => {
+      setIsFocused(false);
+      setSuggestions([]);
+      hideTimerRef.current = null;
+    }, delayMs);
+  };
   const router = useRouter();
   const pathname = usePathname();
   const searchRef = useRef(null);
@@ -48,12 +62,22 @@ export default function SearchBar() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
+        // Try session cache first
+        const cached = typeof window !== 'undefined' ? sessionStorage.getItem('searchAllProducts') : null;
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            setAllProducts(parsed);
+            setIsLoading(false);
+            return;
+          } catch {}
+        }
         const snapshot = await getDocs(collection(db, "products"));
-        const products = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const products = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setAllProducts(products);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('searchAllProducts', JSON.stringify(products));
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
@@ -64,18 +88,25 @@ export default function SearchBar() {
   }, []);
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setSuggestions([]);
-    } else {
-      const filtered = allProducts
-        .filter((product) => 
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .slice(0, 6); // Show up to 6 suggestions with images
-      setSuggestions(filtered);
-    }
+    const term = searchTerm.trim();
+    const handler = setTimeout(() => {
+      if (term === "") {
+        setSuggestions([]);
+        setHighlightedIndex(-1);
+      } else {
+        const lowered = term.toLowerCase();
+        const filtered = allProducts
+          .filter((product) =>
+            product.name?.toLowerCase().includes(lowered) ||
+            product.description?.toLowerCase().includes(lowered) ||
+            product.sku?.toLowerCase().includes(lowered)
+          )
+          .slice(0, 10);
+        setSuggestions(filtered);
+        setHighlightedIndex(filtered.length ? 0 : -1);
+      }
+    }, 150); // debounce
+    return () => clearTimeout(handler);
   }, [searchTerm, allProducts]);
 
   // Close suggestions only on navigation changes
@@ -100,6 +131,8 @@ export default function SearchBar() {
     setSearchTerm(product.name);
     // Activate a temporary shield to block underlying clicks
     setIsClickShieldActive(true);
+    // Schedule auto-hide shortly after selection
+    startAutoHide(2000);
 
     // Delay navigation by ~1s to avoid accidental underlying taps
     const target = `/search?q=${encodeURIComponent(product.name)}`;
@@ -157,13 +190,33 @@ export default function SearchBar() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (!isFocused || suggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === 'Enter') {
+      if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+        e.preventDefault();
+        handleSuggestionClick(e, suggestions[highlightedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      // Allow manual close with Escape
+      setIsFocused(false);
+      setSuggestions([]);
+    }
+  };
+
   return (
     <div className="relative w-full max-w-md mx-auto mt-0" ref={searchRef}>
       {/* Click shield to prevent accidental taps on elements behind dropdown */}
       {isClickShieldActive && (
         <div className="fixed inset-0 z-[9999]" style={{ background: 'transparent' }}></div>
       )}
-      <form onSubmit={handleSubmit} className="relative">
+      <form onSubmit={handleSubmit} className="relative" role="search">
         <input
           type="text"
           placeholder="Search on HalloQuip"
@@ -171,6 +224,12 @@ export default function SearchBar() {
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
+          onKeyDown={handleKeyDown}
+          role="combobox"
+          aria-expanded={isFocused && suggestions.length > 0}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${suggestions[highlightedIndex]?.id}` : undefined}
           
         />
         <button type="submit" className="absolute left-3 top-1.5 text-gray-500 hover:text-gray-700">
@@ -180,12 +239,12 @@ export default function SearchBar() {
 
       {/* Search Suggestions Dropdown */}
       {isFocused && searchTerm && suggestions.length > 0 && (
-        <ul className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
-          {suggestions.map((product) => (
-            <li key={product.id} className="p-0 border-b border-gray-100 last:border-b-0">
+        <ul id={listboxId} role="listbox" className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
+          {suggestions.map((product, index) => (
+            <li key={product.id} id={`suggestion-${product.id}`} role="option" aria-selected={index === highlightedIndex} className="p-0 border-b border-gray-100 last:border-b-0">
               <button
                 type="button"
-                className="w-full px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors text-left pointer-events-auto"
+                className={`w-full px-3 py-2 cursor-pointer transition-colors text-left pointer-events-auto ${index === highlightedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
                 onMouseDown={handleSuggestionMouseDown}
                 onClick={(e) => handleSuggestionClickSafe(e, product)}
                 onTouchEnd={(e) => handleTouchEnd(e, product)}
