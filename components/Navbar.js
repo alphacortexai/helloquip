@@ -155,7 +155,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <h1
-                className="text-3xl md:text-3xl font-extrabold text-[#2e4493] cursor-pointer hover:text-[#11a2d7] transition-colors pr-0.5"
+                className="text-3xl md:text-3xl font-extrabold text-sky-500 cursor-pointer hover:text-sky-600 transition-colors pr-0.5"
                 onClick={() => router.push("/")}
               >
                 HalloQuip
