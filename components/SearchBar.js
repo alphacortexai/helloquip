@@ -38,6 +38,8 @@ export default function SearchBar() {
   const [isFocused, setIsFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isClickShieldActive, setIsClickShieldActive] = useState(false);
+  const [isTouchScrolling, setIsTouchScrolling] = useState(false);
+  const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
   const router = useRouter();
   const searchRef = useRef(null);
 
@@ -121,6 +123,43 @@ export default function SearchBar() {
     }, 1100);
   };
 
+  const handleSuggestionMouseDown = (e) => {
+    // Prevent early selection on mousedown; we'll use click instead
+    e.preventDefault();
+  };
+
+  const handleSuggestionClickSafe = (e, product) => {
+    if (isTouchScrolling) return; // ignore if a scroll gesture was detected
+    handleSuggestionClick(e, product);
+  };
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    setIsTouchScrolling(false);
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+    const distance = Math.max(dx, dy);
+    if (distance > 8) {
+      setIsTouchScrolling(true);
+    }
+  };
+
+  const handleTouchEnd = (e, product) => {
+    // If user was scrolling, do nothing
+    if (isTouchScrolling) {
+      setIsTouchScrolling(false);
+      return;
+    }
+    handleSuggestionClick(e, product);
+  };
+
   const handleInputChange = (e) => {
     setSearchTerm(e.target.value);
     if (e.target.value.trim() === "") {
@@ -138,7 +177,7 @@ export default function SearchBar() {
         <input
           type="text"
           placeholder="Search on HalloQuip"
-          className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="w-full pl-10 pr-4 py-1.5 border border-blue-800 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800 text-sm"
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
@@ -151,14 +190,15 @@ export default function SearchBar() {
 
       {/* Search Suggestions Dropdown */}
       {isFocused && searchTerm && suggestions.length > 0 && (
-        <ul className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions">
+        <ul className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
           {suggestions.map((product) => (
             <li key={product.id} className="p-0 border-b border-gray-100 last:border-b-0">
               <button
                 type="button"
                 className="w-full px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors text-left pointer-events-auto"
-                onMouseDown={(e) => handleSuggestionClick(e, product)}
-                onTouchStart={(e) => handleSuggestionClick(e, product)}
+                onMouseDown={handleSuggestionMouseDown}
+                onClick={(e) => handleSuggestionClickSafe(e, product)}
+                onTouchEnd={(e) => handleTouchEnd(e, product)}
               >
                 <div className="flex items-center space-x-3">
                   {/* Product Image */}

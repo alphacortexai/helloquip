@@ -43,7 +43,7 @@ export default function NotificationCard({ title, body, onClose }) {
         boxShadow:
           "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)", // shadow-lg
         padding: 16, // p-4
-        zIndex: 50,
+        zIndex: 2000,
         animation: "slide-in 0.3s ease forwards", // you can define keyframes or remove
       }}
     >

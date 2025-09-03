@@ -334,7 +334,7 @@ export default function Home() {
             {/* Top Row - Categories, Trending Products, and Featured Deal */}
             <div className="grid grid-cols-[280px_1fr_300px] gap-3 mb-4">
               {/* Categories */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 mt-2">
                 <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
                 <Categories 
                   onCategorySelect={setSelectedCategory} 
@@ -398,7 +398,7 @@ export default function Home() {
         <div className="block md:hidden">
           <div className="px-1 py-1">
             {/* Mobile Categories */}
-            <div className="bg-white rounded-xl py-3 mb-1">
+            <div className="bg-white rounded-xl py-3 mb-1 mt-2">
               <Categories 
                 onCategorySelect={setSelectedCategory} 
                 onLoadComplete={() => setCategoriesLoaded(true)}
