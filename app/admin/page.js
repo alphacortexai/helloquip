@@ -413,7 +413,7 @@ function AdminDashboard({ currentAdminUid }) {
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  {view ? "Admin Panel" : "HelloQuip Admin"}
+                  {view ? "Admin Panel" : "HalloQuip Admin"}
         </h1>
                 <p className="text-xs text-gray-500">
                   {view ? "Manage your store" : "Store management system"}
@@ -568,7 +568,7 @@ function AdminDashboard({ currentAdminUid }) {
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-1">Welcome back!</h2>
                     <p className="text-sm text-gray-600">
-                      Manage your HelloQuip store with our admin tools
+                      Manage your HalloQuip store with our admin tools
                     </p>
                   </div>
                   <div className="hidden lg:block">

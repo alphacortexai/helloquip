@@ -205,7 +205,7 @@ export default function TrendingProducts() {
   return (
     <>
       <Head>
-        <title>Trending Products - HelloQuip</title>
+        <title>Trending Products - HalloQuip</title>
       </Head>
 
       {/* Desktop Fade Transition */}

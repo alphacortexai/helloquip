@@ -353,7 +353,7 @@ export default function UserMessenger() {
         >
           <ArrowLeft size={22} />
         </button>
-        <h2 className="text-lg font-semibold text-gray-800">HelloQuip Chat</h2>
+        <h2 className="text-lg font-semibold text-gray-800">HalloQuip Chat</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pt-2 pb-32 flex flex-col space-y-2">

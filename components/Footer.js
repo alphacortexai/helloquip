@@ -15,7 +15,7 @@ const Footer = () => {
           
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-2xl font-bold text-blue-400 mb-4">HelloQuip</h3>
+            <h3 className="text-2xl font-bold text-blue-400 mb-4">HalloQuip</h3>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Your trusted partner for high-quality medical equipment. We are committed to providing reliable, 
               accessible, and affordable solutions to support healthcare across Africa.
@@ -105,7 +105,7 @@ const Footer = () => {
             </div>
             
             <div className="text-sm text-gray-400">
-              <p>© 2025 HelloQuip. All rights reserved.</p>
+              <p>© 2025 HalloQuip. All rights reserved.</p>
             </div>
           </div>
         </div>

@@ -149,7 +149,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="bg-white sticky top-0 z-[100] border-b border-gray-200">
+      <header className="bg-white fixed top-0 left-0 right-0 z-[100] border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between gap-2">
             {/* Logo */}
@@ -158,7 +158,7 @@ export default function Navbar() {
                 className="text-3xl md:text-3xl font-extrabold text-[#2e4493] cursor-pointer hover:text-[#11a2d7] transition-colors pr-0.5"
                 onClick={() => router.push("/")}
               >
-                HelloQuip
+                HalloQuip
               </h1>
             </div>
 

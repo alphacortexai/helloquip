@@ -137,7 +137,7 @@ export default function SearchBar() {
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
-          placeholder="Search for medical equipments & products..."
+          placeholder="Search on HalloQuip"
           className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           value={searchTerm}
           onChange={handleInputChange}

@@ -275,7 +275,9 @@ export default function ClientLayoutWrapper({ children }) {
   return (
     <>
       {showNavbar && <Navbar />}
-      <main className="pt-2 md:pt-3">{children}</main>
+      {/* Spacer for fixed navbar height so content isn't hidden (mobile has taller header with search) */}
+      {showNavbar && <div className="h-[96px] md:h-[72px]"></div>}
+      <main>{children}</main>
       <Toaster richColors position="top-center" />
 
       {/* Mobile Bottom Navigation */}
