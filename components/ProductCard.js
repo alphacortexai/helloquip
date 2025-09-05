@@ -240,9 +240,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
            {/* Discount Badge */}
            {discount > 0 && (
-             <div className="bg-orange-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
-               -{discount}%
-             </div>
+                         <div className="bg-orange-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+              {discount}% Discount
+            </div>
            )}
            
            {/* Trending Badge */}
@@ -285,9 +285,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
            {/* Discount Badge */}
            {discount > 0 && (
-             <div className="bg-orange-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
-               -{discount}%
-             </div>
+                         <div className="bg-orange-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+              {discount}% Discount
+            </div>
            )}
            
            {/* Trending Badge */}

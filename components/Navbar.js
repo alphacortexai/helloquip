@@ -155,7 +155,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <h1
-                className="text-2xl md:text-2xl font-extrabold text-sky-500 cursor-pointer hover:text-sky-600 transition-colors pr-0.5 whitespace-nowrap"
+                className="text-2xl md:text-3xl font-extrabold text-sky-500 cursor-pointer hover:text-sky-600 transition-colors pr-0.5 whitespace-nowrap"
                 onClick={() => router.push("/")}
               >
                 HelloMedicals
