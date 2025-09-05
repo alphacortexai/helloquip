@@ -48,6 +48,9 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const [isDraft, setIsDraft] = useState(existingProduct?.isDraft || false);
   const [loading, setLoading] = useState(false);
   const [userNames, setUserNames] = useState({});
+  const [creatingSubCat, setCreatingSubCat] = useState(false);
+  const [newSubCatName, setNewSubCatName] = useState("");
+  const [subCatSaving, setSubCatSaving] = useState(false);
 
   // Helper function to get preferred image URL
   const getPreferredImageUrl = (imageUrl) => {
@@ -601,6 +604,66 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
                   : "Then, optionally select a sub-category"
               }
             </p>
+            {category && (
+              <div className="mt-2">
+                {!creatingSubCat ? (
+                  <button
+                    type="button"
+                    onClick={() => setCreatingSubCat(true)}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    + Create a new sub-category
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newSubCatName}
+                      onChange={(e) => setNewSubCatName(e.target.value)}
+                      placeholder="Enter sub-category name"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      disabled={!newSubCatName.trim() || subCatSaving}
+                      onClick={async () => {
+                        if (!newSubCatName.trim() || !category) return;
+                        setSubCatSaving(true);
+                        try {
+                          const simpleSlug = (str) => str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+                          const newDocRef = await addDoc(collection(db, "categories"), {
+                            name: newSubCatName.trim(),
+                            slug: simpleSlug(newSubCatName.trim()),
+                            parentId: category,
+                            createdAt: new Date(),
+                          });
+                          const newSub = { id: newDocRef.id, name: newSubCatName.trim(), parentId: category };
+                          setSubCategories((prev) => [...prev, newSub]);
+                          setSubCategory(newDocRef.id);
+                          setNewSubCatName("");
+                          setCreatingSubCat(false);
+                        } catch (e) {
+                          console.error("Failed to create sub-category", e);
+                          alert("Failed to create sub-category. Please try again.");
+                        } finally {
+                          setSubCatSaving(false);
+                        }
+                      }}
+                      className="px-3 py-2 bg-green-600 text-white rounded-md text-sm disabled:bg-green-400"
+                    >
+                      {subCatSaving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setCreatingSubCat(false); setNewSubCatName(""); }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
