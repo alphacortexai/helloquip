@@ -99,7 +99,8 @@ export default function SearchBar() {
           .filter((product) =>
             product.name?.toLowerCase().includes(lowered) ||
             product.description?.toLowerCase().includes(lowered) ||
-            product.sku?.toLowerCase().includes(lowered)
+            product.sku?.toLowerCase().includes(lowered) ||
+            (Array.isArray(product.tags) && product.tags.some((t) => t?.toLowerCase().includes(lowered)))
           )
           .slice(0, 10);
         setSuggestions(filtered);
