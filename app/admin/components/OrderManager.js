@@ -430,14 +430,28 @@ export default function OrderManager() {
 
             <hr className="my-4" />
 
-            <h4 className="font-semibold mb-2">User Info</h4>
-            <p>Name: {selected.userName || "N/A"}</p>
-            <p>Email: {selected.userEmail || "N/A"}</p>
-            <p>Phone: {selected.userPhone || "N/A"}</p>
-            <p>
-              Address:{" "}
+            <h4 className="font-semibold mb-2">Customer Info</h4>
+            {selected.address?.customerType === 'company' ? (
+              <div className="text-sm">
+                <p><strong>Organization:</strong> {selected.address.organizationName || 'N/A'}</p>
+                <p><strong>Contact Person:</strong> {selected.address.contactPerson || 'N/A'}</p>
+                {selected.address.designation && (
+                  <p><strong>Designation:</strong> {selected.address.designation}</p>
+                )}
+                <p><strong>Email:</strong> {selected.userEmail || selected.address.email || 'N/A'}</p>
+                <p><strong>Phone:</strong> {selected.userPhone || selected.address.phoneNumber || 'N/A'}</p>
+              </div>
+            ) : (
+              <div className="text-sm">
+                <p><strong>Name:</strong> {selected.userName || selected.address?.fullName || 'N/A'}</p>
+                <p><strong>Email:</strong> {selected.userEmail || 'N/A'}</p>
+                <p><strong>Phone:</strong> {selected.userPhone || selected.address?.phoneNumber || 'N/A'}</p>
+              </div>
+            )}
+            <p className="mt-1 text-sm">
+              <strong>Address:</strong>{" "}
               {selected.address
-                ? `${selected.address.fullName}, ${selected.address.city}, ${selected.address.area}`
+                ? `${selected.address.city}, ${selected.address.area}`
                 : "N/A"}
             </p>
 

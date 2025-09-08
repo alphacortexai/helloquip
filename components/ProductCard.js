@@ -104,7 +104,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       
       {/* Badge */}
       {badge && (
-        <div className="absolute top-2 left-2 z-10 bg-sky-400 text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
+        <div className="absolute top-2 left-2 z-10 bg-[#1877F2] text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
           {badge}
         </div>
       )}
@@ -146,7 +146,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       
       {/* Badge */}
       {badge && (
-        <div className="absolute top-4 left-4 z-10 bg-sky-400 text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
+        <div className="absolute top-4 left-4 z-10 bg-[#1877F2] text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
           {badge}
         </div>
       )}
@@ -189,7 +189,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
         
         {/* Trending Badge on Image */}
         {badge && (
-          <div className="absolute top-2 left-2 z-10 bg-sky-400 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+          <div className="absolute top-2 left-2 z-10 bg-[#1877F2] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
             {badge}
           </div>
         )}
@@ -247,7 +247,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            
            {/* Trending Badge */}
            {badge && (
-             <div className="bg-sky-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+             <div className="bg-[#1877F2] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
                {badge}
              </div>
            )}
@@ -292,7 +292,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            
            {/* Trending Badge */}
            {badge && (
-             <div className="bg-sky-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+             <div className="bg-[#1877F2] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
                {badge}
              </div>
            )}

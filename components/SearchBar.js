@@ -221,7 +221,7 @@ export default function SearchBar() {
         <input
           type="text"
           placeholder="Search on HalloQuip"
-          className="w-full pl-10 pr-4 py-1.5 border-2 border-sky-500 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
+          className="w-full pl-10 pr-4 py-1.5 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-sm"
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}

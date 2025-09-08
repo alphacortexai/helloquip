@@ -72,7 +72,16 @@ export default function OrderDetailPage() {
 
         <h2 className="text-sm font-semibold mb-2">Delivery Address</h2>
         <div className="text-sm text-gray-700 mb-4">
-          <p>{order.address?.fullName}</p>
+          {order.address?.customerType === 'company' ? (
+            <>
+              <p className="text-gray-900">{order.address?.organizationName}</p>
+              <p>Contact: {order.address?.contactPerson}</p>
+              {order.address?.designation && <p>Designation: {order.address?.designation}</p>}
+              {order.address?.email && <p>Email: {order.address?.email}</p>}
+            </>
+          ) : (
+            <p className="text-gray-900">{order.address?.fullName}</p>
+          )}
           <p>{order.address?.area}</p>
           <p>{order.address?.city}</p>
           <p>{order.address?.phoneNumber}</p>

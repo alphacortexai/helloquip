@@ -48,6 +48,17 @@ function calculateTotal(items) {
 }
 
 function isAddressComplete(address) {
+  const customerType = address.customerType || 'individual';
+  if (customerType === 'company') {
+    return (
+      address.contactPerson &&
+      address.organizationName &&
+      address.email &&
+      address.phoneNumber &&
+      address.area &&
+      address.city
+    );
+  }
   return address.fullName && address.area && address.city && address.phoneNumber;
 }
 
@@ -61,7 +72,12 @@ export default function OrderClient() {
   const [cartItems, setCartItems] = useState([]);
   const [orders, setOrders] = useState([]); // submitted orders list
   const [address, setAddress] = useState({
+    customerType: "individual", // 'individual' | 'company'
     fullName: "",
+    contactPerson: "",
+    organizationName: "",
+    email: "",
+    designation: "",
     area: "",
     city: "",
     phoneNumber: "",
@@ -72,7 +88,12 @@ export default function OrderClient() {
 
   // Ensure all address values are strings to prevent controlled/uncontrolled input errors
   const safeAddress = {
+    customerType: address.customerType || "individual",
     fullName: address.fullName || "",
+    contactPerson: address.contactPerson || "",
+    organizationName: address.organizationName || "",
+    email: address.email || "",
+    designation: address.designation || "",
     area: address.area || "",
     city: address.city || "",
     phoneNumber: address.phoneNumber || "",
@@ -103,7 +124,17 @@ export default function OrderClient() {
 
       const userSnap = await getDoc(doc(db, "users", user.uid));
       const userAddress = userSnap.exists() ? userSnap.data().address || {} : {};
-      setAddress(userAddress);
+      setAddress({
+        customerType: userAddress.customerType || "individual",
+        fullName: userAddress.fullName || "",
+        contactPerson: userAddress.contactPerson || "",
+        organizationName: userAddress.organizationName || "",
+        email: userAddress.email || "",
+        designation: userAddress.designation || "",
+        area: userAddress.area || "",
+        city: userAddress.city || "",
+        phoneNumber: userAddress.phoneNumber || "",
+      });
 
       const cartRef = collection(db, "carts", user.uid, "items");
       const cartSnap = await getDocs(cartRef);
@@ -218,8 +249,8 @@ export default function OrderClient() {
         status: "pending",
         createdAt: new Date().toISOString(),
         // enrich for admin visibility
-        userName: address.fullName || undefined,
-        userEmail: currentUser?.email || undefined,
+        userName: (address.customerType === 'company' ? address.contactPerson : address.fullName) || undefined,
+        userEmail: address.email || currentUser?.email || undefined,
         userPhone: address.phoneNumber || undefined,
         paymentMethod: selectedPayment,
         paymentStatus: selectedPayment === "cod" ? "unpaid" : "pending",
@@ -375,6 +406,23 @@ export default function OrderClient() {
                       {o.paymentMethod && (
                         <p className="text-xs text-gray-600 mt-0.5">Payment: {o.paymentMethod.toUpperCase()} ({o.paymentStatus || 'pending'})</p>
                       )}
+                      {o.address && (
+                        <div className="mt-1 text-xs text-gray-700">
+                          {o.address.customerType === 'company' ? (
+                            <>
+                              <p className="text-gray-900">{o.address.organizationName}</p>
+                              <p>Contact: {o.address.contactPerson}</p>
+                              {o.address.designation && <p>Designation: {o.address.designation}</p>}
+                              {o.address.email && <p>Email: {o.address.email}</p>}
+                            </>
+                          ) : (
+                            <p className="text-gray-900">{o.address.fullName}</p>
+                          )}
+                          <p>{o.address.area}</p>
+                          <p>{o.address.city}</p>
+                          <p>{o.address.phoneNumber}</p>
+                        </div>
+                      )}
                       </div>
                     <div className="flex items-center gap-3">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${o.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : o.status === 'shipped' ? 'bg-blue-100 text-blue-700' : o.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
@@ -498,16 +546,91 @@ export default function OrderClient() {
               </div>
 
               <div className="space-y-4">
+                {/* Customer Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={safeAddress.fullName}
-                    onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your full name"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer Type</label>
+                  <div className="flex items-center gap-4 text-sm">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="customerType"
+                        value="individual"
+                        checked={safeAddress.customerType === 'individual'}
+                        onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
+                      />
+                      <span>Individual</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="customerType"
+                        value="company"
+                        checked={safeAddress.customerType === 'company'}
+                        onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
+                      />
+                      <span>Company / Institution</span>
+                    </label>
+                  </div>
                 </div>
+
+                {safeAddress.customerType === 'individual' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={safeAddress.fullName}
+                      onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person Name</label>
+                      <input
+                        type="text"
+                        value={safeAddress.contactPerson}
+                        onChange={(e) => setAddress({ ...address, contactPerson: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter contact person's name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Institution / Company / Facility Name</label>
+                      <input
+                        type="text"
+                        value={safeAddress.organizationName}
+                        onChange={(e) => setAddress({ ...address, organizationName: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter organization name"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={safeAddress.email}
+                          onChange={(e) => setAddress({ ...address, email: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter email"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Designation (optional)</label>
+                        <input
+                          type="text"
+                          value={safeAddress.designation}
+                          onChange={(e) => setAddress({ ...address, designation: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="e.g. Procurement Officer"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+                
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>

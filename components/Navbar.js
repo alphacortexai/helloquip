@@ -155,7 +155,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <h1
-                className="text-2xl md:text-3xl font-extrabold text-[#1877F2] cursor-pointer hover:text-[#166FE5] transition-colors pr-0.5 whitespace-nowrap"
+                className="text-4xl md:text-5xl font-extrabold text-[#1877F2] cursor-pointer hover:text-[#166FE5] transition-colors pr-0.5 whitespace-nowrap"
                 onClick={() => router.push("/")}
               >
                 Heloquip

@@ -295,10 +295,22 @@ export default function ShipmentsPage() {
           {order.address && (
             <div className="mt-3 border-t pt-3 text-sm text-gray-700">
               <h4 className="font-semibold">Delivery Address:</h4>
-              <p>{order.address.fullName}</p>
+              {order.address.customerType === 'company' ? (
+                <>
+                  <p className="text-gray-900">{order.address.organizationName}</p>
+                  <p>Contact: {order.address.contactPerson}</p>
+                  {order.address.designation && (
+                    <p>Designation: {order.address.designation}</p>
+                  )}
+                  {order.address.email && <p>Email: {order.address.email}</p>}
+                </>
+              ) : (
+                <p className="text-gray-900">{order.address.fullName}</p>
+              )}
               <p>{order.address.area}</p>
               <p>
-                {order.address.city}, {order.address.state}
+                {order.address.city}
+                {order.address.state ? `, ${order.address.state}` : ""}
               </p>
               <p>Phone: {order.address.phoneNumber}</p>
             </div>
