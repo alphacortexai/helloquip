@@ -126,7 +126,7 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
     // Header
     doc.setFontSize(22);
     doc.setTextColor("#1F2A40");
-    doc.text("HELLOQUIP AUTO QUOTATION", 14, 20);
+    doc.text("HeloQuip Auto Quotation", 14, 20);
 
     // Company Info & Quote Meta
     doc.setFontSize(11);
