@@ -381,9 +381,9 @@ export default function Home() {
               <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">New Arrivals</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Placeholder for new arrivals */}
+                  {/* Show latest products from FeaturedProducts component */}
                   <div className="text-center py-6 text-gray-500">
-                    <p>New products coming soon...</p>
+                    <p>Latest products are shown in the Featured Products section above</p>
                   </div>
                 </div>
               </section>

@@ -20,6 +20,10 @@ const SessionProvider = dynamic(() => import("./SessionProvider"), {
   ssr: false,
 });
 
+const AutoSignIn = dynamic(() => import("./AutoSignIn"), {
+  ssr: false,
+});
+
 export default function ClientWrapper({ children }) {
   const [isClient, setIsClient] = useState(false);
 
@@ -34,6 +38,7 @@ export default function ClientWrapper({ children }) {
 
   return (
     <SessionProvider>
+      <AutoSignIn />
       <CartProvider>
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
         <NotificationSetup />

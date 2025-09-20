@@ -22,12 +22,18 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.accessToken = user.accessToken;
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
       }
       return token;
     },
 
     async session({ session, token }) {
       session.accessToken = token.accessToken;
+      session.user.id = token.id;
+      session.user.name = token.name;
+      session.user.email = token.email;
       return session;
     },
   },
@@ -35,6 +41,9 @@ const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET || "your-secret-key-here",
   session: {
     strategy: "jwt",
+  },
+  pages: {
+    signIn: '/', // Redirect to home page instead of sign-in page
   },
 });
 

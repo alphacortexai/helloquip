@@ -224,16 +224,28 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     const loadLatest = async () => {
       try {
         // Client-side filter from main list if available; otherwise do a best-effort fetch-all
-        const twoMonthsAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+        const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days (3 months)
 
         const normalizeDate = (p) => {
           const ts = p.createdAt || p.uploadedAt || p.updatedAt || p.timestamp || p.created_at;
           if (!ts) return null;
-          // Firestore Timestamp
-          if (ts && typeof ts.toDate === 'function') return ts.toDate();
-          // ISO string or millis
-          const d = new Date(ts);
-          return isNaN(d.getTime()) ? null : d;
+          
+          try {
+            // Firestore Timestamp
+            if (ts && typeof ts.toDate === 'function') {
+              return ts.toDate();
+            }
+            // JavaScript Date object
+            if (ts instanceof Date) {
+              return ts;
+            }
+            // ISO string or millis
+            const d = new Date(ts);
+            return isNaN(d.getTime()) ? null : d;
+          } catch (error) {
+            console.warn('Error normalizing date for product:', p.id, error);
+            return null;
+          }
         };
 
         let source = products;
@@ -243,18 +255,42 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           source = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         }
 
-        const latest = source
-          .map((p) => ({ p, d: normalizeDate(p) }))
-          .filter(({ d }) => d && d >= twoMonthsAgo)
+        console.log('Total products available:', source.length);
+        console.log('Looking for products created after:', threeMonthsAgo.toISOString());
+
+        const productsWithDates = source.map((p) => ({ p, d: normalizeDate(p) }));
+        const validDates = productsWithDates.filter(({ d }) => d !== null);
+        const recentProducts = validDates.filter(({ d }) => d >= threeMonthsAgo);
+        
+        console.log('Products with valid dates:', validDates.length);
+        console.log('Products created in last 90 days:', recentProducts.length);
+        
+        // Log some sample dates for debugging
+        if (validDates.length > 0) {
+          console.log('Sample product dates:', validDates.slice(0, 3).map(({ p, d }) => ({
+            id: p.id,
+            name: p.name,
+            date: d.toISOString(),
+            isRecent: d >= threeMonthsAgo
+          })));
+        }
+
+        const latest = recentProducts
           .sort((a, b) => b.d - a.d)
           .slice(0, 12)
           .map(({ p }) => p);
 
-        console.log('Latest products found:', latest.length, 'out of', source.length);
+        console.log('Latest products found (last 90 days):', latest.length, 'out of', source.length);
         
         // If no recent products, show first 8 products as "latest"
         if (latest.length === 0) {
-          const fallback = source.slice(0, 8);
+          // Try to get products with any date first, then fallback to first 8
+          const anyDateProducts = validDates
+            .sort((a, b) => b.d - a.d)
+            .slice(0, 8)
+            .map(({ p }) => p);
+          
+          const fallback = anyDateProducts.length > 0 ? anyDateProducts : source.slice(0, 8);
           console.log('Using fallback latest products:', fallback.length);
           setLatestProducts(fallback);
         } else {
@@ -263,7 +299,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       } catch (e) {
         console.warn('Failed to load latest uploads:', e);
         // Fallback to first few products
-        setLatestProducts(products.slice(0, 8));
+        const fallback = products.length > 0 ? products.slice(0, 8) : [];
+        console.log('Error fallback latest products:', fallback.length);
+        setLatestProducts(fallback);
       }
     };
     loadLatest();
@@ -277,6 +315,13 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
   // Fetch recent products when session changes
   useEffect(() => {
+    console.log('Session changed:', { 
+      hasSession: !!session, 
+      userId: session?.user?.id, 
+      userEmail: session?.user?.email,
+      userName: session?.user?.name 
+    });
+    
     if (session?.user?.id) {
       fetchRecentProducts();
     } else {
@@ -407,9 +452,15 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
   // Function to fetch recent products for the user
   const fetchRecentProducts = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      console.log('No user session, skipping recent products fetch');
+      setRecentProducts([]);
+      return;
+    }
     
     try {
+      console.log('Fetching recent products for user:', session.user.id);
+      
       // Get recent views for this user, ordered by most recent
       const recentViewsQuery = query(
         collection(db, "recentViews"),
@@ -421,12 +472,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       const recentViewsSnapshot = await getDocs(recentViewsQuery);
       
       if (recentViewsSnapshot.empty) {
+        console.log('No recent views found for user:', session.user.id);
         setRecentProducts([]);
         return;
       }
       
       // Get product IDs from recent views
       const productIds = recentViewsSnapshot.docs.map(doc => doc.data().productId);
+      console.log('Found recent view product IDs:', productIds);
       
       // Fetch product details for these IDs
       const productsQuery = query(
@@ -445,6 +498,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         .map(id => recentProductsData.find(p => p.id === id))
         .filter(Boolean);
       
+      console.log('Recent products loaded:', sortedRecentProducts.length);
       setRecentProducts(sortedRecentProducts);
     } catch (error) {
       console.error('Error fetching recent products:', error);
@@ -460,14 +514,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     
     // Track product view for recent section
     if (session?.user?.id) {
-      console.log('👤 User is authenticated, tracking view for product:', id);
+      console.log('👤 User is authenticated, tracking view for product:', id, 'User ID:', session.user.id);
       try {
         await trackProductView(session.user.id, id);
       } catch (error) {
         console.warn('Failed to track product view:', error);
       }
     } else {
-      console.log('❌ User not authenticated, skipping view tracking');
+      console.log('❌ User not authenticated, skipping view tracking. Session:', session);
     }
     
     // Navigate to product detail page
@@ -561,37 +615,47 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
                 {/* Latest uploads horizontal scroller */}
                 <div className="mt-2 mb-2">
-                  <div className="text-sm font-semibold text-white text-center px-1 mb-1">Latest uploads</div>
-                  <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
-                    {latestProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                      <div
-                        key={`latest-${id}`}
-                        className="snap-start shrink-0 w-[40%]"
-                        onClick={() => handleProductClick(id)}
-                      >
-                        <ProductCard
-                          variant="compact"
-                          isFirst={index === 0}
-                          badge={trendingProductIds.has(id) ? "Trending" : undefined}
-                          product={{
-                            id,
-                            name,
-                            description,
-                            sku,
-                            price,
-                            discount,
-                            image: getPreferredImageUrl(imageUrl, featuredCardResolution),
-                          }}
-                        />
-                      </div>
-                    ))}
+                  <div className="text-sm font-semibold text-white text-center px-1 mb-1">
+                    Latest uploads ({latestProducts.length})
                   </div>
+                  {latestProducts.length > 0 ? (
+                    <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
+                      {latestProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+                        <div
+                          key={`latest-${id}`}
+                          className="snap-start shrink-0 w-[40%]"
+                          onClick={() => handleProductClick(id)}
+                        >
+                          <ProductCard
+                            variant="compact"
+                            isFirst={index === 0}
+                            badge={trendingProductIds.has(id) ? "Trending" : undefined}
+                            product={{
+                              id,
+                              name,
+                              description,
+                              sku,
+                              price,
+                              discount,
+                              image: getPreferredImageUrl(imageUrl, featuredCardResolution),
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-400 text-xs py-2">
+                      No latest products available
+                    </div>
+                  )}
                 </div>
 
                 {/* Recent products horizontal scroller - only show if user has recent products */}
-                {recentProducts.length > 0 && (
+                {recentProducts.length > 0 ? (
                   <div className="mt-2 mb-2">
-                    <div className="text-sm font-semibold text-white text-center px-1 mb-1">Recent</div>
+                    <div className="text-sm font-semibold text-white text-center px-1 mb-1">
+                      Recent ({recentProducts.length})
+                    </div>
                     <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
                       {recentProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
                         <div
@@ -615,6 +679,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                           />
                         </div>
                       ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 mb-2">
+                    <div className="text-center text-gray-400 text-xs py-2">
+                      {session?.user?.id ? 'No recent products viewed' : 'No recent products available'}
                     </div>
                   </div>
                 )}
