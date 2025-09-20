@@ -11,6 +11,9 @@ import ImageGallery from "@/components/ImageGallery";
 import QuantityInput from "@/components/QuantityInput";
 import RelatedProducts from "@/components/RelatedProducts";
 import ContactButtons from "@/components/ContactButtons";
+import WishlistButton from "@/components/WishlistButton";
+import ProductComparisonButton from "@/components/ProductComparisonButton";
+import { CustomerExperienceService } from "@/lib/customerExperienceService";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -87,9 +90,14 @@ export default function ProductDetail() {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      
+      // Track product view when user is available and product is loaded
+      if (user && product) {
+        CustomerExperienceService.trackProductView(user.uid, product.id, product);
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [product]);
 
   // (Reverted) No auto-add on return; just return to the product page
 
@@ -215,8 +223,15 @@ export default function ProductDetail() {
                 <QuantityInput quantity={quantity} setQuantity={setQuantity} />
               </div>
 
-              {/* Buttons */}
+              {/* Action Buttons */}
               <div className="bg-white p-4 border border-gray-100 shadow-sm flex flex-col gap-4">
+                {/* Wishlist and Comparison */}
+                <div className="flex justify-center gap-4 mb-2">
+                  <WishlistButton product={product} size="large" />
+                  <ProductComparisonButton product={product} size="large" />
+                </div>
+                
+                {/* Main Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <button
                     onClick={handleAddToOrder}

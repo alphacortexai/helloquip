@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import WishlistButton from './WishlistButton';
+import ProductComparisonButton from './ProductComparisonButton';
 
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -53,7 +55,13 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const wrapperStyle = imageLoaded ? 'opacity-100' : 'opacity-0';
 
   const renderDefault = () => (
-    <div className={`${commonClasses} p-4 ${wrapperStyle}`}>
+    <div className={`${commonClasses} p-4 ${wrapperStyle} relative`}>
+      {/* Action Buttons */}
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
+        <WishlistButton product={product} size="small" />
+        <ProductComparisonButton product={product} size="small" />
+      </div>
+      
       <img {...imageProps} className="w-full h-48 object-cover rounded-xl mb-3" />
       <h2 className="hidden md:block text-lg font-semibold">{product.name}</h2>
       <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>

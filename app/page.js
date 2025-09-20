@@ -5,6 +5,8 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
+import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
+import ProductRecommendations from "@/components/ProductRecommendations";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
@@ -423,6 +425,12 @@ export default function Home() {
                 </div>
               </section>
 
+              {/* Recently Viewed Products */}
+              <RecentlyViewedProducts limit={6} />
+
+              {/* Product Recommendations */}
+              <ProductRecommendations limit={3} />
+
               {/* Customer Testimonials */}
               <section className="bg-white rounded-2xl shadow-sm p-4">
                 <Testimonials />
@@ -472,6 +480,12 @@ export default function Home() {
                 />
               </div>
             </div>
+
+            {/* Recently Viewed Products - Mobile */}
+            <RecentlyViewedProducts limit={4} />
+
+            {/* Product Recommendations - Mobile */}
+            <ProductRecommendations limit={3} />
 
             {/* Promotional Banner */}
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">

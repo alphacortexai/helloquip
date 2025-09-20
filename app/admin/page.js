@@ -32,6 +32,7 @@ import AdminUserChat from "./components/AdminUserChat";
 import DisplaySettings from "./components/DisplaySettings";
 import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
+import RecommendationAnalytics from "./components/RecommendationAnalytics";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -179,6 +180,15 @@ const tabs = [
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     borderColor: "border-amber-100"
+  },
+  { 
+    id: "recommendationAnalytics", 
+    icon: <ChartBarIcon className="w-5 h-5" />, 
+    label: "Recommendation Analytics",
+    description: "View and manage recommendation system",
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-50",
+    borderColor: "border-cyan-100"
   },
   { 
     id: "quatations", 
@@ -400,7 +410,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <EditSubCategoryForm />;
       case "drafts":
         return <DraftsList />;
-
+      case "recommendationAnalytics":
+        return <RecommendationAnalytics />;
       case "quatations":
         return <QuotationViewer />;
       case "quoteRequests":

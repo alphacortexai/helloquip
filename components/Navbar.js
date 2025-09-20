@@ -301,11 +301,38 @@ export default function Navbar() {
                         <button
                           onClick={() => {
                             setMenuOpen(false);
+                            router.push("/dashboard");
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#e5f3fa] hover:text-[#2e4493] rounded-lg transition-colors"
+                        >
+                          My Dashboard
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
                             router.push("/order");
                           }}
                           className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#e5f3fa] hover:text-[#2e4493] rounded-lg transition-colors"
                         >
                           My Orders
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push("/wishlist");
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#e5f3fa] hover:text-[#2e4493] rounded-lg transition-colors"
+                        >
+                          My Wishlist
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push("/compare");
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-[#e5f3fa] hover:text-[#2e4493] rounded-lg transition-colors"
+                        >
+                          Compare Products
                         </button>
                         <button
                           onClick={() => {

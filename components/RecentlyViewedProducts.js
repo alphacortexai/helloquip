@@ -1,0 +1,141 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { CustomerExperienceService } from '@/lib/customerExperienceService';
+import { getProductImageUrl } from '@/lib/imageUtils';
+import Link from 'next/link';
+import { ClockIcon } from '@heroicons/react/24/outline';
+
+export default function RecentlyViewedProducts({ limit = 6, showTitle = true }) {
+  const [user, setUser] = useState(null);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchRecentlyViewed();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchRecentlyViewed = async () => {
+    try {
+      setLoading(true);
+      const items = await CustomerExperienceService.getRecentlyViewed(user.uid, limit);
+      setRecentlyViewed(items);
+    } catch (error) {
+      console.error('Error fetching recently viewed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getImageUrl = (item) => {
+    // Create a product-like object for the image utility
+    const product = {
+      imageUrl: item.product?.imageUrl || item.productImage
+    };
+    return getProductImageUrl(product, "200x200");
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  if (!user) {
+    return null; // Don't show for non-authenticated users
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        {showTitle && (
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <ClockIcon className="h-5 w-5 mr-2" />
+            Recently Viewed
+          </h2>
+        )}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {Array.from({ length: limit }).map((_, index) => (
+            <div key={index} className="animate-pulse">
+              <div className="bg-gray-200 h-32 rounded-lg mb-2"></div>
+              <div className="bg-gray-200 h-4 rounded mb-1"></div>
+              <div className="bg-gray-200 h-3 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (recentlyViewed.length === 0) {
+    return null; // Don't show empty state
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      {showTitle && (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+            <ClockIcon className="h-5 w-5 mr-2" />
+            Recently Viewed
+          </h2>
+          <Link 
+            href="/dashboard" 
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            View All
+          </Link>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {recentlyViewed.map((item) => (
+          <Link
+            key={item.id}
+            href={`/product/${item.productId}`}
+            className="group block"
+          >
+            <div className="relative">
+              <img
+                src={getImageUrl(item)}
+                alt={item.product?.name || item.productName}
+                className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
+              />
+              <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                {formatDate(item.viewedAt)}
+              </div>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">
+                {item.product?.name || item.productName}
+              </h3>
+              <p className="text-sm text-gray-500">
+                UGX {item.product?.price?.toLocaleString() || item.productPrice?.toLocaleString() || 'N/A'}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
