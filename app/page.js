@@ -26,6 +26,8 @@ export default function Home() {
   const [featuredProductsLoaded, setFeaturedProductsLoaded] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
 
 
   // Check if we're on client side
@@ -417,8 +419,24 @@ export default function Home() {
               <FeaturedProducts 
                 selectedCategory={selectedCategory} 
                 onLoadComplete={() => setFeaturedProductsLoaded(true)}
+                onScrollProgressChange={(progress, hasScrolledAll) => {
+                  setScrollProgress(progress);
+                  setHasScrolledAllProducts(hasScrolledAll);
+                }}
               />
             </section>
+
+            {/* Progress indicator line - only show on mobile */}
+            <div className="block md:hidden mb-2">
+              <div className="w-full" style={{ height: '3px' }}>
+                <div 
+                  className={`h-full transition-all duration-300 ${
+                    hasScrolledAllProducts ? 'bg-green-500' : 'bg-blue-300'
+                  }`}
+                  style={{ width: `${scrollProgress * 100}%` }}
+                />
+              </div>
+            </div>
 
             {/* Promotional Banner */}
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">

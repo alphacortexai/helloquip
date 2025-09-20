@@ -5,6 +5,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -53,17 +54,65 @@ const getPreferredImageUrl = (imageUrl, customResolution = null) => {
   return null;
 };
 
-export default function FeaturedProducts({ selectedCategory, keyword, tags, manufacturer, name, onLoadComplete }) {
+export default function FeaturedProducts({ selectedCategory, keyword, tags, manufacturer, name, onLoadComplete, onScrollProgressChange }) {
   const { featuredCardResolution, loading: settingsLoading } = useDisplaySettings();
   const { saveScrollPosition } = useScrollPosition();
+  const { data: session } = useSession();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [trendingProductIds, setTrendingProductIds] = useState(new Set());
+  const [latestProducts, setLatestProducts] = useState([]);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   const router = useRouter();
   const batchSize = 24; // Reduced from previous large numbers
+
+  // --- Seeded shuffle helpers (stable per-user order) ---
+  const getOrCreateUserSeed = () => {
+    try {
+      const authId = session?.user?.id || session?.user?.email || "guest";
+      if (typeof window === 'undefined') return authId;
+      let stored = localStorage.getItem('userSeed');
+      if (!stored) {
+        stored = `${authId}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem('userSeed', stored);
+      }
+      return stored;
+    } catch {
+      return "guest";
+    }
+  };
+
+  const mulberry32 = (a) => {
+    return function() {
+      let t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  const stringHash = (str) => {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+    return h >>> 0;
+  };
+
+  const seededShuffle = (arr, seedString) => {
+    const rand = mulberry32(stringHash(seedString));
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
 
   // Fetch trending product IDs
   const fetchTrendingProductIds = useCallback(async () => {
@@ -80,6 +129,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     async (startAfterDoc = null, reset = false) => {
       setLoading(true);
       try {
+        // Always fetch fresh data - no caching for infinite scroll
         const constraints = [orderBy("name")];
 
         if (startAfterDoc) {
@@ -131,20 +181,30 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           });
         }
 
+        const seed = getOrCreateUserSeed();
+        const sorted = seededShuffle(filteredProducts, seed);
+
         if (reset) {
-          setProducts(filteredProducts);
+          setProducts(sorted);
         } else {
           setProducts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
-            const newUnique = filteredProducts.filter((p) => !existingIds.has(p.id));
-            return [...prev, ...newUnique];
+            const newUnique = sorted.filter((p) => !existingIds.has(p.id));
+            const combined = [...prev, ...newUnique];
+            // Re-shuffle combined to keep global order stable per user
+            return seededShuffle(combined, seed);
           });
         }
 
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         setLastVisible(lastVisibleDoc);
+        
+        // More aggressive hasMore logic - continue if we got a full batch
+        // This ensures we don't miss products due to filtering or other issues
         const hasMoreProducts = querySnapshot.docs.length === batchSize;
         setHasMore(hasMoreProducts);
+        
+        console.log(`📦 Fetched ${fetchedProducts.length} products, hasMore: ${hasMoreProducts}`);
       } catch (err) {
         console.error("Error fetching products:", err);
       }
@@ -152,6 +212,57 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     },
     [keyword, tags, manufacturer, name]
   );
+
+  // Fetch latest uploads (last 1 month)
+  useEffect(() => {
+    const loadLatest = async () => {
+      try {
+        // Client-side filter from main list if available; otherwise do a best-effort fetch-all
+        const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        const normalizeDate = (p) => {
+          const ts = p.createdAt || p.uploadedAt || p.updatedAt || p.timestamp || p.created_at;
+          if (!ts) return null;
+          // Firestore Timestamp
+          if (ts && typeof ts.toDate === 'function') return ts.toDate();
+          // ISO string or millis
+          const d = new Date(ts);
+          return isNaN(d.getTime()) ? null : d;
+        };
+
+        let source = products;
+
+        if (!source || source.length === 0) {
+          const snapshot = await getDocs(collection(db, "products"));
+          source = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        }
+
+        const latest = source
+          .map((p) => ({ p, d: normalizeDate(p) }))
+          .filter(({ d }) => d && d >= oneMonthAgo)
+          .sort((a, b) => b.d - a.d)
+          .slice(0, 12)
+          .map(({ p }) => p);
+
+        console.log('Latest products found:', latest.length, 'out of', source.length);
+        
+        // If no recent products, show first 8 products as "latest"
+        if (latest.length === 0) {
+          const fallback = source.slice(0, 8);
+          console.log('Using fallback latest products:', fallback.length);
+          setLatestProducts(fallback);
+        } else {
+          setLatestProducts(latest);
+        }
+      } catch (e) {
+        console.warn('Failed to load latest uploads:', e);
+        // Fallback to first few products
+        setLatestProducts(products.slice(0, 8));
+      }
+    };
+    loadLatest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products.length]);
 
   // Fetch trending product IDs on component mount
   useEffect(() => {
@@ -194,6 +305,17 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
   }, [keyword, name, manufacturer, tags, fetchProducts, products.length]);
 
+  // Force refresh on page load to ensure fresh data
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/') {
+      console.log('🔄 Page loaded, forcing fresh product fetch...');
+      setProducts([]);
+      setLastVisible(null);
+      setHasMore(true);
+      fetchProducts(null, true);
+    }
+  }, []); // Only run once on mount
+
   // Simple infinite scroll for main page only
   useEffect(() => {
     if (window.location.pathname !== '/') return;
@@ -202,11 +324,29 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       const windowHeight = window.innerHeight;
       const scrollY = window.scrollY;
       const documentHeight = document.body.offsetHeight;
-      const threshold = 800;
+      const threshold = 1200; // Increased threshold for more aggressive loading
       const shouldLoadMore = windowHeight + scrollY >= documentHeight - threshold;
       
       if (shouldLoadMore && !loading && hasMore) {
+        console.log('🔄 Loading more products due to scroll...');
         fetchProducts(lastVisible, false);
+      }
+
+      // Calculate scroll progress through products
+      const featuredProductsSection = document.querySelector('[data-featured-products]');
+      if (featuredProductsSection) {
+        const sectionTop = featuredProductsSection.offsetTop;
+        const sectionHeight = featuredProductsSection.offsetHeight;
+        const scrollProgress = Math.min(Math.max((scrollY - sectionTop + windowHeight) / sectionHeight, 0), 1);
+        setScrollProgress(scrollProgress);
+        
+        // Check if user has scrolled through all products (90% of section)
+        setHasScrolledAllProducts(scrollProgress >= 0.9);
+        
+        // Pass scroll progress to parent component
+        if (onScrollProgressChange) {
+          onScrollProgressChange(scrollProgress, scrollProgress >= 0.9);
+        }
       }
     };
 
@@ -237,7 +377,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }
 
   return (
-    <section className="bg-gray/70 pt-0 md:pt-3 pb-3 relative">
+    <section className="bg-gray/70 pt-0 md:pt-3 pb-3 relative" data-featured-products>
       {isNavigating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
@@ -257,13 +397,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
+        {/* Desktop/Tablet: original grid */}
+        <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-            <div
-              key={id}
-              onClick={() => handleProductClick(id)}
-              className="cursor-pointer group"
-            >
+            <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
               <ProductCard
                 variant="compact"
                 isFirst={index === 0}
@@ -282,10 +419,113 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           ))}
         </div>
 
+        {/* Mobile: first 2 rows (4 items), then latest scroller, then remaining */}
+        <div className="sm:hidden">
+          {(() => {
+            const firstCount = 4;
+            const first = products.slice(0, firstCount);
+            const rest = products.slice(firstCount);
+            return (
+              <>
+                {/* First two rows */}
+                <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
+                  {first.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+                    <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                      <ProductCard
+                        variant="compact"
+                        isFirst={index === 0}
+                        badge={trendingProductIds.has(id) ? "Trending" : undefined}
+                        product={{
+                          id,
+                          name,
+                          description,
+                          sku,
+                          price,
+                          discount,
+                          image: getPreferredImageUrl(imageUrl, featuredCardResolution),
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Latest uploads horizontal scroller */}
+                <div className="mt-2 mb-2">
+                  <div className="text-sm font-semibold text-gray-800 px-1 mb-1">Latest uploads</div>
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
+                    {latestProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+                      <div
+                        key={`latest-${id}`}
+                        className="snap-start shrink-0 w-[40%]"
+                        onClick={() => handleProductClick(id)}
+                      >
+                        <ProductCard
+                          variant="compact"
+                          isFirst={index === 0}
+                          badge={trendingProductIds.has(id) ? "Trending" : undefined}
+                          product={{
+                            id,
+                            name,
+                            description,
+                            sku,
+                            price,
+                            discount,
+                            image: getPreferredImageUrl(imageUrl, featuredCardResolution),
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Remaining products */}
+                <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
+                  {rest.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+                    <div key={`rest-${id}`} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                      <ProductCard
+                        variant="compact"
+                        isFirst={index === 0}
+                        badge={trendingProductIds.has(id) ? "Trending" : undefined}
+                        product={{
+                          id,
+                          name,
+                          description,
+                          sku,
+                          price,
+                          discount,
+                          image: getPreferredImageUrl(imageUrl, featuredCardResolution),
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
         {loading && hasMore && (
           <p className="text-center py-4 text-gray-600">Loading more products...</p>
         )}
+        
+        {/* Fallback load more button if infinite scroll thinks it's done but we might have missed products */}
+        {!loading && !hasMore && products.length > 0 && (
+          <div className="text-center py-4">
+            <button 
+              onClick={() => {
+                console.log('🔄 Manual load more triggered...');
+                setHasMore(true);
+                setLastVisible(null);
+                fetchProducts(null, false);
+              }}
+              className="bg-blue-500 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-600 transition-colors"
+            >
+              Load More Products
+            </button>
+          </div>
+        )}
       </div>
+
     </section>
   );
 }

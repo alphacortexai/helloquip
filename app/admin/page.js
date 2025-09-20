@@ -28,6 +28,7 @@ import QuoteRequestManager from "./components/QuoteRequestManager";
 import FeedbackManager from "./components/FeedbackManager";
 import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
+import AdminUserChat from "./components/AdminUserChat";
 import DisplaySettings from "./components/DisplaySettings";
 import NotificationTracker from "./components/NotificationTracker";
 import { db } from "@/lib/firebase";
@@ -219,10 +220,19 @@ const tabs = [
     id: "userMessenger", 
     icon: <ChatBubbleLeftIcon className="w-5 h-5" />, 
     label: "User Messenger",
-    description: "Message or notify a user",
+    description: "Send notifications to users",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     borderColor: "border-blue-100"
+  },
+  { 
+    id: "adminChat", 
+    icon: <ChatBubbleLeftIcon className="w-5 h-5" />, 
+    label: "Admin Chat",
+    description: "Chat with users directly",
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-100"
   },
   { 
     id: "displaySettings", 
@@ -392,6 +402,12 @@ function AdminDashboard({ currentAdminUid }) {
         return <AdminNotifications />;
       case "userMessenger":
         return <UserMessenger />;
+      case "adminChat":
+        return (
+          <div className="w-full max-w-4xl mx-auto">
+            <AdminUserChat />
+          </div>
+        );
       case "displaySettings":
         return <DisplaySettings />;
       case "notificationTracker":

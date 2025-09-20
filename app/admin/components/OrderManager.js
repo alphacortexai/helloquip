@@ -215,10 +215,28 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, getDoc, deleteDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 const statuses = ["Pending", "Confirmed", "Shipping", "Delivered", "Canceled"];
+
+// Status color mapping
+const getStatusColor = (status) => {
+  switch (status) {
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    case "Confirmed":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "Shipping":
+      return "bg-purple-100 text-purple-800 border-purple-200";
+    case "Delivered":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "Canceled":
+      return "bg-red-100 text-red-800 border-red-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
 
 export default function OrderManager() {
   const [orders, setOrders] = useState([]);
@@ -359,6 +377,24 @@ export default function OrderManager() {
     router.push(`/admin/chat?userId=${userId}`);
   };
 
+  const deleteOrder = async (orderId) => {
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, "orders", orderId));
+      setOrders(prev => prev.filter(order => order.id !== orderId));
+      if (selected?.id === orderId) {
+        setSelected(null);
+      }
+      alert('Order deleted successfully');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Failed to delete order. Please try again.');
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-6">
       {/* Left: Order List */}
@@ -378,7 +414,9 @@ export default function OrderManager() {
               <p className="font-semibold">Order #{order.id.slice(-5)}</p>
               <p className="text-sm text-gray-500">
                 {(order.userName || order.address?.fullName || "No Name")} —{" "}
-                <span className="text-blue-600">{order.status}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                  {order.status}
+                </span>
               </p>
             </button>
           ))
@@ -395,7 +433,9 @@ export default function OrderManager() {
             </p>
             <p>
               <strong>Status:</strong>{" "}
-              <span className="text-blue-600">{selected.status}</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selected.status)}`}>
+                {selected.status}
+              </span>
             </p>
             {selected.paymentMethod && (
               <p className="mt-1">
@@ -460,10 +500,10 @@ export default function OrderManager() {
                 <button
                   key={status}
                   onClick={() => updateStatus(selected.id, status)}
-                  className={`px-2 py-1 text-sm rounded-md ${
+                  className={`px-3 py-2 text-sm rounded-full font-medium border transition-colors ${
                     status === selected.status
-                      ? "bg-[#2e4493] text-white"
-                      : "bg-gray-200 hover:bg-gray-300"
+                      ? getStatusColor(status)
+                      : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200"
                   }`}
                 >
                   {status}
@@ -494,12 +534,20 @@ export default function OrderManager() {
               </div>
             )}
 
-            <button
-              onClick={() => openChatForUser(selected.userId)}
-              className="mt-4 bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 text-sm"
-            >
-              Chat with User
-            </button>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => openChatForUser(selected.userId)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors"
+              >
+                Chat with User
+              </button>
+              <button
+                onClick={() => deleteOrder(selected.id)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors"
+              >
+                Delete Order
+              </button>
+            </div>
           </>
         ) : (
           <p className="text-gray-500">Select an order to view details.</p>
