@@ -224,7 +224,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     const loadLatest = async () => {
       try {
         // Client-side filter from main list if available; otherwise do a best-effort fetch-all
-        const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days (3 months)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today (00:00:00)
 
         const normalizeDate = (p) => {
           const ts = p.createdAt || p.uploadedAt || p.updatedAt || p.timestamp || p.created_at;
@@ -256,22 +257,22 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         }
 
         console.log('Total products available:', source.length);
-        console.log('Looking for products created after:', threeMonthsAgo.toISOString());
+        console.log('Looking for products created from today onwards:', today.toISOString());
 
         const productsWithDates = source.map((p) => ({ p, d: normalizeDate(p) }));
         const validDates = productsWithDates.filter(({ d }) => d !== null);
-        const recentProducts = validDates.filter(({ d }) => d >= threeMonthsAgo);
+        const recentProducts = validDates.filter(({ d }) => d >= today);
         
         console.log('Products with valid dates:', validDates.length);
-        console.log('Products created in last 90 days:', recentProducts.length);
+        console.log('Products created from today onwards:', recentProducts.length);
         
         // Log some sample dates for debugging
         if (validDates.length > 0) {
-          console.log('Sample product dates:', validDates.slice(0, 3).map(({ p, d }) => ({
+          console.log('Sample product dates:', validDates.slice(0, 5).map(({ p, d }) => ({
             id: p.id,
             name: p.name,
             date: d.toISOString(),
-            isRecent: d >= threeMonthsAgo
+            isRecent: d >= today
           })));
         }
 
@@ -280,7 +281,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           .slice(0, 12)
           .map(({ p }) => p);
 
-        console.log('Latest products found (last 90 days):', latest.length, 'out of', source.length);
+        console.log('Latest products found (from today onwards):', latest.length, 'out of', source.length);
         
         // If no recent products, show first 8 products as "latest"
         if (latest.length === 0) {
@@ -719,19 +720,18 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           <p className="text-center py-4 text-gray-600">Loading more products...</p>
         )}
         
-        {/* Fallback load more button if infinite scroll thinks it's done but we might have missed products */}
-        {!loading && !hasMore && products.length > 0 && (
+        {/* View More button - always show at bottom for manual loading */}
+        {!loading && products.length > 0 && (
           <div className="text-center py-4">
             <button 
               onClick={() => {
                 console.log('🔄 Manual load more triggered...');
                 setHasMore(true);
-                setLastVisible(null);
-                fetchProducts(null, false);
+                fetchProducts(lastVisible, false);
               }}
               className="bg-blue-500 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-600 transition-colors"
             >
-              Load More Products
+              View More Products
             </button>
           </div>
         )}

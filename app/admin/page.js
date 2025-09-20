@@ -31,6 +31,7 @@ import UserMessenger from "./components/UserMessenger";
 import AdminUserChat from "./components/AdminUserChat";
 import DisplaySettings from "./components/DisplaySettings";
 import NotificationTracker from "./components/NotificationTracker";
+import LatestProductsViewer from "./components/LatestProductsViewer";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -252,6 +253,15 @@ const tabs = [
     bgColor: "bg-purple-50",
     borderColor: "border-purple-100"
   },
+  {
+    id: "latestProducts",
+    icon: <CubeIcon className="w-5 h-5" />,
+    label: "Latest Products",
+    description: "View recently uploaded products",
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -412,6 +422,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <DisplaySettings />;
       case "notificationTracker":
         return <NotificationTracker />;
+      case "latestProducts":
+        return <LatestProductsViewer />;
       default:
         return null;
     }
