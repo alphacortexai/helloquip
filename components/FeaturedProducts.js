@@ -7,6 +7,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -63,6 +64,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const { featuredCardResolution, loading: settingsLoading } = useDisplaySettings();
   const { saveScrollPosition } = useScrollPosition();
   const { data: session } = useSession();
+  const [firebaseUser, setFirebaseUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -314,21 +316,24 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     fetchTrendingProductIds();
   }, [fetchTrendingProductIds]);
 
-  // Fetch recent products when session changes
+  // Fetch recent products when Firebase Auth state changes or component mounts
   useEffect(() => {
-    console.log('Session changed:', { 
+    const userId = getUserId();
+    console.log('User ID changed:', { 
       hasSession: !!session, 
-      userId: session?.user?.id, 
-      userEmail: session?.user?.email,
-      userName: session?.user?.name 
+      sessionUserId: session?.user?.id, 
+      firebaseUserId: firebaseUser?.uid,
+      finalUserId: userId,
+      userEmail: firebaseUser?.email || session?.user?.email,
+      userName: firebaseUser?.displayName || session?.user?.name 
     });
     
-    if (session?.user?.id) {
+    if (userId && userId !== 'guest') {
       fetchRecentProducts();
     } else {
       setRecentProducts([]);
     }
-  }, [session?.user?.id]);
+  }, [firebaseUser]); // Run when Firebase Auth state changes
 
   // Call onLoadComplete when component is fully loaded
   useEffect(() => {
@@ -451,21 +456,61 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
   };
 
+  // Monitor Firebase Auth state
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      console.log('🔥 Firebase Auth state changed:', user ? `Authenticated user: ${user.uid}` : 'No authenticated user');
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Get the best available user ID (Firebase Auth first, then persistent browser ID)
+  const getUserId = () => {
+    // Priority 1: Real Firebase Auth user
+    if (firebaseUser?.uid) {
+      console.log('✅ Using Firebase Auth user ID:', firebaseUser.uid);
+      return firebaseUser.uid;
+    }
+    
+    // Priority 2: Persistent browser ID for anonymous users
+    try {
+      if (typeof window === 'undefined') return 'guest';
+      
+      let userId = localStorage.getItem('persistentUserId');
+      if (!userId) {
+        // Create a unique ID for this browser
+        userId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('persistentUserId', userId);
+        console.log('🆕 Created new persistent user ID:', userId);
+      } else {
+        console.log('🔄 Using existing persistent user ID:', userId);
+      }
+      return userId;
+    } catch (error) {
+      console.warn('Error getting persistent user ID:', error);
+      return 'guest';
+    }
+  };
+
   // Function to fetch recent products for the user
   const fetchRecentProducts = async () => {
-    if (!session?.user?.id) {
-      console.log('No user session, skipping recent products fetch');
+    const userId = getUserId();
+    
+    if (!userId || userId === 'guest') {
+      console.log('No user ID available, skipping recent products fetch');
       setRecentProducts([]);
       return;
     }
     
     try {
-      console.log('Fetching recent products for user:', session.user.id);
+      console.log('Fetching recent products for user:', userId);
       
       // Get recent views for this user, ordered by most recent
       const recentViewsQuery = query(
         collection(db, "recentViews"),
-        where("userId", "==", session.user.id),
+        where("userId", "==", userId),
         orderBy("viewedAt", "desc"),
         limit(12)
       );
@@ -473,7 +518,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       const recentViewsSnapshot = await getDocs(recentViewsQuery);
       
       if (recentViewsSnapshot.empty) {
-        console.log('No recent views found for user:', session.user.id);
+        console.log('No recent views found for user:', userId);
         setRecentProducts([]);
         return;
       }
@@ -514,15 +559,16 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
     
     // Track product view for recent section
-    if (session?.user?.id) {
-      console.log('👤 User is authenticated, tracking view for product:', id, 'User ID:', session.user.id);
+    const userId = getUserId();
+    if (userId && userId !== 'guest') {
+      console.log('👤 Tracking view for product:', id, 'User ID:', userId);
       try {
-        await trackProductView(session.user.id, id);
+        await trackProductView(userId, id);
       } catch (error) {
         console.warn('Failed to track product view:', error);
       }
     } else {
-      console.log('❌ User not authenticated, skipping view tracking. Session:', session);
+      console.log('❌ No user ID available, skipping view tracking');
     }
     
     // Navigate to product detail page
@@ -685,7 +731,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 ) : (
                   <div className="mt-2 mb-2">
                     <div className="text-center text-gray-400 text-xs py-2">
-                      {session?.user?.id ? 'No recent products viewed' : 'No recent products available'}
+                      No recent products viewed
                     </div>
                   </div>
                 )}

@@ -7,7 +7,8 @@ const handler = NextAuth({
       name: "Anonymous",
       credentials: {},
       async authorize() {
-        // Create an anonymous session for the agent chat
+        // Create a unique anonymous session for each user
+        // This will be overridden by the client-side logic to use persistent browser ID
         return {
           id: "anonymous",
           name: "Anonymous User",
