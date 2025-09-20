@@ -154,12 +154,12 @@ export default function Navbar() {
           <div className="flex items-center justify-between gap-2">
             {/* Logo */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              <h1
-                className="text-4xl md:text-5xl font-extrabold text-[#1877F2] cursor-pointer hover:text-[#166FE5] transition-colors pr-0.5 whitespace-nowrap"
+              <img
+                src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo.png?alt=media&token=580aa6cc-f6d0-4ace-bcda-8e7b6b573821"
+                alt="HeloQuip Logo"
+                className="h-12 md:h-14 w-auto cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => router.push("/")}
-              >
-                Heloquip
-              </h1>
+              />
             </div>
 
             {/* Search Bar - Desktop */}

@@ -43,6 +43,10 @@ export default function SearchBar() {
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const listboxId = "search-suggestions-listbox";
   const hideTimerRef = useRef(null);
+  
+  // Dynamic placeholder state
+  const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
+  const placeholderIntervalRef = useRef(null);
 
   const startAutoHide = (delayMs = 2000) => {
     if (hideTimerRef.current) {
@@ -109,6 +113,52 @@ export default function SearchBar() {
     }, 150); // debounce
     return () => clearTimeout(handler);
   }, [searchTerm, allProducts]);
+
+  // Dynamic placeholder effect
+  useEffect(() => {
+    // Create placeholder texts with product suggestions
+    const basePlaceholder = "Search on HeloQuip";
+    const productSuggestions = allProducts
+      .slice(0, 3) // Take first 3 products
+      .map(product => `Search for ${product.name}`)
+      .filter(Boolean); // Remove any empty suggestions
+    
+    const allPlaceholders = [basePlaceholder, ...productSuggestions];
+    
+    // Only start cycling if we have products and user is not focused on search
+    if (allPlaceholders.length > 1 && !isFocused && !searchTerm) {
+      placeholderIntervalRef.current = setInterval(() => {
+        setCurrentPlaceholderIndex((prevIndex) => 
+          (prevIndex + 1) % allPlaceholders.length
+        );
+      }, 3000); // Change every 3 seconds
+    } else {
+      // Clear interval if user is focused or typing
+      if (placeholderIntervalRef.current) {
+        clearInterval(placeholderIntervalRef.current);
+        placeholderIntervalRef.current = null;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (placeholderIntervalRef.current) {
+        clearInterval(placeholderIntervalRef.current);
+      }
+    };
+  }, [allProducts, isFocused, searchTerm]);
+
+  // Get current dynamic placeholder
+  const getCurrentPlaceholder = () => {
+    const basePlaceholder = "Search on HeloQuip";
+    const productSuggestions = allProducts
+      .slice(0, 3)
+      .map(product => `Search for ${product.name}`)
+      .filter(Boolean);
+    
+    const allPlaceholders = [basePlaceholder, ...productSuggestions];
+    return allPlaceholders[currentPlaceholderIndex] || basePlaceholder;
+  };
 
   // Close suggestions only on navigation changes
   useEffect(() => {
@@ -220,8 +270,8 @@ export default function SearchBar() {
       <form onSubmit={handleSubmit} className="relative" role="search">
         <input
           type="text"
-          placeholder="Search on HalloQuip"
-          className="w-full pl-10 pr-4 py-1.5 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-sm"
+          placeholder={getCurrentPlaceholder()}
+          className="w-full pl-10 pr-4 py-1.5 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-sm transition-all duration-300"
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}

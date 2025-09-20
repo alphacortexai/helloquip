@@ -15,7 +15,13 @@ const Footer = () => {
           
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-2xl font-bold text-blue-400 mb-4">Heloquip</h3>
+            <div className="mb-4">
+              <img
+                src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
+                alt="HeloQuip Logo"
+                className="h-16 w-auto"
+              />
+            </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Your trusted partner for high-quality medical equipment. We are committed to providing reliable, 
               accessible, and affordable solutions to support healthcare across Africa.
