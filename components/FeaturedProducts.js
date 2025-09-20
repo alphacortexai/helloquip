@@ -654,7 +654,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {recentProducts.length > 0 ? (
                   <div className="mt-2 mb-2">
                     <div className="text-sm font-semibold text-white text-center px-1 mb-1">
-                      Recent ({recentProducts.length})
+                      Your recent product views ({recentProducts.length})
                     </div>
                     <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
                       {recentProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
