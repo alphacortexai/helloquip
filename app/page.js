@@ -45,6 +45,31 @@ export default function Home() {
       sessionStorage.removeItem('mainPageProducts');
       sessionStorage.removeItem('mainPageProductsTimestamp');
       setLoading(true);
+      
+      // Force refresh the page data
+      const fetchProducts = async () => {
+        try {
+          const snapshot = await getDocs(collection(db, "products"));
+          const products = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          
+          setAllProducts(products);
+          
+          // Cache the products for future use
+          sessionStorage.setItem('mainPageProducts', JSON.stringify(products));
+          sessionStorage.setItem('mainPageProductsTimestamp', Date.now().toString());
+          
+          console.log('📦 Refreshed and cached products:', products.length);
+        } catch (error) {
+          console.error("Error refreshing products:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchProducts();
     } catch (error) {
       console.warn('Error clearing cache:', error);
     }
@@ -99,9 +124,9 @@ export default function Home() {
       const cachedProducts = sessionStorage.getItem('mainPageProducts');
       const cachedTimestamp = sessionStorage.getItem('mainPageProductsTimestamp');
       
-      // Use cache if it's less than 30 minutes old
+      // Use cache if it's less than 5 minutes old (reduced from 30 minutes for faster updates)
       const isCacheValid = cachedProducts && cachedTimestamp && 
-        (Date.now() - parseInt(cachedTimestamp)) < 30 * 60 * 1000;
+        (Date.now() - parseInt(cachedTimestamp)) < 5 * 60 * 1000;
       
       if (isCacheValid) {
         try {
@@ -371,6 +396,16 @@ export default function Home() {
             {/* Featured Products */}
             <div className="space-y-4">
               <section className="bg-white rounded-2xl shadow-sm p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-800">Latest Products</h2>
+                  <button 
+                    onClick={refreshData}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    title="Refresh to see newly uploaded products"
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
                 <FeaturedProducts 
                   selectedCategory={selectedCategory} 
                   onLoadComplete={() => setFeaturedProductsLoaded(true)}

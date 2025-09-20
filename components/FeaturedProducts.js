@@ -78,49 +78,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const router = useRouter();
   const batchSize = 24; // Reduced from previous large numbers
 
-  // --- Seeded shuffle helpers (stable per-user order) ---
-  const getOrCreateUserSeed = () => {
-    try {
-      const authId = session?.user?.id || session?.user?.email || "guest";
-      if (typeof window === 'undefined') return authId;
-      let stored = localStorage.getItem('userSeed');
-      if (!stored) {
-        stored = `${authId}-${Math.random().toString(36).slice(2)}`;
-        localStorage.setItem('userSeed', stored);
-      }
-      return stored;
-    } catch {
-      return "guest";
-    }
-  };
-
-  const mulberry32 = (a) => {
-    return function() {
-      let t = (a += 0x6D2B79F5);
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  };
-
-  const stringHash = (str) => {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
-    }
-    return h >>> 0;
-  };
-
-  const seededShuffle = (arr, seedString) => {
-    const rand = mulberry32(stringHash(seedString));
-    const copy = arr.slice();
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  };
+  // Products are now sorted consistently by creation date (newest first)
+  // No more randomization to ensure users can track their progress
 
   // Fetch trending product IDs
   const fetchTrendingProductIds = useCallback(async () => {
@@ -189,8 +148,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           });
         }
 
-        const seed = getOrCreateUserSeed();
-        const sorted = seededShuffle(filteredProducts, seed);
+        // Sort products consistently by creation date (newest first) for predictable ordering
+        const sorted = filteredProducts.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+          return dateB - dateA; // Newest first
+        });
 
         if (reset) {
           setProducts(sorted);
@@ -199,8 +162,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             const existingIds = new Set(prev.map((p) => p.id));
             const newUnique = sorted.filter((p) => !existingIds.has(p.id));
             const combined = [...prev, ...newUnique];
-            // Re-shuffle combined to keep global order stable per user
-            return seededShuffle(combined, seed);
+            // Sort combined list consistently by creation date
+            return combined.sort((a, b) => {
+              const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+              const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+              return dateB - dateA; // Newest first
+            });
           });
         }
 
@@ -221,13 +188,15 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     [keyword, tags, manufacturer, name]
   );
 
-  // Fetch latest uploads (last 2 months)
+  // Fetch latest uploads (last 2 months up to current hour)
   useEffect(() => {
     const loadLatest = async () => {
       try {
         // Client-side filter from main list if available; otherwise do a best-effort fetch-all
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today (00:00:00)
+        const now = new Date(); // Current time (up to this very hour)
+        const twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(now.getMonth() - 2); // Go back 2 months
+        twoMonthsAgo.setHours(0, 0, 0, 0); // Start of day 2 months ago
 
         const normalizeDate = (p) => {
           const ts = p.createdAt || p.uploadedAt || p.updatedAt || p.timestamp || p.created_at;
@@ -251,22 +220,19 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           }
         };
 
-        let source = products;
-
-        if (!source || source.length === 0) {
-          const snapshot = await getDocs(collection(db, "products"));
-          source = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        }
+        // Always fetch fresh data for latest products to ensure new uploads appear immediately
+        const snapshot = await getDocs(collection(db, "products"));
+        const source = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
         console.log('Total products available:', source.length);
-        console.log('Looking for products created from today onwards:', today.toISOString());
+        console.log('Looking for products created from last 2 months:', twoMonthsAgo.toISOString(), 'to', now.toISOString());
 
         const productsWithDates = source.map((p) => ({ p, d: normalizeDate(p) }));
         const validDates = productsWithDates.filter(({ d }) => d !== null);
-        const recentProducts = validDates.filter(({ d }) => d >= today);
+        const recentProducts = validDates.filter(({ d }) => d >= twoMonthsAgo && d <= now);
         
         console.log('Products with valid dates:', validDates.length);
-        console.log('Products created from today onwards:', recentProducts.length);
+        console.log('Products created in last 2 months:', recentProducts.length);
         
         // Log some sample dates for debugging
         if (validDates.length > 0) {
@@ -274,26 +240,26 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             id: p.id,
             name: p.name,
             date: d.toISOString(),
-            isRecent: d >= today
+            isRecent: d >= twoMonthsAgo && d <= now
           })));
         }
 
         const latest = recentProducts
           .sort((a, b) => b.d - a.d)
-          .slice(0, 12)
+          .slice(0, 20) // Increased from 12 to 20
           .map(({ p }) => p);
 
-        console.log('Latest products found (from today onwards):', latest.length, 'out of', source.length);
+        console.log('Latest products found (from last 2 months up to current hour):', latest.length, 'out of', source.length);
         
-        // If no recent products, show first 8 products as "latest"
+        // If no recent products, show first 20 products as "latest"
         if (latest.length === 0) {
-          // Try to get products with any date first, then fallback to first 8
+          // Try to get products with any date first, then fallback to first 20
           const anyDateProducts = validDates
             .sort((a, b) => b.d - a.d)
-            .slice(0, 8)
+            .slice(0, 20) // Increased from 8 to 20
             .map(({ p }) => p);
           
-          const fallback = anyDateProducts.length > 0 ? anyDateProducts : source.slice(0, 8);
+          const fallback = anyDateProducts.length > 0 ? anyDateProducts : source.slice(0, 20); // Increased from 8 to 20
           console.log('Using fallback latest products:', fallback.length);
           setLatestProducts(fallback);
         } else {
@@ -301,8 +267,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         }
       } catch (e) {
         console.warn('Failed to load latest uploads:', e);
-        // Fallback to first few products
-        const fallback = products.length > 0 ? products.slice(0, 8) : [];
+        // Fallback to first 20 products
+        const fallback = products.length > 0 ? products.slice(0, 20) : [];
         console.log('Error fallback latest products:', fallback.length);
         setLatestProducts(fallback);
       }
@@ -766,18 +732,28 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           <p className="text-center py-4 text-gray-600">Loading more products...</p>
         )}
         
-        {/* View More button - always show at bottom for manual loading */}
+        {/* View More / Scroll to Top button */}
         {!loading && products.length > 0 && (
           <div className="text-center py-4">
             <button 
               onClick={() => {
-                console.log('🔄 Manual load more triggered...');
-                setHasMore(true);
-                fetchProducts(lastVisible, false);
+                if (hasMore) {
+                  console.log('🔄 Manual load more triggered...');
+                  setHasMore(true);
+                  fetchProducts(lastVisible, false);
+                } else {
+                  // Scroll to top when all products are loaded
+                  console.log('⬆️ Scrolling to top...');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
               }}
-              className="bg-blue-500 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-600 transition-colors"
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
+                hasMore 
+                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                  : 'bg-green-500 text-white hover:bg-green-600'
+              }`}
             >
-              View More Products
+              {hasMore ? 'View More Products' : 'Scroll to Top'}
             </button>
           </div>
         )}
