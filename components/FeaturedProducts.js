@@ -14,6 +14,11 @@ import {
   orderBy,
   limit,
   startAfter,
+  addDoc,
+  where,
+  doc,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
@@ -65,6 +70,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [hasMore, setHasMore] = useState(true);
   const [trendingProductIds, setTrendingProductIds] = useState(new Set());
   const [latestProducts, setLatestProducts] = useState([]);
+  const [recentProducts, setRecentProducts] = useState([]);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   const router = useRouter();
@@ -269,6 +275,15 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     fetchTrendingProductIds();
   }, [fetchTrendingProductIds]);
 
+  // Fetch recent products when session changes
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchRecentProducts();
+    } else {
+      setRecentProducts([]);
+    }
+  }, [session?.user?.id]);
+
   // Call onLoadComplete when component is fully loaded
   useEffect(() => {
     if (!loading && !settingsLoading && products.length > 0 && onLoadComplete) {
@@ -354,10 +369,105 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     return () => window.removeEventListener("scroll", handleScroll);
   }, [fetchProducts, loading, hasMore, lastVisible]);
 
-  const handleProductClick = (id) => {
+  // Function to track product views for recent section
+  const trackProductView = async (userId, productId) => {
+    try {
+      console.log('🔍 Tracking product view:', { userId, productId });
+      
+      // Check if this view already exists for this user and product
+      const recentViewsQuery = query(
+        collection(db, "recentViews"),
+        where("userId", "==", userId),
+        where("productId", "==", productId)
+      );
+      
+      const existingViews = await getDocs(recentViewsQuery);
+      
+      if (existingViews.empty) {
+        // Create new view record
+        const docRef = await addDoc(collection(db, "recentViews"), {
+          userId,
+          productId,
+          viewedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        });
+        console.log('✅ Created new view record:', docRef.id);
+      } else {
+        // Update existing view record with new timestamp
+        const viewDoc = existingViews.docs[0];
+        await updateDoc(doc(db, "recentViews", viewDoc.id), {
+          viewedAt: serverTimestamp()
+        });
+        console.log('🔄 Updated existing view record:', viewDoc.id);
+      }
+    } catch (error) {
+      console.error('❌ Error tracking product view:', error);
+    }
+  };
+
+  // Function to fetch recent products for the user
+  const fetchRecentProducts = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      // Get recent views for this user, ordered by most recent
+      const recentViewsQuery = query(
+        collection(db, "recentViews"),
+        where("userId", "==", session.user.id),
+        orderBy("viewedAt", "desc"),
+        limit(12)
+      );
+      
+      const recentViewsSnapshot = await getDocs(recentViewsQuery);
+      
+      if (recentViewsSnapshot.empty) {
+        setRecentProducts([]);
+        return;
+      }
+      
+      // Get product IDs from recent views
+      const productIds = recentViewsSnapshot.docs.map(doc => doc.data().productId);
+      
+      // Fetch product details for these IDs
+      const productsQuery = query(
+        collection(db, "products"),
+        where("__name__", "in", productIds)
+      );
+      
+      const productsSnapshot = await getDocs(productsQuery);
+      const recentProductsData = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Sort by the order of recent views (most recent first)
+      const sortedRecentProducts = productIds
+        .map(id => recentProductsData.find(p => p.id === id))
+        .filter(Boolean);
+      
+      setRecentProducts(sortedRecentProducts);
+    } catch (error) {
+      console.error('Error fetching recent products:', error);
+      setRecentProducts([]);
+    }
+  };
+
+  const handleProductClick = async (id) => {
     // Save scroll position before navigation (only on main page)
     if (window.location.pathname === '/') {
       saveScrollPosition();
+    }
+    
+    // Track product view for recent section
+    if (session?.user?.id) {
+      console.log('👤 User is authenticated, tracking view for product:', id);
+      try {
+        await trackProductView(session.user.id, id);
+      } catch (error) {
+        console.warn('Failed to track product view:', error);
+      }
+    } else {
+      console.log('❌ User not authenticated, skipping view tracking');
     }
     
     // Navigate to product detail page
@@ -451,8 +561,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
                 {/* Latest uploads horizontal scroller */}
                 <div className="mt-2 mb-2">
-                  <div className="text-sm font-semibold text-gray-800 px-1 mb-1">Latest uploads</div>
-                  <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
+                  <div className="text-sm font-semibold text-white text-center px-1 mb-1">Latest uploads</div>
+                  <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
                     {latestProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
                       <div
                         key={`latest-${id}`}
@@ -477,6 +587,37 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                     ))}
                   </div>
                 </div>
+
+                {/* Recent products horizontal scroller - only show if user has recent products */}
+                {recentProducts.length > 0 && (
+                  <div className="mt-2 mb-2">
+                    <div className="text-sm font-semibold text-white text-center px-1 mb-1">Recent</div>
+                    <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
+                      {recentProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+                        <div
+                          key={`recent-${id}`}
+                          className="snap-start shrink-0 w-[40%]"
+                          onClick={() => handleProductClick(id)}
+                        >
+                          <ProductCard
+                            variant="compact"
+                            isFirst={index === 0}
+                            badge={trendingProductIds.has(id) ? "Trending" : undefined}
+                            product={{
+                              id,
+                              name,
+                              description,
+                              sku,
+                              price,
+                              discount,
+                              image: getPreferredImageUrl(imageUrl, featuredCardResolution),
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Remaining products */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
