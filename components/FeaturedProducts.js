@@ -213,12 +213,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     [keyword, tags, manufacturer, name]
   );
 
-  // Fetch latest uploads (last 1 month)
+  // Fetch latest uploads (last 2 months)
   useEffect(() => {
     const loadLatest = async () => {
       try {
         // Client-side filter from main list if available; otherwise do a best-effort fetch-all
-        const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const twoMonthsAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
         const normalizeDate = (p) => {
           const ts = p.createdAt || p.uploadedAt || p.updatedAt || p.timestamp || p.created_at;
@@ -239,7 +239,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
         const latest = source
           .map((p) => ({ p, d: normalizeDate(p) }))
-          .filter(({ d }) => d && d >= oneMonthAgo)
+          .filter(({ d }) => d && d >= twoMonthsAgo)
           .sort((a, b) => b.d - a.d)
           .slice(0, 12)
           .map(({ p }) => p);
