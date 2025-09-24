@@ -29,15 +29,6 @@ import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
 
-// Utility function to shuffle array
-const shuffleArray = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
 
 // Helper to decode URL and pick preferred size
 const getPreferredImageUrl = (imageUrl, customResolution = null) => {
@@ -203,26 +194,22 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           console.log(`✅ Added ${additionalProducts.length} additional products, total: ${finalProducts.length}`);
         }
 
-        // Shuffle products for better random view
-        const shuffled = shuffleArray(finalProducts);
-
         if (reset) {
-          setProducts(shuffled);
+          setProducts(finalProducts);
         } else {
           setProducts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
-            const newUnique = shuffled.filter((p) => !existingIds.has(p.id));
+            const newUnique = finalProducts.filter((p) => !existingIds.has(p.id));
             const combined = [...prev, ...newUnique];
             
-            console.log(`🔄 Adding products: prev=${prev.length}, new=${shuffled.length}, unique=${newUnique.length}, combined=${combined.length}`);
+            console.log(`🔄 Adding products: prev=${prev.length}, new=${finalProducts.length}, unique=${newUnique.length}, combined=${combined.length}`);
             
             // If we got very few new products, it might indicate we're hitting duplicates
-            if (newUnique.length < 10 && shuffled.length >= 30) {
-              console.log(`⚠️ Too many duplicates detected (${newUnique.length} new out of ${shuffled.length}), this might indicate pagination issues`);
+            if (newUnique.length < 10 && finalProducts.length >= 30) {
+              console.log(`⚠️ Too many duplicates detected (${newUnique.length} new out of ${finalProducts.length}), this might indicate pagination issues`);
             }
             
-            // Shuffle the combined list for better random view
-            return shuffleArray(combined);
+            return combined;
           });
         }
 

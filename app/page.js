@@ -5,15 +5,6 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 
-// Utility function to shuffle array
-const shuffleArray = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
@@ -173,11 +164,10 @@ export default function Home() {
       const cachedProducts = cacheUtils.getCache(CACHE_KEYS.MAIN_PRODUCTS, CACHE_DURATIONS.MAIN_PRODUCTS);
       
       if (cachedProducts) {
-        const shuffledProducts = shuffleArray(cachedProducts);
-        setAllProducts(shuffledProducts);
+        setAllProducts(cachedProducts);
         setLoading(false);
         setAllProductsLoaded(true);
-        console.log('📦 Using cached products (shuffled):', shuffledProducts.length);
+        console.log('📦 Using cached products:', cachedProducts.length);
         return;
       }
       
@@ -188,14 +178,13 @@ export default function Home() {
           ...doc.data(),
         }));
         
-        const shuffledProducts = shuffleArray(products);
-        setAllProducts(shuffledProducts);
+        setAllProducts(products);
         setAllProductsLoaded(true);
         
-        // Cache the original products (not shuffled) for future use
+        // Cache the products for future use
         cacheUtils.setCache(CACHE_KEYS.MAIN_PRODUCTS, products, CACHE_DURATIONS.MAIN_PRODUCTS);
         
-        console.log('📦 Fetched and cached products (shuffled):', shuffledProducts.length);
+        console.log('📦 Fetched and cached products:', products.length);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {

@@ -15,15 +15,6 @@ import { db } from "@/lib/firebase";
 import ProductCard from "@/components/ProductCard";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 
-// Utility function to shuffle array
-const shuffleArray = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
 
 const getPreferredImageUrl = (imageUrl) => {
   if (!imageUrl) return null;
@@ -68,10 +59,9 @@ export default function TrendingProducts({ onLoadComplete }) {
         const cachedProducts = cacheUtils.getCache(CACHE_KEYS.TRENDING_PRODUCTS, CACHE_DURATIONS.TRENDING_PRODUCTS);
         
         if (cachedProducts) {
-          const shuffledProducts = shuffleArray(cachedProducts);
-          setProducts(shuffledProducts);
+          setProducts(cachedProducts);
           setLoading(false);
-          console.log('📦 Using cached trending products (shuffled):', shuffledProducts.length);
+          console.log('📦 Using cached trending products:', cachedProducts.length);
           
           if (onLoadComplete) {
             onLoadComplete();
@@ -124,10 +114,9 @@ export default function TrendingProducts({ onLoadComplete }) {
         });
 
         const fullProducts = (await Promise.all(productPromises)).filter(Boolean);
-        const shuffledProducts = shuffleArray(fullProducts);
-        console.log('✅ Loaded trending products (shuffled):', shuffledProducts.length);
+        console.log('✅ Loaded trending products:', fullProducts.length);
         
-        setProducts(shuffledProducts);
+        setProducts(fullProducts);
         
         // Cache the results for faster future loads
         cacheUtils.setCache(CACHE_KEYS.TRENDING_PRODUCTS, fullProducts, CACHE_DURATIONS.TRENDING_PRODUCTS);
