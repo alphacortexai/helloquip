@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import WishlistButton from './WishlistButton';
 import ProductComparisonButton from './ProductComparisonButton';
+import { useProductSettings, formatProductName, shouldShowMOQ, shouldShowSKU } from '@/hooks/useProductSettings';
 
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { settings } = useProductSettings();
 
   // Helper hey bro function to get the appropriate image URL based on variant and size
   const getImageUrl = (product, variant) => {
@@ -63,7 +65,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       </div>
       
       <img {...imageProps} className="w-full h-48 object-cover rounded-xl mb-3" />
-      <h2 className="hidden md:block text-lg font-semibold">{product.name}</h2>
+      <h2 className="hidden md:block text-lg font-semibold">{formatProductName(product.name, settings)}</h2>
       <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-600 mt-1">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2">UGX {discountedPrice.toLocaleString()}</p>
@@ -74,7 +76,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     <div className={`${commonClasses} p-4 flex gap-4 items-center ${wrapperStyle}`}>
       <img {...imageProps} className="w-32 h-32 object-cover rounded-xl flex-shrink-0" />
       <div>
-        <h2 className="hidden md:block text-lg font-semibold">{product.name}</h2>
+        <h2 className="hidden md:block text-lg font-semibold">{formatProductName(product.name, settings)}</h2>
         <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
         <p className="text-gray-600 mt-1 line-clamp-2">{product.description}</p>
         <p className="text-blue-600 font-bold mt-2">UGX {discountedPrice.toLocaleString()}</p>
@@ -89,7 +91,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       </div>
       <div className="flex flex-col justify-between p-4 w-full">
         <div>
-          <h3 className="hidden md:block text-sm sm:text-base font-medium text-gray-800 line-clamp-2">{product.name || 'Unnamed Product'}</h3>
+          <h3 className="hidden md:block text-sm sm:text-base font-medium text-gray-800 line-clamp-2">{formatProductName(product.name, settings)}</h3>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{product.description || 'No description available'}</p>
         </div>
         <div className="flex items-end justify-between mt-3">
@@ -97,7 +99,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
             <p className="text-sm text-gray-900 font-semibold">
               UGX {discountedPrice.toLocaleString()}
             </p>
-            <p className="text-[11px] text-gray-500">1 item (MOQ)</p>
+            {shouldShowMOQ(settings) && (
+              <p className="text-[11px] text-gray-500">1 item (MOQ)</p>
+            )}
           </div>
           <p className="text-[12px] text-gray-400 italic">
             CODE: {product.sku}
@@ -124,14 +128,16 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       <div className={`flex flex-col justify-between ${largeDesktop ? 'p-8' : 'p-5'} w-full`}>
         <div>
           <h3 className={`hidden md:block text-[18px] sm:text-base font-semibold text-gray-800 line-clamp-2 ${largeDesktop ? 'md:text-2xl' : ''}`}>
-            {product.name || 'Unnamed Product'}
+            {formatProductName(product.name, settings)}
           </h3>
           {/* <p className="text-sm text-gray-500 mt-1 line-clamp-2">
             {product.description || 'No description available'}
           </p> */}
-          <p className="text-[12px] text-gray-500 italic">
-            SKU: {product.sku}
-          </p>
+          {shouldShowSKU(settings) && (
+            <p className="text-[12px] text-gray-500 italic">
+              SKU: {product.sku}
+            </p>
+          )}
 
           <div className="mt-2">
             <p className={`text-sm text-gray-900 font-semibold ${largeDesktop ? 'md:text-xl' : ''}`}>
@@ -168,17 +174,21 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       <div className="flex flex-col justify-between p-8 w-full">
         <div>
           <h3 className="hidden md:block text-xl font-semibold text-gray-800 line-clamp-2 mb-3">
-            {product.name || 'Unnamed Product'}
+            {formatProductName(product.name, settings)}
           </h3>
-          <p className="text-sm text-gray-500 italic mb-4">
-            SKU: {product.sku}
-          </p>
+          {shouldShowSKU(settings) && (
+            <p className="text-sm text-gray-500 italic mb-4">
+              SKU: {product.sku}
+            </p>
+          )}
 
           <div className="mt-auto">
             <p className="text-lg text-gray-900 font-semibold mb-2">
               UGX {discountedPrice.toLocaleString()}
             </p>
-            <p className="text-sm text-gray-500">1 item (MOQ)</p>
+            {shouldShowMOQ(settings) && (
+              <p className="text-sm text-gray-500">1 item (MOQ)</p>
+            )}
           </div>
         </div>
       </div>
@@ -207,18 +217,22 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       <div className="flex flex-col justify-center w-full text-right pr-3">
         <div>
           <h3 className="hidden md:block text-sm font-semibold text-gray-800 line-clamp-2 mb-0">
-            {product.name || 'Unnamed Product'}
+            {formatProductName(product.name, settings)}
           </h3>
-          <p className="text-[9px] text-gray-500 italic mt-0.5">
-            SKU: {product.sku}
-          </p>
+          {shouldShowSKU(settings) && (
+            <p className="text-[9px] text-gray-500 italic mt-0.5">
+              SKU: {product.sku}
+            </p>
+          )}
         </div>
 
         <div className="mt-2">
           <p className="text-sm text-gray-900 font-semibold">
             UGX {discountedPrice.toLocaleString()}
           </p>
-          <p className="text-[9px] text-gray-500">1 item (MOQ)</p>
+          {shouldShowMOQ(settings) && (
+            <p className="text-[9px] text-gray-500">1 item (MOQ)</p>
+          )}
         </div>
       </div>
     </div>
@@ -227,7 +241,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const renderPortrait = () => (
     <div className={`${commonClasses} p-4 w-48 ${wrapperStyle}`}>
       <img {...imageProps} className="w-full h-56 object-cover rounded-xl mb-3" />
-      <h2 className="hidden md:block text-base font-semibold">{product.name}</h2>
+      <h2 className="hidden md:block text-base font-semibold">{formatProductName(product.name, settings)}</h2>
       <p className="text-[7px] text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-500 text-sm mt-1 line-clamp-3">{product.description}</p>
       <p className="text-blue-600 font-bold mt-2 text-sm">UGX {discountedPrice.toLocaleString()}</p>
@@ -267,18 +281,22 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
                                                                                                                                                                        <div className="px-0 text-center">
                                <p
                 className="text-sm font-medium text-gray-800 mb-0.5 truncate pt-2"
-                title={product.name || 'Unnamed Product'}
+                title={formatProductName(product.name, settings)}
               >
-                {product.name || 'Unnamed Product'}
+                {formatProductName(product.name, settings)}
               </p>
 
               <p className="text-sm text-gray-900 font-semibold mb-0.5">
                 UGX {discountedPrice.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
-              <p className="text-[11px] text-blue-600 italic pb-2">
-                SKU: {product.sku || 'N/A'}
-              </p>
+              {shouldShowMOQ(settings) && (
+                <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
+              )}
+              {shouldShowSKU(settings) && (
+                <p className="text-[11px] text-blue-600 italic pb-2">
+                  SKU: {product.sku || 'N/A'}
+                </p>
+              )}
            </div>
     </div>
   );
@@ -309,10 +327,14 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
                                                                                                                                                <img {...imageProps} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center' }} />
       </div>
                                                                                                                <div className="px-0 text-center">
-                             <p className="text-sm font-medium text-gray-800 truncate mb-0.5 pt-2" title={product.name || 'Unnamed Product'}>{product.name || 'Unnamed Product'}</p>
+                             <p className="text-sm font-medium text-gray-800 truncate mb-0.5 pt-2" title={formatProductName(product.name, settings)}>{formatProductName(product.name, settings)}</p>
             <p className="text-sm text-gray-900 font-semibold mb-0.5">UGX {discountedPrice.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
-            <p className="text-[7px] text-blue-600 italic pb-2">SKU: {product.sku || "N/A"}</p>
+            {shouldShowMOQ(settings) && (
+              <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
+            )}
+            {shouldShowSKU(settings) && (
+              <p className="text-[7px] text-blue-600 italic pb-2">SKU: {product.sku || "N/A"}</p>
+            )}
          </div>
     </div>
   );

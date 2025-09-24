@@ -7,7 +7,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useProductSettings, formatProductName } from "@/hooks/useProductSettings";
 import {
   collection,
   getDocs,
@@ -23,6 +25,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
+import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
 
@@ -61,6 +64,7 @@ const getPreferredImageUrl = (imageUrl, customResolution = null) => {
 };
 
 export default function FeaturedProducts({ selectedCategory, keyword, tags, manufacturer, name, onLoadComplete, onScrollProgressChange }) {
+  const { settings } = useProductSettings();
   const { featuredCardResolution, loading: settingsLoading } = useDisplaySettings();
   const { saveScrollPosition } = useScrollPosition();
   const { data: session } = useSession();
@@ -72,14 +76,15 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [hasMore, setHasMore] = useState(true);
   const [trendingProductIds, setTrendingProductIds] = useState(new Set());
   const [latestProducts, setLatestProducts] = useState([]);
-  const [recentProducts, setRecentProducts] = useState([]);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   const router = useRouter();
-  const batchSize = 24; // Reduced from previous large numbers
+  const batchSize = 50; // 50 products per load
+  const initialLoadSize = 100; // Initial load size - 100 products on first load
 
   // Products are now sorted consistently by creation date (newest first)
   // No more randomization to ensure users can track their progress
+
 
   // Fetch trending product IDs
   const fetchTrendingProductIds = useCallback(async () => {
@@ -93,17 +98,26 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }, []);
 
   const fetchProducts = useCallback(
-    async (startAfterDoc = null, reset = false) => {
+    async (startAfterDoc = null, reset = false, loadSize = batchSize) => {
       setLoading(true);
       try {
+        // Debug: Log search criteria
+        console.log('🔍 Search criteria:', { keyword, name, manufacturer, tags, selectedCategory });
+        
         // Always fetch fresh data - no caching for infinite scroll
-        const constraints = [orderBy("name")];
+        const constraints = [orderBy("createdAt", "desc")];
 
         if (startAfterDoc) {
           constraints.push(startAfter(startAfterDoc));
         }
 
-        constraints.push(limit(batchSize));
+        // If we have search criteria, fetch more products to account for filtering
+        const hasSearchCriteria = keyword || name || manufacturer || (tags && tags.length);
+        const fetchSize = hasSearchCriteria ? loadSize * 3 : loadSize; // Fetch 3x more if filtering
+        
+        console.log(`📊 Fetch strategy: hasSearchCriteria=${hasSearchCriteria}, fetchSize=${fetchSize}, loadSize=${loadSize}`);
+        
+        constraints.push(limit(fetchSize));
 
         const q = query(collection(db, "products"), ...constraints);
         const querySnapshot = await getDocs(q);
@@ -122,6 +136,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           const lowerManufacturer = manufacturer?.trim().toLowerCase();
           const tagSet = new Set((tags || []).map((tag) => tag.toLowerCase()));
 
+          console.log('🔍 Filtering with criteria:', { lowerKeyword, lowerName, lowerManufacturer, tagSet });
+
           filteredProducts = fetchedProducts.filter((product) => {
             const nameMatch =
               lowerKeyword && product.name?.toLowerCase().includes(lowerKeyword);
@@ -138,18 +154,46 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
               Array.isArray(product.tags) &&
               product.tags.some((tag) => tagSet.has(tag.toLowerCase()));
 
-            return (
-              nameMatch ||
-              descMatch ||
-              nameSimMatch ||
-              manufacturerMatch ||
-              tagMatch
-            );
+            const matches = nameMatch || descMatch || nameSimMatch || manufacturerMatch || tagMatch;
+            
+            // Debug first few products
+            if (fetchedProducts.indexOf(product) < 3) {
+              console.log(`🔍 Product "${product.name}": nameMatch=${nameMatch}, descMatch=${descMatch}, nameSimMatch=${nameSimMatch}, manufacturerMatch=${manufacturerMatch}, tagMatch=${tagMatch}, final=${matches}`);
+            }
+
+            return matches;
           });
+
+          console.log(`🔍 Filtering: ${fetchedProducts.length} fetched → ${filteredProducts.length} after filtering`);
+        } else {
+          console.log('🔍 No search criteria, showing all fetched products');
+        }
+
+        // If filtering resulted in very few products, include some unfiltered products as fallback
+        let finalProducts = filteredProducts;
+        if (filteredProducts.length < Math.min(loadSize, 20)) {
+          console.log(`⚠️ Very few filtered products (${filteredProducts.length}), adding fallback products...`);
+          const existingIds = new Set(filteredProducts.map(p => p.id));
+          const fallbackProducts = fetchedProducts
+            .filter(p => !existingIds.has(p.id))
+            .slice(0, loadSize - filteredProducts.length);
+          finalProducts = [...filteredProducts, ...fallbackProducts];
+          console.log(`✅ Added ${fallbackProducts.length} fallback products, total: ${finalProducts.length}`);
+        }
+        
+        // Ensure we always have at least the requested number of products if available
+        if (finalProducts.length < loadSize && fetchedProducts.length >= loadSize) {
+          console.log(`⚠️ Still not enough products (${finalProducts.length}), using more unfiltered products...`);
+          const existingIds = new Set(finalProducts.map(p => p.id));
+          const additionalProducts = fetchedProducts
+            .filter(p => !existingIds.has(p.id))
+            .slice(0, loadSize - finalProducts.length);
+          finalProducts = [...finalProducts, ...additionalProducts];
+          console.log(`✅ Added ${additionalProducts.length} additional products, total: ${finalProducts.length}`);
         }
 
         // Sort products consistently by creation date (newest first) for predictable ordering
-        const sorted = filteredProducts.sort((a, b) => {
+        const sorted = finalProducts.sort((a, b) => {
           const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
           const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
           return dateB - dateA; // Newest first
@@ -162,6 +206,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             const existingIds = new Set(prev.map((p) => p.id));
             const newUnique = sorted.filter((p) => !existingIds.has(p.id));
             const combined = [...prev, ...newUnique];
+            
+            console.log(`🔄 Adding products: prev=${prev.length}, new=${sorted.length}, unique=${newUnique.length}, combined=${combined.length}`);
+            
+            // If we got very few new products, it might indicate we're hitting duplicates
+            if (newUnique.length < 10 && sorted.length >= 30) {
+              console.log(`⚠️ Too many duplicates detected (${newUnique.length} new out of ${sorted.length}), this might indicate pagination issues`);
+            }
+            
             // Sort combined list consistently by creation date
             return combined.sort((a, b) => {
               const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
@@ -176,16 +228,16 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         
         // More aggressive hasMore logic - continue if we got a full batch
         // This ensures we don't miss products due to filtering or other issues
-        const hasMoreProducts = querySnapshot.docs.length === batchSize;
+        const hasMoreProducts = querySnapshot.docs.length === fetchSize;
         setHasMore(hasMoreProducts);
         
-        console.log(`📦 Fetched ${fetchedProducts.length} products, hasMore: ${hasMoreProducts}`);
+        console.log(`📦 Fetched ${fetchedProducts.length} products (requested: ${fetchSize}, filtered: ${filteredProducts.length}, final: ${sorted.length}), hasMore: ${hasMoreProducts}`);
       } catch (err) {
         console.error("Error fetching products:", err);
       }
       setLoading(false);
     },
-    [keyword, tags, manufacturer, name]
+    [keyword, tags, manufacturer, name, batchSize]
   );
 
   // Fetch latest uploads (last 2 months up to current hour)
@@ -282,24 +334,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     fetchTrendingProductIds();
   }, [fetchTrendingProductIds]);
 
-  // Fetch recent products when Firebase Auth state changes or component mounts
-  useEffect(() => {
-    const userId = getUserId();
-    console.log('User ID changed:', { 
-      hasSession: !!session, 
-      sessionUserId: session?.user?.id, 
-      firebaseUserId: firebaseUser?.uid,
-      finalUserId: userId,
-      userEmail: firebaseUser?.email || session?.user?.email,
-      userName: firebaseUser?.displayName || session?.user?.name 
-    });
-    
-    if (userId && userId !== 'guest') {
-      fetchRecentProducts();
-    } else {
-      setRecentProducts([]);
-    }
-  }, [firebaseUser]); // Run when Firebase Auth state changes
 
   // Call onLoadComplete when component is fully loaded
   useEffect(() => {
@@ -333,7 +367,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       setProducts([]);
       setLastVisible(null);
       setHasMore(true);
-      fetchProducts(null, true);
+      fetchProducts(null, true, initialLoadSize);
     }
   }, [keyword, name, manufacturer, tags, fetchProducts, products.length]);
 
@@ -344,9 +378,46 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       setProducts([]);
       setLastVisible(null);
       setHasMore(true);
-      fetchProducts(null, true);
+      fetchProducts(null, true, initialLoadSize);
     }
   }, []); // Only run once on mount
+
+  // Auto-load products to ensure users always have content
+  useEffect(() => {
+    const autoLoadProducts = () => {
+      // If we have fewer than 100 products and there are more to load, auto-load
+      if (products.length < 100 && hasMore && !loading) {
+        console.log('🔄 Auto-loading more products to ensure minimum content...');
+        fetchProducts(lastVisible, false, initialLoadSize);
+      }
+    };
+
+    // Auto-load after a short delay to ensure initial load is complete
+    const timer = setTimeout(autoLoadProducts, 2000);
+    
+    // Also auto-load when user is idle (no scroll for 3 seconds)
+    let idleTimer;
+    const handleUserActivity = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (products.length < 150 && hasMore && !loading) {
+          console.log('🔄 Auto-loading more products during idle time...');
+          fetchProducts(lastVisible, false, initialLoadSize);
+        }
+      }, 3000);
+    };
+
+    // Listen for scroll and mouse movement to detect user activity
+    window.addEventListener('scroll', handleUserActivity);
+    window.addEventListener('mousemove', handleUserActivity);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(idleTimer);
+      window.removeEventListener('scroll', handleUserActivity);
+      window.removeEventListener('mousemove', handleUserActivity);
+    };
+  }, [products.length, hasMore, loading, lastVisible, fetchProducts, batchSize]);
 
   // Simple infinite scroll for main page only
   useEffect(() => {
@@ -361,7 +432,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       
       if (shouldLoadMore && !loading && hasMore) {
         console.log('🔄 Loading more products due to scroll...');
-        fetchProducts(lastVisible, false);
+        fetchProducts(lastVisible, false, batchSize);
       }
 
       // Calculate scroll progress through products
@@ -384,7 +455,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [fetchProducts, loading, hasMore, lastVisible]);
+  }, [fetchProducts, loading, hasMore, lastVisible, batchSize]);
 
   // Function to track product views for recent section
   const trackProductView = async (userId, productId) => {
@@ -460,63 +531,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
   };
 
-  // Function to fetch recent products for the user
-  const fetchRecentProducts = async () => {
-    const userId = getUserId();
-    
-    if (!userId || userId === 'guest') {
-      console.log('No user ID available, skipping recent products fetch');
-      setRecentProducts([]);
-      return;
-    }
-    
-    try {
-      console.log('Fetching recent products for user:', userId);
-      
-      // Get recent views for this user, ordered by most recent
-      const recentViewsQuery = query(
-        collection(db, "recentViews"),
-        where("userId", "==", userId),
-        orderBy("viewedAt", "desc"),
-        limit(12)
-      );
-      
-      const recentViewsSnapshot = await getDocs(recentViewsQuery);
-      
-      if (recentViewsSnapshot.empty) {
-        console.log('No recent views found for user:', userId);
-        setRecentProducts([]);
-        return;
-      }
-      
-      // Get product IDs from recent views
-      const productIds = recentViewsSnapshot.docs.map(doc => doc.data().productId);
-      console.log('Found recent view product IDs:', productIds);
-      
-      // Fetch product details for these IDs
-      const productsQuery = query(
-        collection(db, "products"),
-        where("__name__", "in", productIds)
-      );
-      
-      const productsSnapshot = await getDocs(productsQuery);
-      const recentProductsData = productsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      // Sort by the order of recent views (most recent first)
-      const sortedRecentProducts = productIds
-        .map(id => recentProductsData.find(p => p.id === id))
-        .filter(Boolean);
-      
-      console.log('Recent products loaded:', sortedRecentProducts.length);
-      setRecentProducts(sortedRecentProducts);
-    } catch (error) {
-      console.error('Error fetching recent products:', error);
-      setRecentProducts([]);
-    }
-  };
 
   const handleProductClick = async (id) => {
     // Save scroll position before navigation (only on main page)
@@ -626,33 +640,57 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                   ))}
                 </div>
 
+                {/* Recently Viewed Products - Embedded */}
+                <div className="mt-1 mb-1">
+                  <RecentlyViewedProducts limit={4} showTitle={true} />
+                </div>
+
                 {/* Latest uploads horizontal scroller */}
-                <div className="mt-2 mb-2">
-                  <div className="text-sm font-semibold text-white text-center px-1 mb-1">
-                    Latest
+                <div className="bg-white rounded-lg shadow p-4 mb-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Latest
+                    </h2>
+                    <Link 
+                      href="/search" 
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      View All
+                    </Link>
                   </div>
+                  
                   {latestProducts.length > 0 ? (
-                    <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2">
                       {latestProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
                         <div
                           key={`latest-${id}`}
-                          className="snap-start shrink-0 w-[40%]"
+                          className="snap-start shrink-0 w-32 cursor-pointer group"
                           onClick={() => handleProductClick(id)}
                         >
-                          <ProductCard
-                            variant="compact"
-                            isFirst={index === 0}
-                            badge={trendingProductIds.has(id) ? "Trending" : undefined}
-                            product={{
-                              id,
-                              name,
-                              description,
-                              sku,
-                              price,
-                              discount,
-                              image: getPreferredImageUrl(imageUrl, featuredCardResolution),
-                            }}
-                          />
+                          <div className="relative">
+                            <img
+                              src={getPreferredImageUrl(imageUrl, featuredCardResolution)}
+                              alt={name || 'Product'}
+                              className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
+                            />
+                            <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                              New
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">
+                              {formatProductName(name, settings)}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              UGX {price?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -662,45 +700,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                     </div>
                   )}
                 </div>
-
-                {/* Recent products horizontal scroller - only show if user has recent products */}
-                {recentProducts.length > 0 ? (
-                  <div className="mt-2 mb-2">
-                    <div className="text-sm font-semibold text-white text-center px-1 mb-1">
-                      Your recent product views
-                    </div>
-                    <div className="flex gap-1 overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 pr-6">
-                      {recentProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                        <div
-                          key={`recent-${id}`}
-                          className="snap-start shrink-0 w-[40%]"
-                          onClick={() => handleProductClick(id)}
-                        >
-                          <ProductCard
-                            variant="compact"
-                            isFirst={index === 0}
-                            badge={trendingProductIds.has(id) ? "Trending" : undefined}
-                            product={{
-                              id,
-                              name,
-                              description,
-                              sku,
-                              price,
-                              discount,
-                              image: getPreferredImageUrl(imageUrl, featuredCardResolution),
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 mb-2">
-                    <div className="text-center text-gray-400 text-xs py-2">
-                      No recent products viewed
-                    </div>
-                  </div>
-                )}
 
                 {/* Remaining products */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
@@ -739,8 +738,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
               onClick={() => {
                 if (hasMore) {
                   console.log('🔄 Manual load more triggered...');
+                  console.log('📊 Current state:', { 
+                    currentProducts: products.length, 
+                    hasMore, 
+                    lastVisible: lastVisible?.id,
+                    batchSize 
+                  });
                   setHasMore(true);
-                  fetchProducts(lastVisible, false);
+                  fetchProducts(lastVisible, false, batchSize);
                 } else {
                   // Scroll to top when all products are loaded
                   console.log('⬆️ Scrolling to top...');

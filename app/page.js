@@ -425,11 +425,8 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* Recently Viewed Products */}
-              <RecentlyViewedProducts limit={6} />
-
               {/* Product Recommendations */}
-              <ProductRecommendations limit={3} />
+              <ProductRecommendations limit={6} />
 
               {/* Customer Testimonials */}
               <section className="bg-white rounded-2xl shadow-sm p-4">
@@ -481,11 +478,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Recently Viewed Products - Mobile */}
-            <RecentlyViewedProducts limit={4} />
-
             {/* Product Recommendations - Mobile */}
-            <ProductRecommendations limit={3} />
+            <ProductRecommendations limit={4} />
 
             {/* Promotional Banner */}
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">

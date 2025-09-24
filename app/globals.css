@@ -32,6 +32,16 @@ main {
   display: none;
 }
 
+/* No scrollbar utility class */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Search suggestions mobile optimizations */
 @media (max-width: 768px) {
   .search-suggestions {

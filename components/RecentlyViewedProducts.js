@@ -6,11 +6,13 @@ import { CustomerExperienceService } from '@/lib/customerExperienceService';
 import { getProductImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { ClockIcon } from '@heroicons/react/24/outline';
+import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
 
-export default function RecentlyViewedProducts({ limit = 6, showTitle = true }) {
+export default function RecentlyViewedProducts({ limit = 6, showTitle = true, title = "Recently Viewed" }) {
   const [user, setUser] = useState(null);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { settings } = useProductSettings();
 
   useEffect(() => {
     const auth = getAuth();
@@ -71,7 +73,7 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true }) 
         {showTitle && (
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <ClockIcon className="h-5 w-5 mr-2" />
-            Recently Viewed
+            {title}
           </h2>
         )}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -92,12 +94,12 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true }) 
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow p-4">
       {showTitle && (
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center">
             <ClockIcon className="h-5 w-5 mr-2" />
-            Recently Viewed
+            {title}
           </h2>
           <Link 
             href="/dashboard" 
@@ -108,12 +110,12 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true }) 
         </div>
       )}
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2">
         {recentlyViewed.map((item) => (
           <Link
             key={item.id}
             href={`/product/${item.productId}`}
-            className="group block"
+            className="group block snap-start shrink-0 w-32"
           >
             <div className="relative">
               <img
@@ -121,13 +123,13 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true }) 
                 alt={item.product?.name || item.productName}
                 className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
               />
-              <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+              <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
                 {formatDate(item.viewedAt)}
               </div>
             </div>
             <div className="mt-2">
               <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">
-                {item.product?.name || item.productName}
+                {formatProductName(item.product?.name || item.productName, settings)}
               </h3>
               <p className="text-sm text-gray-500">
                 UGX {item.product?.price?.toLocaleString() || item.productPrice?.toLocaleString() || 'N/A'}

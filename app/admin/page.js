@@ -33,6 +33,7 @@ import DisplaySettings from "./components/DisplaySettings";
 import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
+import ProductControl from "./components/ProductControl";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -272,6 +273,15 @@ const tabs = [
     bgColor: "bg-green-50",
     borderColor: "border-green-100"
   },
+  {
+    id: "productControl",
+    icon: <Cog6ToothIcon className="w-5 h-5" />,
+    label: "Control",
+    description: "Control product display settings",
+    color: "text-slate-600",
+    bgColor: "bg-slate-50",
+    borderColor: "border-slate-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -435,6 +445,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <NotificationTracker />;
       case "latestProducts":
         return <LatestProductsViewer />;
+      case "productControl":
+        return <ProductControl />;
       default:
         return null;
     }

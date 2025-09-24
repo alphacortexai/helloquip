@@ -24,6 +24,10 @@ const AutoSignIn = dynamic(() => import("./AutoSignIn"), {
   ssr: false,
 });
 
+const ProductSettingsProvider = dynamic(() => import("../hooks/useProductSettings").then(mod => ({ default: mod.ProductSettingsProvider })), {
+  ssr: false,
+});
+
 export default function ClientWrapper({ children }) {
   const [isClient, setIsClient] = useState(false);
 
@@ -39,10 +43,12 @@ export default function ClientWrapper({ children }) {
   return (
     <SessionProvider>
       <AutoSignIn />
-      <CartProvider>
-        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
-        <NotificationSetup />
-      </CartProvider>
+      <ProductSettingsProvider>
+        <CartProvider>
+          <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+          <NotificationSetup />
+        </CartProvider>
+      </ProductSettingsProvider>
     </SessionProvider>
   );
 }

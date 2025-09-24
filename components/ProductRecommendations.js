@@ -85,7 +85,7 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
             {title}
           </h2>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {Array.from({ length: limit }).map((_, index) => (
             <div key={index} className="animate-pulse">
               <div className="bg-gray-200 h-32 rounded-lg mb-2"></div>
@@ -105,13 +105,21 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
   return (
     <div className="bg-white rounded-lg shadow p-6">
       {showTitle && (
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <SparklesIcon className="h-5 w-5 mr-2" />
-          {title}
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+            <SparklesIcon className="h-5 w-5 mr-2" />
+            {title}
+          </h2>
+          <Link 
+            href="/search" 
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            View All
+          </Link>
+        </div>
       )}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {recommendations.map((product) => {
           const badge = getRecommendationBadge(product.recommendationReason);
           
@@ -127,10 +135,8 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
                   alt={product.name}
                   className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
                 />
-                <div className="absolute top-2 left-2">
-                  <span className={`text-xs px-2 py-1 rounded-full ${badge.color}`}>
-                    {badge.text}
-                  </span>
+                <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                  {badge.text}
                 </div>
               </div>
               <div className="mt-2">
@@ -140,11 +146,6 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
                 <p className="text-sm text-gray-500">
                   UGX {product.price?.toLocaleString() || 'N/A'}
                 </p>
-                {product.manufacturer && (
-                  <p className="text-xs text-gray-400">
-                    {product.manufacturer}
-                  </p>
-                )}
               </div>
             </Link>
           );
