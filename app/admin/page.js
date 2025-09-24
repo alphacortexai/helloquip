@@ -34,6 +34,7 @@ import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
 import ProductControl from "./components/ProductControl";
+import ProductSuggestions from "./components/ProductSuggestions";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -52,6 +53,7 @@ import {
   UserCircleIcon,
   CogIcon,
   BellIcon,
+  StarIcon,
 } from "@heroicons/react/24/outline";
 
 const tabs = [
@@ -282,6 +284,15 @@ const tabs = [
     bgColor: "bg-slate-50",
     borderColor: "border-slate-100"
   },
+  {
+    id: "productSuggestions",
+    icon: <StarIcon className="w-5 h-5" />,
+    label: "Product Suggestions",
+    description: "Suggest products for recommendations",
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50",
+    borderColor: "border-yellow-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -447,6 +458,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <LatestProductsViewer />;
       case "productControl":
         return <ProductControl />;
+      case "productSuggestions":
+        return <ProductSuggestions />;
       default:
         return null;
     }

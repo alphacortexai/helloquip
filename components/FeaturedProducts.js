@@ -568,10 +568,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }
 
   return (
-    <section className="bg-gray/70 pt-0 md:pt-3 pb-3 relative" data-featured-products>
+    <section className="bg-gray/70 pt-0 md:pt-3 pb-0 relative" data-featured-products>
       {isNavigating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500" />
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-blue-500 border-b-blue-500 border-l-blue-500" />
         </div>
       )}
 
@@ -647,19 +647,13 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
                 {/* Latest uploads horizontal scroller */}
                 <div className="bg-white rounded-lg shadow p-4 mb-1">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                       <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Latest
                     </h2>
-                    <Link 
-                      href="/search" 
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      View All
-                    </Link>
                   </div>
                   
                   {latestProducts.length > 0 ? (
@@ -728,12 +722,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         {loading && hasMore && (
-          <p className="text-center py-4 text-gray-600">Loading more products...</p>
+          <p className="text-center text-gray-600">Loading more products...</p>
         )}
         
         {/* View More / Scroll to Top button */}
         {!loading && products.length > 0 && (
-          <div className="text-center py-4">
+          <div className="text-center py-2">
             <button 
               onClick={() => {
                 if (hasMore) {
@@ -755,7 +749,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
               className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
                 hasMore 
                   ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                  : 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
               {hasMore ? 'View More Products' : 'Scroll to Top'}

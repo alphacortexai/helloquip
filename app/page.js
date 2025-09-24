@@ -466,17 +466,6 @@ export default function Home() {
               />
             </section>
 
-            {/* Progress indicator line - only show on mobile */}
-            <div className="block md:hidden mb-2">
-              <div className="w-full" style={{ height: '3px' }}>
-                <div 
-                  className={`h-full transition-all duration-300 ${
-                    hasScrolledAllProducts ? 'bg-green-500' : 'bg-blue-300'
-                  }`}
-                  style={{ width: `${scrollProgress * 100}%` }}
-                />
-              </div>
-            </div>
 
             {/* Product Recommendations - Mobile */}
             <ProductRecommendations limit={4} />

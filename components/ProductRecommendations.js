@@ -6,11 +6,22 @@ import { CustomerExperienceService } from '@/lib/customerExperienceService';
 import { getProductImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { SparklesIcon } from '@heroicons/react/24/outline';
+import { useProductSuggestions } from '@/hooks/useProductSuggestions';
 
 export default function ProductRecommendations({ limit = 3, showTitle = true, title = "Recommended for You" }) {
   const [user, setUser] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { suggestions, loading: suggestionsLoading } = useProductSuggestions();
+  
+  // Debug suggestions loading
+  useEffect(() => {
+    console.log('🎯 Suggestions state changed:', {
+      loading: suggestionsLoading,
+      count: suggestions?.length || 0,
+      suggestions: suggestions
+    });
+  }, [suggestions, suggestionsLoading]);
 
   useEffect(() => {
     const auth = getAuth();
@@ -27,7 +38,19 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
       // For non-authenticated users, show popular products
       fetchPopularProducts();
     }
-  }, [user]);
+  }, [user, suggestions]); // Added suggestions dependency
+
+  // Also trigger when suggestions finish loading
+  useEffect(() => {
+    if (!suggestionsLoading && suggestions && suggestions.length > 0) {
+      console.log('🔄 Suggestions loaded, refreshing recommendations...');
+      if (user) {
+        fetchRecommendations();
+      } else {
+        fetchPopularProducts();
+      }
+    }
+  }, [suggestionsLoading, suggestions]);
 
   const fetchRecommendations = async () => {
     try {
@@ -35,7 +58,10 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
       console.log('🔍 Fetching personalized recommendations for user:', user.uid);
       const items = await CustomerExperienceService.getPersonalizedRecommendations(user.uid, limit);
       console.log('📊 Personalized recommendations received:', items);
-      setRecommendations(items);
+      
+      // Combine with suggested products
+      const combinedRecommendations = combineWithSuggestions(items);
+      setRecommendations(combinedRecommendations);
     } catch (error) {
       console.error('Error fetching recommendations:', error);
       // Fallback to popular products
@@ -51,7 +77,10 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
       console.log('🔍 Fetching popular products as fallback');
       const items = await CustomerExperienceService.getPopularProducts(limit);
       console.log('📊 Popular products received:', items);
-      setRecommendations(items);
+      
+      // Combine with suggested products
+      const combinedRecommendations = combineWithSuggestions(items);
+      setRecommendations(combinedRecommendations);
     } catch (error) {
       console.error('Error fetching popular products:', error);
     } finally {
@@ -59,12 +88,61 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
     }
   };
 
+  const combineWithSuggestions = (systemRecommendations) => {
+    console.log('🔄 Combining suggestions with system recommendations...');
+    console.log('📊 Suggestions available:', suggestions?.length || 0);
+    console.log('📊 System recommendations:', systemRecommendations?.length || 0);
+    
+    if (!suggestions || suggestions.length === 0) {
+      console.log('⚠️ No suggestions available, returning system recommendations only');
+      return systemRecommendations;
+    }
+
+    // Convert suggestions to recommendation format
+    const suggestedProducts = suggestions.map(suggestion => ({
+      id: suggestion.productId,
+      name: suggestion.product?.name || 'Unknown Product',
+      description: suggestion.product?.description || '',
+      price: suggestion.product?.price || 0,
+      discount: suggestion.product?.discount || 0,
+      imageUrl: suggestion.product?.imageUrl || null,
+      sku: suggestion.product?.sku || '',
+      manufacturer: suggestion.product?.manufacturer || '',
+      priority: suggestion.priority || 1,
+      isSuggested: true,
+      suggestionReason: suggestion.reason || ''
+    }));
+
+    // Combine and prioritize
+    const combined = [...suggestedProducts, ...systemRecommendations];
+    
+    // Remove duplicates based on product ID
+    const unique = combined.filter((product, index, self) => 
+      index === self.findIndex(p => p.id === product.id)
+    );
+
+    // Sort by priority (suggested products first, then by priority)
+    unique.sort((a, b) => {
+      if (a.isSuggested && !b.isSuggested) return -1;
+      if (!a.isSuggested && b.isSuggested) return 1;
+      if (a.isSuggested && b.isSuggested) return (b.priority || 1) - (a.priority || 1);
+      return 0;
+    });
+
+    console.log('🎯 Combined recommendations:', unique.slice(0, limit));
+    return unique.slice(0, limit);
+  };
+
   const getImageUrl = (product) => {
     return getProductImageUrl(product, "200x200");
   };
 
-  const getRecommendationBadge = (reason) => {
-    switch (reason) {
+  const getRecommendationBadge = (product) => {
+    if (product.isSuggested) {
+      return { text: 'Suggested', color: 'bg-yellow-100 text-yellow-800' };
+    }
+    
+    switch (product.reason) {
       case 'Similar category':
         return { text: 'Similar Category', color: 'bg-blue-100 text-blue-800' };
       case 'Same manufacturer':
@@ -121,7 +199,7 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {recommendations.map((product) => {
-          const badge = getRecommendationBadge(product.recommendationReason);
+          const badge = getRecommendationBadge(product);
           
           return (
             <Link
@@ -135,7 +213,7 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
                   alt={product.name}
                   className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
                 />
-                <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded ${badge.color}`}>
                   {badge.text}
                 </div>
               </div>

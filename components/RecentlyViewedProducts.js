@@ -96,17 +96,11 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
   return (
     <div className="bg-white rounded-lg shadow p-4">
       {showTitle && (
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center">
             <ClockIcon className="h-5 w-5 mr-2" />
             {title}
           </h2>
-          <Link 
-            href="/dashboard" 
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
-            View All
-          </Link>
         </div>
       )}
       
