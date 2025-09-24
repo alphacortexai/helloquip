@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
+
+// Utility function to shuffle array
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
@@ -100,8 +111,7 @@ export default function Home() {
     console.log('🔄 Manually refreshing data...');
     
     try {
-      sessionStorage.removeItem('mainPageProducts');
-      sessionStorage.removeItem('mainPageProductsTimestamp');
+      cacheUtils.clearCache(CACHE_KEYS.MAIN_PRODUCTS);
       setLoading(true);
       
       // Force refresh the page data
@@ -116,8 +126,7 @@ export default function Home() {
           setAllProducts(products);
           
           // Cache the products for future use
-          sessionStorage.setItem('mainPageProducts', JSON.stringify(products));
-          sessionStorage.setItem('mainPageProductsTimestamp', Date.now().toString());
+          cacheUtils.setCache(CACHE_KEYS.MAIN_PRODUCTS, products, CACHE_DURATIONS.MAIN_PRODUCTS);
           
           console.log('📦 Fetched and cached products:', products.length);
         } catch (error) {
@@ -141,14 +150,10 @@ export default function Home() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         try {
-          const timestamp = sessionStorage.getItem('mainPageProductsTimestamp');
-          if (timestamp) {
-            const age = Date.now() - parseInt(timestamp);
-            // If cache is older than 10 minutes, refresh
-            if (age > 10 * 60 * 1000) {
-              console.log('🔄 Page became visible, cache is stale, refreshing...');
-              refreshData();
-            }
+          const cacheAge = cacheUtils.getCacheAge(CACHE_KEYS.MAIN_PRODUCTS);
+          if (cacheAge !== null && cacheAge > 10 * 60) { // 10 minutes in seconds
+            console.log('🔄 Page became visible, cache is stale, refreshing...');
+            refreshData();
           }
         } catch (error) {
           console.warn('Error checking cache age:', error);
@@ -165,24 +170,15 @@ export default function Home() {
 
     const fetchProducts = async () => {
       // Check if we have cached products first
-      const cachedProducts = sessionStorage.getItem('mainPageProducts');
-      const cachedTimestamp = sessionStorage.getItem('mainPageProductsTimestamp');
+      const cachedProducts = cacheUtils.getCache(CACHE_KEYS.MAIN_PRODUCTS, CACHE_DURATIONS.MAIN_PRODUCTS);
       
-      // Use cache if it's less than 5 minutes old (reduced from 30 minutes for faster updates)
-      const isCacheValid = cachedProducts && cachedTimestamp && 
-        (Date.now() - parseInt(cachedTimestamp)) < 5 * 60 * 1000;
-      
-      if (isCacheValid) {
-        try {
-          const parsed = JSON.parse(cachedProducts);
-          setAllProducts(parsed);
-          setLoading(false);
-          setAllProductsLoaded(true);
-          console.log('📦 Using cached products:', parsed.length);
-          return;
-        } catch (error) {
-          console.warn('Failed to parse cached products, fetching fresh data');
-        }
+      if (cachedProducts) {
+        const shuffledProducts = shuffleArray(cachedProducts);
+        setAllProducts(shuffledProducts);
+        setLoading(false);
+        setAllProductsLoaded(true);
+        console.log('📦 Using cached products (shuffled):', shuffledProducts.length);
+        return;
       }
       
       try {
@@ -192,14 +188,14 @@ export default function Home() {
           ...doc.data(),
         }));
         
-        setAllProducts(products);
+        const shuffledProducts = shuffleArray(products);
+        setAllProducts(shuffledProducts);
         setAllProductsLoaded(true);
         
-        // Cache the products for future use
-        sessionStorage.setItem('mainPageProducts', JSON.stringify(products));
-        sessionStorage.setItem('mainPageProductsTimestamp', Date.now().toString());
+        // Cache the original products (not shuffled) for future use
+        cacheUtils.setCache(CACHE_KEYS.MAIN_PRODUCTS, products, CACHE_DURATIONS.MAIN_PRODUCTS);
         
-        console.log('📦 Fetched and cached products:', products.length);
+        console.log('📦 Fetched and cached products (shuffled):', shuffledProducts.length);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {

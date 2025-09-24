@@ -13,6 +13,17 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ProductCard from "@/components/ProductCard";
+import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
+
+// Utility function to shuffle array
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const getPreferredImageUrl = (imageUrl) => {
   if (!imageUrl) return null;
@@ -54,25 +65,18 @@ export default function TrendingProducts({ onLoadComplete }) {
         console.log('🚀 Fetching trending products...');
         
         // Check cache first for faster loading
-        const cachedProducts = sessionStorage.getItem('trendingProducts');
-        const cachedTimestamp = sessionStorage.getItem('trendingProductsTimestamp');
-        const isCacheValid = cachedProducts && cachedTimestamp && 
-          (Date.now() - parseInt(cachedTimestamp)) < 10 * 60 * 1000; // 10 minutes cache
+        const cachedProducts = cacheUtils.getCache(CACHE_KEYS.TRENDING_PRODUCTS, CACHE_DURATIONS.TRENDING_PRODUCTS);
         
-        if (isCacheValid) {
-          try {
-            const parsed = JSON.parse(cachedProducts);
-            setProducts(parsed);
-            setLoading(false);
-            console.log('📦 Using cached trending products:', parsed.length);
-            
-            if (onLoadComplete) {
-              onLoadComplete();
-            }
-            return;
-          } catch (error) {
-            console.warn('Failed to parse cached trending products, fetching fresh data');
+        if (cachedProducts) {
+          const shuffledProducts = shuffleArray(cachedProducts);
+          setProducts(shuffledProducts);
+          setLoading(false);
+          console.log('📦 Using cached trending products (shuffled):', shuffledProducts.length);
+          
+          if (onLoadComplete) {
+            onLoadComplete();
           }
+          return;
         }
         
         // Fetch trending product IDs
@@ -120,13 +124,13 @@ export default function TrendingProducts({ onLoadComplete }) {
         });
 
         const fullProducts = (await Promise.all(productPromises)).filter(Boolean);
-        console.log('✅ Loaded trending products:', fullProducts.length);
+        const shuffledProducts = shuffleArray(fullProducts);
+        console.log('✅ Loaded trending products (shuffled):', shuffledProducts.length);
         
-        setProducts(fullProducts);
+        setProducts(shuffledProducts);
         
         // Cache the results for faster future loads
-        sessionStorage.setItem('trendingProducts', JSON.stringify(fullProducts));
-        sessionStorage.setItem('trendingProductsTimestamp', Date.now().toString());
+        cacheUtils.setCache(CACHE_KEYS.TRENDING_PRODUCTS, fullProducts, CACHE_DURATIONS.TRENDING_PRODUCTS);
         
         setLoading(false);
         

@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { Search } from "lucide-react";
 import Image from "next/image";
+import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 
 // Helper function to get preferred image URL
 const getPreferredImageUrl = (imageUrl) => {
@@ -66,22 +67,25 @@ export default function SearchBar() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Try session cache first
-        const cached = typeof window !== 'undefined' ? sessionStorage.getItem('searchAllProducts') : null;
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            setAllProducts(parsed);
-            setIsLoading(false);
-            return;
-          } catch {}
+        
+        // Check cache first with 5-minute expiration
+        const cachedProducts = cacheUtils.getCache(CACHE_KEYS.SEARCH_PRODUCTS, CACHE_DURATIONS.SEARCH_PRODUCTS);
+        
+        if (cachedProducts) {
+          setAllProducts(cachedProducts);
+          setIsLoading(false);
+          console.log('📦 Using cached search products:', cachedProducts.length);
+          return;
         }
+        
         const snapshot = await getDocs(collection(db, "products"));
         const products = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setAllProducts(products);
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('searchAllProducts', JSON.stringify(products));
-        }
+        
+        // Cache the products with timestamp
+        cacheUtils.setCache(CACHE_KEYS.SEARCH_PRODUCTS, products, CACHE_DURATIONS.SEARCH_PRODUCTS);
+        
+        console.log('📦 Fetched and cached search products:', products.length);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {

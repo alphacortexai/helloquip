@@ -29,6 +29,16 @@ import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
 
+// Utility function to shuffle array
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 // Helper to decode URL and pick preferred size
 const getPreferredImageUrl = (imageUrl, customResolution = null) => {
   if (!imageUrl) return null;
@@ -193,34 +203,26 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           console.log(`✅ Added ${additionalProducts.length} additional products, total: ${finalProducts.length}`);
         }
 
-        // Sort products consistently by creation date (newest first) for predictable ordering
-        const sorted = finalProducts.sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-          return dateB - dateA; // Newest first
-        });
+        // Shuffle products for better random view
+        const shuffled = shuffleArray(finalProducts);
 
         if (reset) {
-          setProducts(sorted);
+          setProducts(shuffled);
         } else {
           setProducts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
-            const newUnique = sorted.filter((p) => !existingIds.has(p.id));
+            const newUnique = shuffled.filter((p) => !existingIds.has(p.id));
             const combined = [...prev, ...newUnique];
             
-            console.log(`🔄 Adding products: prev=${prev.length}, new=${sorted.length}, unique=${newUnique.length}, combined=${combined.length}`);
+            console.log(`🔄 Adding products: prev=${prev.length}, new=${shuffled.length}, unique=${newUnique.length}, combined=${combined.length}`);
             
             // If we got very few new products, it might indicate we're hitting duplicates
-            if (newUnique.length < 10 && sorted.length >= 30) {
-              console.log(`⚠️ Too many duplicates detected (${newUnique.length} new out of ${sorted.length}), this might indicate pagination issues`);
+            if (newUnique.length < 10 && shuffled.length >= 30) {
+              console.log(`⚠️ Too many duplicates detected (${newUnique.length} new out of ${shuffled.length}), this might indicate pagination issues`);
             }
             
-            // Sort combined list consistently by creation date
-            return combined.sort((a, b) => {
-              const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-              const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-              return dateB - dateA; // Newest first
-            });
+            // Shuffle the combined list for better random view
+            return shuffleArray(combined);
           });
         }
 
