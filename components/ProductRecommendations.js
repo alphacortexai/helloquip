@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { useProductSuggestions } from '@/hooks/useProductSuggestions';
 
-export default function ProductRecommendations({ limit = 3, showTitle = true, title = "Recommended for You" }) {
+export default function ProductRecommendations({ limit = 3, showTitle = true, title = "Recommended for You", onLoadComplete }) {
   const [user, setUser] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,12 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
       await fetchPopularProducts();
     } finally {
       setLoading(false);
+      
+      // Notify parent component that loading is complete
+      if (onLoadComplete) {
+        console.log('✅ ProductRecommendations: Loading complete, calling onLoadComplete');
+        onLoadComplete();
+      }
     }
   };
 
@@ -85,6 +91,12 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
       console.error('Error fetching popular products:', error);
     } finally {
       setLoading(false);
+      
+      // Notify parent component that loading is complete
+      if (onLoadComplete) {
+        console.log('✅ ProductRecommendations: Loading complete (fallback), calling onLoadComplete');
+        onLoadComplete();
+      }
     }
   };
 

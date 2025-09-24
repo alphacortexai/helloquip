@@ -40,7 +40,7 @@ const getPreferredImageUrl = (imageUrl) => {
   return null;
 };
 
-export default function TrendingProducts() {
+export default function TrendingProducts({ onLoadComplete }) {
   const [products, setProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -102,6 +102,12 @@ export default function TrendingProducts() {
         setProducts(fullProducts);
         setLoading(false); // Add this line to fix endless loading
         
+        // Notify parent component that loading is complete
+        if (onLoadComplete) {
+          console.log('✅ TrendingProducts: Loading complete, calling onLoadComplete');
+          onLoadComplete();
+        }
+        
       } catch (error) {
         console.warn("Network failed, trying cache…", error);
         try {
@@ -147,6 +153,12 @@ export default function TrendingProducts() {
           setProducts([]); // Set empty array if both network and cache fail
         } finally {
           setLoading(false);
+          
+          // Notify parent component that loading is complete
+          if (onLoadComplete) {
+            console.log('✅ TrendingProducts: Loading complete (fallback), calling onLoadComplete');
+            onLoadComplete();
+          }
         }
       }
     };
@@ -188,8 +200,17 @@ export default function TrendingProducts() {
 
   if (loading) {
     return (
-      <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-        Loading trending products...
+      <div className="h-48 flex items-center justify-center">
+        <div className="animate-pulse w-full">
+          {/* Desktop trending skeleton - single large card */}
+          <div className="hidden md:block">
+            <div className="bg-gray-200 h-48 rounded-2xl"></div>
+          </div>
+          {/* Mobile trending skeleton - horizontal scroll */}
+          <div className="block md:hidden">
+            <div className="bg-gray-200 h-40 rounded-xl"></div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -10,13 +10,29 @@ import ProductRecommendations from "@/components/ProductRecommendations";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
+import LoadingScreen from "@/components/LoadingScreen";
+import SkeletonLoader from "@/components/SkeletonLoader";
 
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
-  loading: () => <div className="text-center py-10">Loading trending products...</div>,
+  loading: () => (
+    <div className="bg-white rounded-xl p-4">
+      <SkeletonLoader type="trending" />
+    </div>
+  ),
 });
 
 const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), {
-  loading: () => <div className="text-center py-10">Loading featured products...</div>,
+  loading: () => (
+    <div className="bg-gray/70 pt-0 md:pt-3 pb-0 relative">
+      <div className="max-w-7xl mx-auto px-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonLoader key={i} type="product-card" />
+          ))}
+        </div>
+      </div>
+    </div>
+  ),
 });
 
 export default function Home() {
@@ -27,7 +43,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [featuredProductsLoaded, setFeaturedProductsLoaded] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [trendingProductsLoaded, setTrendingProductsLoaded] = useState(false);
+  const [allProductsLoaded, setAllProductsLoaded] = useState(false);
+  const [recommendationsLoaded, setRecommendationsLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
 
@@ -36,6 +56,37 @@ export default function Home() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Hide loading screen when components are ready or after minimum time
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoadingScreen(false);
+    }, 2500); // Minimum 2.5 seconds for loading screen to show logo properly
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Also hide loading screen when all components are loaded (if faster than 2.5 seconds)
+  useEffect(() => {
+    console.log('🔍 Loading states:', {
+      featuredProductsLoaded,
+      categoriesLoaded,
+      trendingProductsLoaded,
+      allProductsLoaded,
+      recommendationsLoaded,
+      loading,
+      showLoadingScreen
+    });
+    
+    if (featuredProductsLoaded && categoriesLoaded && trendingProductsLoaded && allProductsLoaded && recommendationsLoaded && !loading) {
+      const timer = setTimeout(() => {
+        console.log('✅ All components loaded, hiding loading screen');
+        setShowLoadingScreen(false);
+      }, 1500); // Increased delay to ensure all components are fully rendered
+      
+      return () => clearTimeout(timer);
+    }
+  }, [featuredProductsLoaded, categoriesLoaded, trendingProductsLoaded, allProductsLoaded, recommendationsLoaded, loading]);
 
   // Function to clear cache and refresh data
   const refreshData = () => {
@@ -135,6 +186,7 @@ export default function Home() {
           const parsed = JSON.parse(cachedProducts);
           setAllProducts(parsed);
           setLoading(false);
+          setAllProductsLoaded(true);
           console.log('📦 Using cached products:', parsed.length);
           return;
         } catch (error) {
@@ -150,6 +202,7 @@ export default function Home() {
         }));
         
         setAllProducts(products);
+        setAllProductsLoaded(true);
         
         // Cache the products for future use
         sessionStorage.setItem('mainPageProducts', JSON.stringify(products));
@@ -319,11 +372,13 @@ export default function Home() {
   }, [isClient, showLoading, isOnline, isCheckingConnection]);
 
   // Don't render anything until client-side
+  // Don't show loading screen as separate page, show it as overlay
+
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-blue-500 border-b-blue-500 border-l-blue-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Loading...</p>
         </div>
       </div>
@@ -336,22 +391,11 @@ export default function Home() {
 
   return (
     <>
-
-
-      {/* Loading Spinner */}
-      {showLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500 mx-auto mb-4" />
-            <p className="text-gray-600 font-medium">Loading main page components...</p>
-            <div className="mt-2 text-sm text-gray-500">
-              {!featuredProductsLoaded && <div>Featured Products...</div>}
-              {!categoriesLoaded && <div>Categories...</div>}
-            </div>
-
-          </div>
-        </div>
+      {/* Loading Screen Overlay */}
+      {showLoadingScreen && (
+        <LoadingScreen onComplete={() => setShowLoadingScreen(false)} />
       )}
+
 
 
 
@@ -373,7 +417,7 @@ export default function Home() {
 
               {/* Trending Products */}
               <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
-                <TrendingProducts />
+                <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
               </section>
 
               {/* Featured Deal */}
@@ -426,7 +470,7 @@ export default function Home() {
               </section>
 
               {/* Product Recommendations */}
-              <ProductRecommendations limit={6} />
+              <ProductRecommendations limit={6} onLoadComplete={() => setRecommendationsLoaded(true)} />
 
               {/* Customer Testimonials */}
               <section className="bg-white rounded-2xl shadow-sm p-4">
@@ -450,7 +494,7 @@ export default function Home() {
             {/* Trending Products */}
             <section className="bg-white rounded-xl mb-1">
               <h2 className="hidden text-xl font-bold text-gray-800 mb-3 px-2">Trending Products</h2>
-              <TrendingProducts />
+              <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
             </section>
 
             {/* Featured Products */}
@@ -468,7 +512,7 @@ export default function Home() {
 
 
             {/* Product Recommendations - Mobile */}
-            <ProductRecommendations limit={4} />
+            <ProductRecommendations limit={4} onLoadComplete={() => setRecommendationsLoaded(true)} />
 
             {/* Promotional Banner */}
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">
