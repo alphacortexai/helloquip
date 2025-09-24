@@ -29,7 +29,7 @@ export default function LoadingScreen({ onComplete }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-[200]">
       <div className="text-center">
         {/* Logo Area */}
         <div className="mb-8">
@@ -41,7 +41,6 @@ export default function LoadingScreen({ onComplete }) {
             />
           </div>
         </div>
-
 
         {/* Progress Bar */}
         <div className="w-64 mx-auto mb-4">

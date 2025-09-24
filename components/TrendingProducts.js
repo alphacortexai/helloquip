@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   collection,
   getDocs,
-  getDocsFromCache,
   query,
   limit,
   doc,
@@ -52,146 +51,114 @@ export default function TrendingProducts({ onLoadComplete }) {
     const fetchTrendingProducts = async () => {
       try {
         setLoading(true);
+        console.log('🚀 Fetching trending products...');
         
+        // Check cache first for faster loading
+        const cachedProducts = sessionStorage.getItem('trendingProducts');
+        const cachedTimestamp = sessionStorage.getItem('trendingProductsTimestamp');
+        const isCacheValid = cachedProducts && cachedTimestamp && 
+          (Date.now() - parseInt(cachedTimestamp)) < 10 * 60 * 1000; // 10 minutes cache
+        
+        if (isCacheValid) {
+          try {
+            const parsed = JSON.parse(cachedProducts);
+            setProducts(parsed);
+            setLoading(false);
+            console.log('📦 Using cached trending products:', parsed.length);
+            
+            if (onLoadComplete) {
+              onLoadComplete();
+            }
+            return;
+          } catch (error) {
+            console.warn('Failed to parse cached trending products, fetching fresh data');
+          }
+        }
+        
+        // Fetch trending product IDs
         const q = query(collection(db, "trendingProducts"), limit(5));
         const snapshot = await getDocs(q);
+        console.log('📊 Found trending docs:', snapshot.docs.length);
 
-        // Extract product IDs from trending collection
-        const trendingDocs = snapshot.docs.map((doc) => {
+        if (snapshot.docs.length === 0) {
+          setProducts([]);
+          setLoading(false);
+          if (onLoadComplete) onLoadComplete();
+          return;
+        }
+
+        // Extract product IDs
+        const productIds = snapshot.docs.map((doc) => {
           const data = doc.data();
-          return {
-            productId: data.productId || doc.id,
-            addedAt: data.addedAt,
-            // Use cached data if available
-            cachedName: data.name,
-            cachedPrice: data.price,
-            cachedImageUrl: data.imageUrl,
-          };
+          return data.productId || doc.id;
         });
 
-        // Fetch full product details and validate existence
-        const productPromises = trendingDocs.map(async (trendingDoc) => {
+        // Batch fetch all products at once (parallel instead of sequential)
+        const productPromises = productIds.map(async (productId) => {
           try {
-            const productRef = doc(db, "products", trendingDoc.productId);
+            const productRef = doc(db, "products", productId);
             const productSnap = await getDoc(productRef);
             
             if (productSnap.exists()) {
               const data = productSnap.data();
               return {
                 id: productSnap.id,
-                name: data.name || trendingDoc.cachedName || "Unnamed",
-                image: getPreferredImageUrl(data.image || data.imageUrl || trendingDoc.cachedImageUrl),
-                price: data.price || trendingDoc.cachedPrice || 0,
+                name: data.name || "Unnamed",
+                image: getPreferredImageUrl(data.image || data.imageUrl),
+                price: data.price || 0,
                 description: data.description || "No description provided.",
                 sku: data.sku || "N/A",
-                // Keep trending metadata
-                addedAt: trendingDoc.addedAt,
+                manufacturer: data.manufacturer || "",
+                discount: data.discount || 0,
               };
-            } else {
-              // Product was deleted, return null to filter out
-              console.warn(`Trending product ${trendingDoc.productId} no longer exists`);
-              return null;
             }
+            return null;
           } catch (error) {
-            console.error(`Error fetching product ${trendingDoc.productId}:`, error);
+            console.error(`Error fetching product ${productId}:`, error);
             return null;
           }
         });
 
         const fullProducts = (await Promise.all(productPromises)).filter(Boolean);
-        setProducts(fullProducts);
-        setLoading(false); // Add this line to fix endless loading
+        console.log('✅ Loaded trending products:', fullProducts.length);
         
-        // Notify parent component that loading is complete
+        setProducts(fullProducts);
+        
+        // Cache the results for faster future loads
+        sessionStorage.setItem('trendingProducts', JSON.stringify(fullProducts));
+        sessionStorage.setItem('trendingProductsTimestamp', Date.now().toString());
+        
+        setLoading(false);
+        
         if (onLoadComplete) {
           console.log('✅ TrendingProducts: Loading complete, calling onLoadComplete');
           onLoadComplete();
         }
         
       } catch (error) {
-        console.warn("Network failed, trying cache…", error);
-        try {
-          const cachedSnapshot = await getDocsFromCache(collection(db, "trendingProducts"));
-          const trendingDocs = cachedSnapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              productId: data.productId || doc.id,
-              cachedName: data.name,
-              cachedPrice: data.price,
-              cachedImageUrl: data.imageUrl,
-            };
-          });
-
-          const cachedProductPromises = trendingDocs.map(async (trendingDoc) => {
-            try {
-              const productRef = doc(db, "products", trendingDoc.productId);
-              const productSnap = await getDoc(productRef);
-              
-              if (productSnap.exists()) {
-                const data = productSnap.data();
-                return {
-                  id: productSnap.id,
-                  name: data.name || trendingDoc.cachedName || "Unnamed",
-                  image: getPreferredImageUrl(data.image || data.imageUrl || trendingDoc.cachedImageUrl),
-                  price: data.price || trendingDoc.cachedPrice || 0,
-                  description: data.description || "No description provided.",
-                  sku: data.sku || "N/A",
-                };
-              } else {
-                return null;
-              }
-            } catch (error) {
-              console.error(`Error fetching cached product ${trendingDoc.productId}:`, error);
-              return null;
-            }
-          });
-
-          const cachedProducts = (await Promise.all(cachedProductPromises)).filter(Boolean);
-          setProducts(cachedProducts);
-        } catch (cacheErr) {
-          console.error("No cache found for trending products:", cacheErr);
-          setProducts([]); // Set empty array if both network and cache fail
-        } finally {
-          setLoading(false);
-          
-          // Notify parent component that loading is complete
-          if (onLoadComplete) {
-            console.log('✅ TrendingProducts: Loading complete (fallback), calling onLoadComplete');
-            onLoadComplete();
-          }
+        console.error('Error fetching trending products:', error);
+        setProducts([]);
+        setLoading(false);
+        
+        if (onLoadComplete) {
+          console.log('✅ TrendingProducts: Loading complete (error), calling onLoadComplete');
+          onLoadComplete();
         }
       }
     };
 
     fetchTrendingProducts();
-  }, []);
+  }, [onLoadComplete]);
 
   useEffect(() => {
     if (products.length <= 1) return;
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % products.length);
     }, 5000);
-    return () => clearInterval(interval);
-  }, [products]);
 
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-      // When resetting to first slide, use 'auto' behavior to avoid any visible scroll
-      if (currentSlide === 0) {
-        // Just jump directly to the first card without any visible movement
-        scrollContainerRef.current.scrollTo({
-          left: 0,
-          behavior: "auto"
-        });
-      } else {
-        // Normal smooth scrolling for other slides
-        scrollContainerRef.current.scrollTo({
-          left: currentSlide * scrollContainerRef.current.offsetWidth,
-          behavior: "smooth",
-        });
-      }
-    }
-  }, [currentSlide, products.length]);
+    return () => clearInterval(interval);
+  }, [products.length]);
 
   const handleProductClick = (productId) => {
     setIsNavigating(true);

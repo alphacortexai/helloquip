@@ -9,7 +9,6 @@ import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
 import ProductRecommendations from "@/components/ProductRecommendations";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
-import { useScrollPosition } from "@/lib/useScrollPosition";
 import LoadingScreen from "@/components/LoadingScreen";
 import SkeletonLoader from "@/components/SkeletonLoader";
 
@@ -37,7 +36,6 @@ const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), 
 
 export default function Home() {
   const { loading: settingsLoading } = useDisplaySettings();
-  const { restoreScrollPosition } = useScrollPosition();
   const [allProducts, setAllProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [loading, setLoading] = useState(true);
@@ -114,9 +112,9 @@ export default function Home() {
           sessionStorage.setItem('mainPageProducts', JSON.stringify(products));
           sessionStorage.setItem('mainPageProductsTimestamp', Date.now().toString());
           
-          console.log('📦 Refreshed and cached products:', products.length);
+          console.log('📦 Fetched and cached products:', products.length);
         } catch (error) {
-          console.error("Error refreshing products:", error);
+          console.error("Error fetching products:", error);
         } finally {
           setLoading(false);
         }
@@ -124,7 +122,8 @@ export default function Home() {
       
       fetchProducts();
     } catch (error) {
-      console.warn('Error clearing cache:', error);
+      console.error('Error refreshing data:', error);
+      setLoading(false);
     }
   };
 
@@ -153,21 +152,6 @@ export default function Home() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isClient]);
-
-
-
-  // Restore scroll position when returning to main page
-  useEffect(() => {
-    if (isClient && featuredProductsLoaded && categoriesLoaded) {
-      // Small delay to ensure products are rendered
-      const timer = setTimeout(() => {
-        restoreScrollPosition();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isClient, featuredProductsLoaded, categoriesLoaded, restoreScrollPosition]);
-
-
 
   useEffect(() => {
     if (!isClient) return;
@@ -232,66 +216,29 @@ export default function Home() {
   useEffect(() => {
     if (!isClient) return;
 
-    console.log('🔍 Starting internet connection check...');
-
-    // Set checking to false immediately so UI loads normally
-    setIsCheckingConnection(false);
-
-    // Simple connection test with timeout
-    const testConnection = () => {
-      console.log('🌐 Testing internet connection...');
-      
-      // Use a simple image request that's likely to fail when offline
-      const img = new Image();
-      const timeoutId = setTimeout(() => {
-        console.log('⏰ Connection test timeout - assuming offline');
-        setIsOnline(false);
-      }, 3000);
-
-      img.onload = () => {
-        console.log('✅ Internet connection confirmed');
-        clearTimeout(timeoutId);
+    // Check internet connection
+    const checkConnection = async () => {
+      try {
+        const response = await fetch('https://www.google.com/favicon.ico', { 
+          method: 'HEAD',
+          mode: 'no-cors',
+          cache: 'no-cache'
+        });
         setIsOnline(true);
-      };
-
-      img.onerror = () => {
-        console.log('❌ Internet connection test failed');
-        clearTimeout(timeoutId);
+      } catch (error) {
+        console.log('📡 No internet connection detected');
         setIsOnline(false);
-      };
-
-      // Try to load a small image from a reliable source
-      img.src = 'https://www.google.com/favicon.ico?' + Date.now();
+      } finally {
+        setIsCheckingConnection(false);
+      }
     };
 
-    // Check initial connection status
-    if (navigator.onLine) {
-      console.log('📡 Navigator reports online, testing connection...');
-      testConnection();
-    } else {
-      console.log('📡 Navigator reports offline');
-      setIsOnline(false);
-    }
+    checkConnection();
 
-    let onlineTimer = null;
-
+    // Set up online/offline event listeners
     const handleOnline = () => {
       console.log('🌐 Internet connection restored');
       setIsOnline(true);
-      
-      // Clear any online timers
-      if (onlineTimer) {
-        clearTimeout(onlineTimer);
-        onlineTimer = null;
-      }
-
-      // Wait a bit for connection to stabilize, then reload
-      onlineTimer = setTimeout(() => {
-        if (navigator.onLine) {
-          console.log('🔄 Reloading page after internet restoration...');
-          window.location.reload();
-        }
-      }, 2000); // 2 second delay to ensure stable connection
     };
 
     const handleOffline = () => {
@@ -299,17 +246,30 @@ export default function Home() {
       setIsOnline(false);
     };
 
-    // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Cleanup function
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      if (onlineTimer) clearTimeout(onlineTimer);
     };
   }, [isClient]);
+
+  // Show connection status and handle loading
+  useEffect(() => {
+    if (!isClient) return;
+
+    if (!isCheckingConnection && !isOnline) {
+      // Show offline message and prevent loading
+      console.log('📡 Offline - preventing component loading');
+      return;
+    }
+
+    if (!isCheckingConnection && isOnline) {
+      // Online - allow normal loading
+      console.log('🌐 Online - allowing component loading');
+    }
+  }, [isClient, showLoading, isOnline, isCheckingConnection]);
 
   // Basic mobile screenshot prevention only
   useEffect(() => {
@@ -322,54 +282,17 @@ export default function Home() {
       console.log('📱 Mobile device detected - applying basic screenshot protection');
       
       // Only prevent context menu, allow all touch events for scrolling
-      const preventMobileContextMenu = (e) => {
-        // Only prevent context menu, allow scrolling
-        if (e.type === 'contextmenu') {
-          e.preventDefault();
-          return false;
-        }
+      const preventContextMenu = (e) => {
+        e.preventDefault();
       };
 
-      // Only add context menu prevention, don't block touch events
-      document.addEventListener('contextmenu', preventMobileContextMenu);
+      document.addEventListener('contextmenu', preventContextMenu);
       
-      // Add minimal CSS for mobile
-      const style = document.createElement('style');
-      style.textContent = `
-        /* Mobile-only: prevent long press context menu */
-        @media (max-width: 768px) {
-          body {
-            -webkit-touch-callout: none !important;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-
-      // Cleanup function
       return () => {
-        document.removeEventListener('contextmenu', preventMobileContextMenu);
-        if (style.parentNode) {
-          style.parentNode.removeChild(style);
-        }
+        document.removeEventListener('contextmenu', preventContextMenu);
       };
     }
   }, [isClient]);
-
-  // 15-second timeout for loading (only when online)
-  useEffect(() => {
-    if (!isClient || !isOnline || isCheckingConnection) return;
-
-    const timeout = setTimeout(() => {
-      if (showLoading) {
-        console.log('⏰ Loading timeout reached (15s), forcing completion');
-        setFeaturedProductsLoaded(true);
-        setCategoriesLoaded(true);
-        setLoading(false);
-      }
-    }, 15000); // 15 seconds
-
-    return () => clearTimeout(timeout);
-  }, [isClient, showLoading, isOnline, isCheckingConnection]);
 
   // Don't render anything until client-side
   // Don't show loading screen as separate page, show it as overlay
@@ -385,19 +308,12 @@ export default function Home() {
     );
   }
 
-
-
-
-
   return (
     <>
       {/* Loading Screen Overlay */}
       {showLoadingScreen && (
         <LoadingScreen onComplete={() => setShowLoadingScreen(false)} />
       )}
-
-
-
 
       {/* Main Layout */}
       <div className="min-h-screen bg-[#2e4493] overflow-hidden">
@@ -424,51 +340,30 @@ export default function Home() {
               <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
                 <div className="h-full flex flex-col justify-center items-center text-center">
                   <div>
-                    <h3 className="text-2xl font-bold mb-3">Featured Deal</h3>
-                    <p className="text-lg mb-4">Get up to 50% off on selected medical equipment</p>
-                    <ul className="space-y-1 text-sm mb-6 inline-block text-left">
-                      <li>• Premium quality equipment</li>
-                      <li>• Fast delivery nationwide</li>
-                      <li>• Professional support</li>
-                    </ul>
+                    <h3 className="text-2xl font-bold mb-4">Special Offer</h3>
+                    <p className="text-lg mb-6">Get 20% off on all medical equipment this month!</p>
+                    <button className="bg-white text-green-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                      Shop Now
+                    </button>
                   </div>
-                  <button className="bg-white text-green-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-                    View Deal
-                  </button>
                 </div>
               </section>
             </div>
 
             {/* Featured Products */}
-            <div className="space-y-4">
-              <section className="bg-white rounded-2xl shadow-sm p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-800">Latest Products</h2>
-                  <button 
-                    onClick={refreshData}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    title="Refresh to see newly uploaded products"
-                  >
-                    🔄 Refresh
-                  </button>
-                </div>
-                <FeaturedProducts 
-                  selectedCategory={selectedCategory} 
-                  onLoadComplete={() => setFeaturedProductsLoaded(true)}
-                />
-              </section>
+            <section className="mb-4">
+              <FeaturedProducts 
+                selectedCategory={selectedCategory} 
+                onLoadComplete={() => setFeaturedProductsLoaded(true)}
+                onScrollProgressChange={(progress, hasScrolledAll) => {
+                  setScrollProgress(progress);
+                  setHasScrolledAllProducts(hasScrolledAll);
+                }}
+              />
+            </section>
 
-              {/* New Arrivals */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">New Arrivals</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Show latest products from FeaturedProducts component */}
-                  <div className="text-center py-6 text-gray-500">
-                    <p>Latest products are shown in the Featured Products section above</p>
-                  </div>
-                </div>
-              </section>
-
+            {/* Bottom Row - Product Recommendations and Testimonials */}
+            <div className="grid grid-cols-[1fr_300px] gap-3">
               {/* Product Recommendations */}
               <ProductRecommendations limit={6} onLoadComplete={() => setRecommendationsLoaded(true)} />
 
@@ -518,51 +413,20 @@ export default function Home() {
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">
               <div className="text-center">
                 <h3 className="text-xl font-bold mb-2">Special Offers</h3>
-                <p className="text-sm mb-3">Get up to 50% off on selected medical equipment</p>
-                <button className="bg-white text-blue-600 px-6 py-2 rounded-full text-sm font-semibold">
-                  Shop Now
+                <p className="text-sm mb-4">Get amazing deals on medical equipment</p>
+                <button className="bg-white text-blue-600 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                  View Offers
                 </button>
               </div>
             </section>
 
-            {/* Customer Testimonials */}
+            {/* Customer Testimonials - Mobile */}
             <section className="bg-white rounded-xl p-4 mb-4">
               <Testimonials />
             </section>
           </div>
         </div>
       </div>
-
-      {/* Offline Dialog Overlay */}
-      {!isOnline && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8 max-w-md w-full text-center transform transition-all duration-300 scale-100">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">No Internet Connection</h2>
-              <p className="text-gray-600 mb-6">
-                Please check your internet connection and try again. The app requires an internet connection to function properly.
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => window.location.reload()}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                🔄 Retry Connection
-              </button>
-              <p className="text-xs text-gray-500">
-                The page will automatically reload when your connection is restored.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
