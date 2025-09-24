@@ -87,7 +87,7 @@ export default function Home() {
       const timer = setTimeout(() => {
         console.log('✅ All components loaded, hiding loading screen');
         setShowLoadingScreen(false);
-      }, 2000); // 2 second delay after all components are loaded
+      }, 0); // No delay - hide immediately when all components are loaded
       
       return () => clearTimeout(timer);
     }
