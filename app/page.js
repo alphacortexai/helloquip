@@ -53,6 +53,13 @@ export default function Home() {
   // Check if we're on client side
   useEffect(() => {
     setIsClient(true);
+    
+    // Show content when loading screen is ready
+    const timer = setTimeout(() => {
+      document.documentElement.classList.add('loaded');
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Hide loading screen when components are ready or after minimum time
@@ -80,7 +87,7 @@ export default function Home() {
       const timer = setTimeout(() => {
         console.log('✅ All components loaded, hiding loading screen');
         setShowLoadingScreen(false);
-      }, 1500); // Increased delay to ensure all components are fully rendered
+      }, 2000); // 2 second delay after all components are loaded
       
       return () => clearTimeout(timer);
     }
@@ -295,8 +302,6 @@ export default function Home() {
   }, [isClient]);
 
   // Don't render anything until client-side
-  // Don't show loading screen as separate page, show it as overlay
-
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
@@ -310,13 +315,14 @@ export default function Home() {
 
   return (
     <>
-      {/* Loading Screen Overlay */}
+      {/* Always show loading screen first to prevent content flash */}
       {showLoadingScreen && (
         <LoadingScreen onComplete={() => setShowLoadingScreen(false)} />
       )}
 
-      {/* Main Layout */}
-      <div className="min-h-screen bg-[#2e4493] overflow-hidden">
+      {/* Main Layout - Only render when loading screen is hidden */}
+      {!showLoadingScreen && (
+        <div className="min-h-screen bg-[#2e4493] overflow-hidden">
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-1 py-3">
@@ -426,7 +432,8 @@ export default function Home() {
             </section>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </>
   );
 }

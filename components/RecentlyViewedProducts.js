@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
 
-export default function RecentlyViewedProducts({ limit = 6, showTitle = true, title = "Recently Viewed" }) {
+export default function RecentlyViewedProducts({ limit = 6, showTitle = true, title = "Recently Viewed", onLoadComplete }) {
   const [user, setUser] = useState(null);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,8 +27,11 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
       fetchRecentlyViewed();
     } else {
       setLoading(false);
+      if (onLoadComplete) {
+        onLoadComplete();
+      }
     }
-  }, [user]);
+  }, [user, onLoadComplete]);
 
   const fetchRecentlyViewed = async () => {
     try {
@@ -39,6 +42,9 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
       console.error('Error fetching recently viewed:', error);
     } finally {
       setLoading(false);
+      if (onLoadComplete) {
+        onLoadComplete();
+      }
     }
   };
 

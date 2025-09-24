@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Prevent content flash during loading */
+html {
+  visibility: hidden;
+}
+
+html.loaded {
+  visibility: visible;
+}
+
 /* Prevent horizontal overflow */
 html, body {
   overflow-x: hidden;

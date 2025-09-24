@@ -78,6 +78,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [latestProducts, setLatestProducts] = useState([]);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
+  const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
   const router = useRouter();
   const batchSize = 50; // 50 products per load
   const initialLoadSize = 100; // Initial load size - 100 products on first load
@@ -337,13 +338,13 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
   // Call onLoadComplete when component is fully loaded
   useEffect(() => {
-    if (!loading && !settingsLoading && products.length > 0 && onLoadComplete) {
+    if (!loading && !settingsLoading && products.length > 0 && recentlyViewedLoaded && onLoadComplete) {
       const timer = setTimeout(() => {
         onLoadComplete();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [loading, settingsLoading, products.length, onLoadComplete]);
+  }, [loading, settingsLoading, products.length, recentlyViewedLoaded, onLoadComplete]);
 
   // Load products when search criteria changes
   useEffect(() => {
@@ -642,7 +643,11 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
                 {/* Recently Viewed Products - Embedded */}
                 <div className="mt-1 mb-1">
-                  <RecentlyViewedProducts limit={4} showTitle={true} />
+                  <RecentlyViewedProducts 
+                    limit={4} 
+                    showTitle={true} 
+                    onLoadComplete={() => setRecentlyViewedLoaded(true)}
+                  />
                 </div>
 
                 {/* Latest uploads horizontal scroller */}
