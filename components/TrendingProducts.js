@@ -144,7 +144,7 @@ export default function TrendingProducts({ onLoadComplete }) {
   }, [onLoadComplete]);
 
   useEffect(() => {
-    if (products.length <= 1) return;
+    if (products.length === 0) return;
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % products.length);
@@ -152,6 +152,24 @@ export default function TrendingProducts({ onLoadComplete }) {
 
     return () => clearInterval(interval);
   }, [products.length]);
+
+  // Auto-scroll mobile carousel
+  useEffect(() => {
+    if (products.length === 0 || !scrollContainerRef.current) return;
+
+    const scrollToSlide = () => {
+      if (scrollContainerRef.current) {
+        const slideWidth = scrollContainerRef.current.scrollWidth / products.length;
+        scrollContainerRef.current.scrollTo({
+          left: currentSlide * slideWidth,
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    // Scroll immediately when currentSlide changes
+    scrollToSlide();
+  }, [currentSlide, products.length]);
 
   const handleProductClick = (productId) => {
     setIsNavigating(true);
@@ -189,6 +207,7 @@ export default function TrendingProducts({ onLoadComplete }) {
         <title>Trending Products - HalloQuip</title>
       </Head>
 
+
       {/* Desktop Fade Transition */}
       <div className="hidden md:block h-full flex items-start justify-center relative">
         <div className="w-full h-full relative">
@@ -204,12 +223,14 @@ export default function TrendingProducts({ onLoadComplete }) {
                   product={product}
                   variant="carousel"
                   badge="Trending"
+                  hideSKU={true}
                   onClick={() => handleProductClick(product.id)}
                 />
               </div>
             </div>
           ))}
         </div>
+        
       </div>
 
       {/* Mobile Carousel */}
@@ -218,7 +239,7 @@ export default function TrendingProducts({ onLoadComplete }) {
           ref={scrollContainerRef}
           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
         >
-          {products.map((product) => (
+          {products.map((product, index) => (
             <div
               key={product.id}
               className="flex-shrink-0 w-full snap-center"
@@ -227,11 +248,13 @@ export default function TrendingProducts({ onLoadComplete }) {
                 product={product}
                 variant="mobilecarousel"
                 badge="Trending"
+                hideSKU={true}
                 onClick={() => handleProductClick(product.id)}
               />
             </div>
           ))}
         </div>
+        
       </div>
     </>
   );

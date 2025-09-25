@@ -3,7 +3,7 @@ import WishlistButton from './WishlistButton';
 import ProductComparisonButton from './ProductComparisonButton';
 import { useProductSettings, formatProductName, shouldShowMOQ, shouldShowSKU } from '@/hooks/useProductSettings';
 
-const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution }) => {
+const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution, hideSKU = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { settings } = useProductSettings();
 
@@ -176,9 +176,16 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
           <h3 className="hidden md:block text-xl font-semibold text-gray-800 line-clamp-2 mb-3">
             {formatProductName(product.name, settings)}
           </h3>
-          {shouldShowSKU(settings) && (
-            <p className="text-sm text-gray-500 italic mb-4">
+          {shouldShowSKU(settings) && !hideSKU && (
+            <p className="text-sm text-gray-500 italic mb-2">
               SKU: {product.sku}
+            </p>
+          )}
+          
+          {/* Product Title */}
+          {product.name && (
+            <p className="text-xl text-gray-600 line-clamp-3 mb-4">
+              {product.name}
             </p>
           )}
 
@@ -219,9 +226,16 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
           <h3 className="hidden md:block text-sm font-semibold text-gray-800 line-clamp-2 mb-0">
             {formatProductName(product.name, settings)}
           </h3>
-          {shouldShowSKU(settings) && (
+          {shouldShowSKU(settings) && !hideSKU && (
             <p className="text-[9px] text-gray-500 italic mt-0.5">
               SKU: {product.sku}
+            </p>
+          )}
+          
+          {/* Product Title for Mobile */}
+          {product.name && (
+            <p className="text-base text-gray-600 line-clamp-2 mt-1">
+              {product.name}
             </p>
           )}
         </div>
