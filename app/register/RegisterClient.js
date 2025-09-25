@@ -263,11 +263,11 @@ export default function RegisterClient() {
   }, [auth, redirect, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <h1 className="text-4xl font-extrabold text-indigo-700 mb-2">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#2e4493] px-4 text-white">
+      <h1 className="text-4xl font-extrabold mb-2">
         {isRegistering ? "Join Us Today!" : "Hello Quip!"}
       </h1>
-      <p className="text-indigo-500 text-lg mb-8 text-center max-w-md">
+      <p className="text-white/90 text-lg mb-8 text-center max-w-md">
         {isRegistering
           ? "Create your account and start your journey with us."
           : "Sign in to proceed with your order."}
@@ -286,7 +286,7 @@ export default function RegisterClient() {
         <input
           type="email"
           placeholder="Email address"
-          className="w-full border border-gray-300 rounded-lg px-5 py-3"
+          className="w-full rounded-lg px-5 py-3 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/60"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -295,7 +295,7 @@ export default function RegisterClient() {
         <input
           type="password"
           placeholder="Password"
-          className="w-full border border-gray-300 rounded-lg px-5 py-3"
+          className="w-full rounded-lg px-5 py-3 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/60"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -305,7 +305,7 @@ export default function RegisterClient() {
           <input
             type="password"
             placeholder="Confirm Password"
-            className="w-full border border-gray-300 rounded-lg px-5 py-3"
+            className="w-full rounded-lg px-5 py-3 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/60"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
@@ -314,13 +314,13 @@ export default function RegisterClient() {
 
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-3 rounded-lg"
+          className="w-full bg-white text-[#2e4493] py-3 rounded-lg font-semibold hover:bg-white/90 transition"
         >
           {isRegistering ? "Register" : "Sign In"}
         </button>
       </form>
 
-      <p className="text-gray-600 mt-6 max-w-md text-center">
+      <p className="text-white/90 mt-6 max-w-md text-center">
         {isRegistering ? (
           <>
             Already have an account?{' '}
@@ -331,7 +331,7 @@ export default function RegisterClient() {
                 setPassword("");
                 setConfirmPassword("");
               }}
-              className="text-indigo-600 font-medium hover:underline"
+              className="text-white font-semibold hover:underline"
               type="button"
             >
               Sign In
@@ -347,7 +347,7 @@ export default function RegisterClient() {
                 setPassword("");
                 setConfirmPassword("");
               }}
-              className="text-indigo-600 font-medium hover:underline"
+              className="text-white font-semibold hover:underline"
               type="button"
             >
               Register
@@ -357,7 +357,7 @@ export default function RegisterClient() {
       </p>
 
       <div className="flex items-center justify-center gap-3 my-6 max-w-md w-full">
-        <span className="text-gray-400 font-semibold uppercase tracking-wider">
+        <span className="text-white/70 font-semibold uppercase tracking-wider">
           OR
         </span>
       </div>
@@ -374,10 +374,19 @@ export default function RegisterClient() {
 
       <button
         onClick={() => router.push("/")}
-        className="mt-10 max-w-md w-full text-indigo-700 border border-indigo-700 py-3 rounded-lg font-semibold hover:bg-indigo-100 transition"
+        className="mt-10 max-w-md w-full text-white border border-white py-3 rounded-lg font-semibold hover:bg-white/10 transition"
       >
         ← Return to Shop
       </button>
+
+      {/* Bottom logo */}
+      <div className="mt-10 opacity-90">
+        <img
+          src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
+          alt="HelloQuip Logo"
+          className="h-10 w-auto"
+        />
+      </div>
     </div>
   );
 }
