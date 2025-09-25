@@ -47,7 +47,7 @@ export default function TrendingProducts({ onLoadComplete }) {
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
-  const scrollContainerRef = useRef(null);
+  const trackRef = useRef(null);
   
   useEffect(() => {
     const fetchTrendingProducts = async () => {
@@ -143,26 +143,27 @@ export default function TrendingProducts({ onLoadComplete }) {
     fetchTrendingProducts();
   }, [onLoadComplete]);
 
+  // Auto-slide logic
   useEffect(() => {
     if (products.length === 0) return;
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % products.length);
-    }, 5000);
+    }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
   }, [products.length]);
 
   // Auto-scroll mobile carousel
   useEffect(() => {
-    if (products.length === 0 || !scrollContainerRef.current) return;
+    if (products.length === 0 || !trackRef.current) return;
 
     const scrollToSlide = () => {
-      if (scrollContainerRef.current) {
-        const slideWidth = scrollContainerRef.current.scrollWidth / products.length;
-        scrollContainerRef.current.scrollTo({
+      if (trackRef.current) {
+        const slideWidth = trackRef.current.scrollWidth / products.length;
+        trackRef.current.scrollTo({
           left: currentSlide * slideWidth,
-          behavior: 'smooth'
+          behavior: 'auto'
         });
       }
     };
@@ -170,6 +171,8 @@ export default function TrendingProducts({ onLoadComplete }) {
     // Scroll immediately when currentSlide changes
     scrollToSlide();
   }, [currentSlide, products.length]);
+
+
 
   const handleProductClick = (productId) => {
     setIsNavigating(true);
@@ -208,13 +211,13 @@ export default function TrendingProducts({ onLoadComplete }) {
       </Head>
 
 
-      {/* Desktop Fade Transition */}
+      {/* Desktop Slide Carousel */}
       <div className="hidden md:block h-full flex items-start justify-center relative">
         <div className="w-full h-full relative">
           {products.map((product, index) => (
             <div
               key={product.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
+              className={`absolute inset-0 ${
                 index === currentSlide ? "opacity-100" : "opacity-0"
               }`}
             >
@@ -230,13 +233,12 @@ export default function TrendingProducts({ onLoadComplete }) {
             </div>
           ))}
         </div>
-        
       </div>
 
-      {/* Mobile Carousel */}
+      {/* Mobile Slide Carousel */}
       <div className="block md:hidden">
         <div
-          ref={scrollContainerRef}
+          ref={trackRef}
           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
         >
           {products.map((product, index) => (
@@ -254,7 +256,6 @@ export default function TrendingProducts({ onLoadComplete }) {
             </div>
           ))}
         </div>
-        
       </div>
     </>
   );
