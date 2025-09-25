@@ -175,6 +175,12 @@ export default function TrendingProducts({ onLoadComplete }) {
 
 
   const handleProductClick = (productId) => {
+    // Save current scroll position for this path before navigating
+    try {
+      const key = `scroll:${window.location.pathname}`;
+      sessionStorage.setItem(key, String(window.scrollY));
+    } catch {}
+
     setIsNavigating(true);
     router.push(`/product/${productId}`);
   };

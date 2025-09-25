@@ -203,6 +203,15 @@ export default function ClientLayoutWrapper({ children }) {
   }, [user]);
 
   // --- Scroll position save/restore across navigations ---
+  // Prefer manual scroll restoration to avoid browser default conflicts
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('scrollRestoration' in window.history)) return;
+    const prev = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => {
+      try { window.history.scrollRestoration = prev; } catch {}
+    };
+  }, []);
   // Save current scroll position for the current pathname
   useEffect(() => {
     const saveScrollPosition = () => {
@@ -262,7 +271,7 @@ export default function ClientLayoutWrapper({ children }) {
       return;
     }
 
-    const attempts = [0, 50, 120, 250, 450, 700, 1000, 1400];
+    const attempts = [0, 80, 160, 300, 500, 800, 1200, 1600, 2200, 3000, 4000, 5000];
     let cancelled = false;
     const tryScroll = (y) => {
       if (cancelled) return;

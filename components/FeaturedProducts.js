@@ -600,15 +600,17 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           ))}
         </div>
 
-        {/* Mobile: first 2 rows (4 items), then latest scroller, then remaining */}
+        {/* Mobile: two rows after Trending, Recently Viewed, two rows, Latest, then remaining */}
         <div className="sm:hidden">
           {(() => {
             const firstCount = 4;
+            const secondCount = 8;
             const first = products.slice(0, firstCount);
-            const rest = products.slice(firstCount);
+            const second = products.slice(firstCount, secondCount);
+            const rest = products.slice(secondCount);
             return (
               <>
-                {/* First two rows */}
+                {/* Two rows right after Trending */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                   {first.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
                     <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
@@ -639,8 +641,32 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                   />
                 </div>
 
+                {/* Two rows before Latest */}
+                {second.length > 0 && (
+                  <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
+                    {second.map(({ id, name, description, price, discount, imageUrl, sku }) => (
+                      <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                        <ProductCard
+                          variant="compact"
+                          isFirst={false}
+                          badge={trendingProductIds.has(id) ? "Trending" : undefined}
+                          product={{
+                            id,
+                            name,
+                            description,
+                            sku,
+                            price,
+                            discount,
+                            image: getPreferredImageUrl(imageUrl, featuredCardResolution),
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Latest uploads horizontal scroller */}
-                <div className="bg-white rounded-lg shadow p-4 mb-1">
+                <div className="bg-white rounded-lg shadow p-4 mt-1 mb-1">
                   <div className="flex items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                       <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
