@@ -256,7 +256,11 @@ export default function ClientLayoutWrapper({ children }) {
     const key = `scroll:${pathname}`;
     const raw = (() => { try { return sessionStorage.getItem(key); } catch { return null; } })();
     const targetY = raw ? parseInt(raw, 10) : 0;
-    if (Number.isNaN(targetY) || targetY <= 0) return;
+    if (Number.isNaN(targetY) || targetY <= 0) {
+      // No saved position: ensure we start at the very top
+      window.scrollTo(0, 0);
+      return;
+    }
 
     const attempts = [0, 50, 120, 250, 450, 700, 1000, 1400];
     let cancelled = false;

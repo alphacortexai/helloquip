@@ -126,6 +126,10 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
                   alt={cat.name}
                   className="w-4/5 h-4/5 object-contain"
                   draggable={false}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>';
+                  }}
                 />
               </div>
               <span className={`text-xs font-medium line-clamp-2 ${
@@ -169,6 +173,10 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
                       alt={cat.name}
                       className="w-full h-full object-contain"
                       draggable={false}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>';
+                      }}
                     />
                   </div>
                   <p className="mt-1 text-[12px] font-medium text-gray-700 leading-tight line-clamp-2">
@@ -202,6 +210,10 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
                     alt={cat.name}
                     className="w-5/6 h-5/6 object-contain"
                     draggable={false}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.src = 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>';
+                    }}
                   />
                 </div>
                 <span className={`text-sm font-medium line-clamp-1 ${
