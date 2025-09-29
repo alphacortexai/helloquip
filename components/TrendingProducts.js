@@ -179,6 +179,7 @@ export default function TrendingProducts({ onLoadComplete }) {
     try {
       const key = `scroll:${window.location.pathname}`;
       sessionStorage.setItem(key, String(window.scrollY));
+      sessionStorage.setItem('returnFromProduct', '1');
     } catch {}
 
     setIsNavigating(true);

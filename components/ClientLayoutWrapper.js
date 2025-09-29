@@ -290,7 +290,20 @@ export default function ClientLayoutWrapper({ children }) {
       {showNavbar && <Navbar />}
       {/* Spacer for fixed navbar height so content isn't hidden (mobile has taller header with search) */}
       {showNavbar && <div className="h-[96px] md:h-[72px]"></div>}
-      <main>{children}</main>
+      <main>
+        {/* Suppress global LoadingScreen when returning from a product page */}
+        {(() => {
+          try {
+            const returning = sessionStorage.getItem('returnFromProduct') === '1';
+            if (returning) {
+              sessionStorage.removeItem('returnFromProduct');
+              // Render children directly (LoadingScreen logic inside pages should check this too)
+              return children;
+            }
+          } catch {}
+          return children;
+        })()}
+      </main>
       <Toaster richColors position="top-center" />
 
       {/* Mobile Bottom Navigation */}

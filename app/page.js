@@ -47,7 +47,7 @@ export default function Home() {
   const [allProductsLoaded, setAllProductsLoaded] = useState(false);
   const [recommendationsLoaded, setRecommendationsLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
 
@@ -64,17 +64,31 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Decide whether to show the loading screen for this session (once per browser session)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const shownThisSession = sessionStorage.getItem('loadingScreenShown') === '1';
+      if (!shownThisSession) {
+        setShowLoadingScreen(true);
+        sessionStorage.setItem('loadingScreenShown', '1');
+      }
+    } catch {}
+  }, []);
+
   // Hide loading screen when components are ready or after minimum time
   useEffect(() => {
+    if (!showLoadingScreen) return;
     const timer = setTimeout(() => {
       setShowLoadingScreen(false);
     }, 2500); // Minimum 2.5 seconds for loading screen to show logo properly
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [showLoadingScreen]);
 
   // Also hide loading screen when all components are loaded (if faster than 2.5 seconds)
   useEffect(() => {
+    if (!showLoadingScreen) return;
     console.log('🔍 Loading states:', {
       featuredProductsLoaded,
       categoriesLoaded,
@@ -93,7 +107,7 @@ export default function Home() {
       
       return () => clearTimeout(timer);
     }
-  }, [featuredProductsLoaded, categoriesLoaded, trendingProductsLoaded, allProductsLoaded, recommendationsLoaded, loading]);
+  }, [featuredProductsLoaded, categoriesLoaded, trendingProductsLoaded, allProductsLoaded, recommendationsLoaded, loading, showLoadingScreen]);
 
   // Function to clear cache and refresh data
   const refreshData = () => {
@@ -290,10 +304,11 @@ export default function Home() {
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-r-blue-500 border-b-blue-500 border-l-blue-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading...</p>
-        </div>
+        <img
+          src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
+          alt="HeloQuip Logo"
+          className="h-16 w-auto"
+        />
       </div>
     );
   }

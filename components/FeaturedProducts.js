@@ -221,7 +221,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         const hasMoreProducts = querySnapshot.docs.length === fetchSize;
         setHasMore(hasMoreProducts);
         
-        console.log(`📦 Fetched ${fetchedProducts.length} products (requested: ${fetchSize}, filtered: ${filteredProducts.length}, final: ${sorted.length}), hasMore: ${hasMoreProducts}`);
+        console.log(`📦 Fetched ${fetchedProducts.length} products (requested: ${fetchSize}, filtered: ${filteredProducts.length}, final: ${finalProducts.length}), hasMore: ${hasMoreProducts}`);
       } catch (err) {
         console.error("Error fetching products:", err);
       }

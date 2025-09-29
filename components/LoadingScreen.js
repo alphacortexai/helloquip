@@ -29,39 +29,39 @@ export default function LoadingScreen({ onComplete }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-[200]">
+    <div className="fixed inset-0 bg-[#2e4493] flex items-center justify-center z-[200]">
       <div className="text-center">
         {/* Logo Area */}
         <div className="mb-8">
           <div className="mx-auto mb-4 flex items-center justify-center">
             <img
-              src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo.png?alt=media&token=580aa6cc-f6d0-4ace-bcda-8e7b6b573821"
-              alt="HelloQuip Logo"
-              className="h-12 md:h-14 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+              src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
+              alt="HeloQuip Logo"
+              className="h-14 md:h-16 w-auto"
             />
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="w-64 mx-auto mb-4">
-          <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="bg-white/30 rounded-full h-2 overflow-hidden">
             <div 
-              className="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out"
+              className="bg-white h-full rounded-full transition-all duration-300 ease-out"
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>
         </div>
 
         {/* Progress Percentage */}
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-white">
           {Math.round(Math.min(progress, 100))}%
         </p>
 
         {/* Loading Dots Animation */}
         <div className="flex justify-center mt-6 space-x-1">
-          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
     </div>
