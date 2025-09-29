@@ -247,18 +247,39 @@ export default function ClientLayoutWrapper({ children }) {
       const tryAnchor = () => {
         const el = document.getElementById(id);
         if (el) {
-          el.scrollIntoView({ block: 'center' });
+          // Prefer a precise scroll that accounts for fixed headers on mobile
+          try {
+            const rect = el.getBoundingClientRect();
+            const y = rect.top + window.scrollY - 100; // approximate header offset
+            window.scrollTo(0, y);
+          } catch {
+            el.scrollIntoView({ block: 'center' });
+          }
           return true;
         }
         return false;
       };
-      // Try a few times to account for async content
-      const tries = [0, 80, 180, 350, 600, 1000];
+      // Try multiple times (longer on mobile due to dynamic imports and images)
+      const tries = [0, 120, 240, 400, 700, 1000, 1500, 2200, 3000, 4000, 5500];
       let done = false;
       const timers = tries.map((ms) => setTimeout(() => {
         if (!done && tryAnchor()) done = true;
       }, ms));
-      return () => timers.forEach(clearTimeout);
+
+      // Fallback to numeric restoration if anchor not found after all tries
+      const fallbackTimer = setTimeout(() => {
+        if (!done) {
+          const key = `scroll:${pathname}`;
+          let raw = null;
+          try { raw = sessionStorage.getItem(key); } catch {}
+          const targetY = raw ? parseInt(raw, 10) : 0;
+          if (Number.isFinite(targetY) && targetY > 0) {
+            window.scrollTo(0, targetY);
+          }
+        }
+      }, Math.max(...tries) + 200);
+
+      return () => { timers.forEach(clearTimeout); clearTimeout(fallbackTimer); };
     }
 
     // Fallback to numeric scroll position restore

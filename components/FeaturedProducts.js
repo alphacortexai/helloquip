@@ -80,6 +80,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
+  const [targetProductId, setTargetProductId] = useState(null);
   const router = useRouter();
   const batchSize = 50; // 50 products per load
   const initialLoadSize = 100; // Initial load size - 100 products on first load
@@ -229,6 +230,82 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     },
     [keyword, tags, manufacturer, name, batchSize]
   );
+
+  // Detect target product from URL hash on mount (for precise restoration)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#p-') && hash.length > 3) {
+        const id = hash.slice(3);
+        if (id) setTargetProductId(id);
+      }
+    } catch {}
+  }, []);
+
+  // If there's a target product hash, ensure it's loaded and scroll to it
+  useEffect(() => {
+    if (!targetProductId) return;
+
+    const exists = products.some((p) => p.id === targetProductId);
+
+    if (exists) {
+      // Scroll to the target element with extended retries (mobile images/layout settle slower)
+      const anchorId = `p-${targetProductId}`;
+      const attempts = [0, 150, 300, 500, 800, 1200, 1800, 2500, 3300, 4200, 5200, 6500, 8000];
+      let cancelled = false;
+
+      const scrollWithOffset = () => {
+        const el = document.getElementById(anchorId);
+        if (!el) return false;
+        try {
+          const header = document.querySelector('header');
+          const headerHeight = header ? header.offsetHeight : 0;
+          const rect = el.getBoundingClientRect();
+          const y = rect.top + window.scrollY - Math.max(headerHeight, 80);
+          window.scrollTo(0, y);
+        } catch {
+          el.scrollIntoView({ block: 'center' });
+        }
+        return true;
+      };
+
+      // If images are still loading, wait for them to finish before attempting scroll
+      const container = document.querySelector('[data-featured-products]');
+      let pendingImageHandlers = [];
+      if (container) {
+        const imgs = Array.from(container.querySelectorAll('img'));
+        const notReady = imgs.filter(img => !img.complete);
+        if (notReady.length > 0) {
+          notReady.forEach(img => {
+            const handler = () => { scrollWithOffset(); };
+            img.addEventListener('load', handler, { once: true });
+            pendingImageHandlers.push({ img, handler });
+          });
+        }
+      }
+
+      const timers = attempts.map((ms) => setTimeout(() => {
+        if (cancelled) return;
+        scrollWithOffset();
+      }, ms));
+      const clearTimer = setTimeout(() => setTargetProductId(null), Math.max(...attempts) + 500);
+      return () => {
+        cancelled = true;
+        timers.forEach(clearTimeout);
+        clearTimeout(clearTimer);
+        pendingImageHandlers.forEach(({ img, handler }) => img.removeEventListener('load', handler));
+      };
+    }
+
+    if (hasMore && !loading) {
+      // Load more products until the target shows up or we run out
+      fetchProducts(lastVisible, false, batchSize);
+    } else if (!hasMore) {
+      // Give up if no more products
+      setTargetProductId(null);
+    }
+  }, [targetProductId, products, hasMore, loading, lastVisible, fetchProducts, batchSize]);
 
   // Fetch latest uploads (last 2 months up to current hour)
   useEffect(() => {
@@ -543,6 +620,20 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     
     // Navigate to product detail page
     setIsNavigating(true);
+    try {
+      // Persist an anchor hash on the main page entry so back navigation can restore position precisely
+      if (typeof window !== 'undefined' && window.location.pathname === '/') {
+        const { pathname, search } = window.location;
+        const anchor = `#p-${id}`;
+        if (typeof history !== 'undefined' && history.replaceState) {
+          history.replaceState(null, '', `${pathname}${search}${anchor}`);
+        } else {
+          window.location.hash = anchor;
+        }
+        try { sessionStorage.setItem('returnFromProduct', '1'); } catch {}
+        try { sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY)); } catch {}
+      }
+    } catch {}
     router.push(`/product/${id}`);
   };
 
@@ -581,7 +672,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         {/* Desktop/Tablet: original grid */}
         <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-            <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+            <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
               <ProductCard
                 variant="compact"
                 isFirst={index === 0}
@@ -613,7 +704,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {/* Two rows right after Trending */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                   {first.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                    <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                    <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
                       <ProductCard
                         variant="compact"
                         isFirst={index === 0}
@@ -645,7 +736,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {second.length > 0 && (
                   <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                     {second.map(({ id, name, description, price, discount, imageUrl, sku }) => (
-                      <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                      <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
                         <ProductCard
                           variant="compact"
                           isFirst={false}
@@ -718,7 +809,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {/* Remaining products */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                   {rest.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                    <div key={`rest-${id}`} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                    <div id={`p-${id}`} key={`rest-${id}`} onClick={() => handleProductClick(id)} className="cursor-pointer group">
                       <ProductCard
                         variant="compact"
                         isFirst={index === 0}
