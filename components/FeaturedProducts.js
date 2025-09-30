@@ -27,6 +27,7 @@ import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
 import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
+import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import { useScrollPosition } from "@/lib/useScrollPosition";
 
 
@@ -243,6 +244,26 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     } catch {}
   }, []);
 
+  // Also detect hash on back/forward cache restores and hash changes (mobile browsers often use bfcache)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => {
+      try {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#p-') && hash.length > 3) {
+          const id = hash.slice(3);
+          if (id) setTargetProductId(id);
+        }
+      } catch {}
+    };
+    window.addEventListener('pageshow', handler);
+    window.addEventListener('hashchange', handler);
+    return () => {
+      window.removeEventListener('pageshow', handler);
+      window.removeEventListener('hashchange', handler);
+    };
+  }, []);
+
   // If there's a target product hash, ensure it's loaded and scroll to it
   useEffect(() => {
     if (!targetProductId) return;
@@ -252,7 +273,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     if (exists) {
       // Scroll to the target element with extended retries (mobile images/layout settle slower)
       const anchorId = `p-${targetProductId}`;
-      const attempts = [0, 150, 300, 500, 800, 1200, 1800, 2500, 3300, 4200, 5200, 6500, 8000];
+      const attempts = [0, 120, 240, 400, 650, 900, 1300, 1800, 2500, 3300, 4200, 5200, 6500, 8000];
       let cancelled = false;
 
       const scrollWithOffset = () => {
@@ -262,10 +283,25 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           const header = document.querySelector('header');
           const headerHeight = header ? header.offsetHeight : 0;
           const rect = el.getBoundingClientRect();
-          const y = rect.top + window.scrollY - Math.max(headerHeight, 80);
-          window.scrollTo(0, y);
+          const currentY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+          const targetY = rect.top + currentY - Math.max(headerHeight, 80);
+          const scrollingElement = document.scrollingElement || document.documentElement || document.body;
+
+          requestAnimationFrame(() => {
+            try { window.scrollTo({ top: targetY, left: 0, behavior: 'auto' }); } catch {}
+            try { scrollingElement.scrollTop = targetY; } catch {}
+            try { document.documentElement.scrollTop = targetY; } catch {}
+            try { document.body.scrollTop = targetY; } catch {}
+          });
+
+          setTimeout(() => {
+            const near = Math.abs((window.pageYOffset || document.documentElement.scrollTop || 0) - targetY) < 2;
+            if (!near) {
+              try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
+            }
+          }, 60);
         } catch {
-          el.scrollIntoView({ block: 'center' });
+          try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
         }
         return true;
       };
@@ -287,9 +323,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
       const timers = attempts.map((ms) => setTimeout(() => {
         if (cancelled) return;
-        scrollWithOffset();
+        const ok = scrollWithOffset();
+        if (ok) cancelled = true; // gate further retries once successful
       }, ms));
-      const clearTimer = setTimeout(() => setTargetProductId(null), Math.max(...attempts) + 500);
+      const clearTimer = setTimeout(() => setTargetProductId(null), Math.max(...attempts) + 600);
       return () => {
         cancelled = true;
         timers.forEach(clearTimeout);
@@ -311,6 +348,13 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   useEffect(() => {
     const loadLatest = async () => {
       try {
+        // Use cache first if available
+        const cachedLatest = cacheUtils.getCache(CACHE_KEYS.LATEST_PRODUCTS, CACHE_DURATIONS.MAIN_PRODUCTS);
+        if (cachedLatest && Array.isArray(cachedLatest) && cachedLatest.length > 0) {
+          setLatestProducts(cachedLatest);
+          return;
+        }
+
         // Client-side filter from main list if available; otherwise do a best-effort fetch-all
         const now = new Date(); // Current time (up to this very hour)
         const twoMonthsAgo = new Date();
@@ -381,8 +425,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           const fallback = anyDateProducts.length > 0 ? anyDateProducts : source.slice(0, 20); // Increased from 8 to 20
           console.log('Using fallback latest products:', fallback.length);
           setLatestProducts(fallback);
+          cacheUtils.setCache(CACHE_KEYS.LATEST_PRODUCTS, fallback, CACHE_DURATIONS.MAIN_PRODUCTS);
         } else {
           setLatestProducts(latest);
+          cacheUtils.setCache(CACHE_KEYS.LATEST_PRODUCTS, latest, CACHE_DURATIONS.MAIN_PRODUCTS);
         }
       } catch (e) {
         console.warn('Failed to load latest uploads:', e);
@@ -390,6 +436,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         const fallback = products.length > 0 ? products.slice(0, 20) : [];
         console.log('Error fallback latest products:', fallback.length);
         setLatestProducts(fallback);
+        cacheUtils.setCache(CACHE_KEYS.LATEST_PRODUCTS, fallback, CACHE_DURATIONS.MAIN_PRODUCTS);
       }
     };
     loadLatest();
@@ -603,6 +650,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     // Save scroll position before navigation (only on main page)
     if (window.location.pathname === '/') {
       saveScrollPosition();
+      try {
+        sessionStorage.setItem('restoreScrollY', String(window.scrollY));
+      } catch {}
     }
     
     // Track product view for recent section
@@ -672,7 +722,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         {/* Desktop/Tablet: original grid */}
         <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-            <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+            <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
               <ProductCard
                 variant="compact"
                 isFirst={index === 0}
@@ -704,7 +754,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {/* Two rows right after Trending */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                   {first.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                    <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                    <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
                       <ProductCard
                         variant="compact"
                         isFirst={index === 0}
@@ -736,7 +786,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {second.length > 0 && (
                   <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                     {second.map(({ id, name, description, price, discount, imageUrl, sku }) => (
-                      <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                      <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
                         <ProductCard
                           variant="compact"
                           isFirst={false}
@@ -757,7 +807,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 )}
 
                 {/* Latest uploads horizontal scroller */}
-                <div className="bg-white rounded-lg shadow p-4 mt-1 mb-1">
+                <div className="bg-white rounded-lg shadow p-4 mt-1 mb-1" style={{ minHeight: 196 }}>
                   <div className="flex items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                       <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -809,7 +859,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {/* Remaining products */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                   {rest.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                    <div id={`p-${id}`} key={`rest-${id}`} onClick={() => handleProductClick(id)} className="cursor-pointer group">
+                    <div id={`p-${id}`} key={`rest-${id}`} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
                       <ProductCard
                         variant="compact"
                         isFirst={index === 0}

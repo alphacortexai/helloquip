@@ -228,17 +228,90 @@ export default function ClientLayoutWrapper({ children }) {
     };
   }, [pathname]);
 
+  // Mobile bfcache support: save on pagehide, restore on pageshow (persisted)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePageHide = () => {
+      try {
+        sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY));
+      } catch {}
+    };
+
+    const handlePageShow = (event) => {
+      // Only apply on bfcache restores
+      if (!event || !event.persisted) return;
+
+      // If there's an anchor hash (e.g., #p-123), let page components perform precise restore
+      const hash = window.location.hash;
+      if (hash && hash.length > 1) return;
+
+      // Numeric restoration for general pages
+      const key = `scroll:${pathname}`;
+      let raw = null;
+      try { raw = sessionStorage.getItem(key); } catch {}
+      const targetY = raw ? parseInt(raw, 10) : 0;
+      if (!Number.isFinite(targetY) || targetY <= 0) return;
+
+      // Account for fixed header height on mobile
+      let headerOffset = 0;
+      try {
+        const header = document.querySelector('header');
+        headerOffset = header ? header.offsetHeight : 0;
+      } catch {}
+
+      const attempts = [0, 80, 160, 300, 500, 800, 1200, 1800];
+      let cancelled = false;
+      const timers = attempts.map((ms) => setTimeout(() => {
+        if (cancelled) return;
+        const y = Math.max(0, targetY - Math.max(headerOffset, 80));
+        window.scrollTo(0, y);
+      }, ms));
+      const cleanup = () => { cancelled = true; timers.forEach(clearTimeout); };
+      // Auto-clean after last attempt
+      setTimeout(() => {
+        cleanup();
+      }, Math.max(...attempts) + 200);
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [pathname]);
+
+  // Restore via explicit saved numeric position when returning from product (back navigation) - Home only
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pathname !== '/') return;
+    const tryNumericRestore = () => {
+      let raw = null;
+      try { raw = sessionStorage.getItem('restoreScrollY'); } catch {}
+      const y = raw ? parseInt(raw, 10) : NaN;
+      if (!Number.isFinite(y) || y <= 0) return;
+      // Clear it immediately to avoid future unintended restores
+      try { sessionStorage.removeItem('restoreScrollY'); } catch {}
+
+      const attempts = [0, 80, 160, 300, 500, 800, 1200, 1800];
+      let cancelled = false;
+      const timers = attempts.map((ms) => setTimeout(() => {
+        if (cancelled) return;
+        window.scrollTo(0, y);
+      }, ms));
+      setTimeout(() => {
+        cancelled = true;
+        timers.forEach(clearTimeout);
+      }, Math.max(...attempts) + 600);
+    };
+
+    // On mount of Home, attempt numeric restore once
+    tryNumericRestore();
+  }, [pathname]);
+
   // Restore saved scroll position when mounting a pathname
   useEffect(() => {
-    // If a previous navigation requested forcing scroll to top (e.g., after login), do that and skip restoration
-    try {
-      const forceTop = sessionStorage.getItem('forceScrollTop');
-      if (forceTop === '1') {
-        sessionStorage.removeItem('forceScrollTop');
-        window.scrollTo(0, 0);
-        return;
-      }
-    } catch {}
 
     // If URL has a hash, try to scroll to the anchor element first (precise restore)
     const hash = window.location.hash;
@@ -250,10 +323,19 @@ export default function ClientLayoutWrapper({ children }) {
           // Prefer a precise scroll that accounts for fixed headers on mobile
           try {
             const rect = el.getBoundingClientRect();
-            const y = rect.top + window.scrollY - 100; // approximate header offset
-            window.scrollTo(0, y);
+            const header = document.querySelector('header');
+            const headerHeight = header ? header.offsetHeight : 0;
+            const currentY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            const y = rect.top + currentY - Math.max(headerHeight, 80);
+            const scrollingElement = document.scrollingElement || document.documentElement || document.body;
+            requestAnimationFrame(() => {
+              try { window.scrollTo({ top: y, left: 0, behavior: 'auto' }); } catch {}
+              try { scrollingElement.scrollTop = y; } catch {}
+              try { document.documentElement.scrollTop = y; } catch {}
+              try { document.body.scrollTop = y; } catch {}
+            });
           } catch {
-            el.scrollIntoView({ block: 'center' });
+            try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
           }
           return true;
         }
@@ -287,8 +369,7 @@ export default function ClientLayoutWrapper({ children }) {
     const raw = (() => { try { return sessionStorage.getItem(key); } catch { return null; } })();
     const targetY = raw ? parseInt(raw, 10) : 0;
     if (Number.isNaN(targetY) || targetY <= 0) {
-      // No saved position: ensure we start at the very top
-      window.scrollTo(0, 0);
+      // Do not force top by default; let the page remain where it is
       return;
     }
 
@@ -301,6 +382,50 @@ export default function ClientLayoutWrapper({ children }) {
     const timers = attempts.map((ms) => setTimeout(() => tryScroll(targetY), ms));
     return () => { cancelled = true; timers.forEach(clearTimeout); };
   }, [pathname]);
+
+  // Global hashchange precise scroll handler (mobile friendly) with gating after first success
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onHashChange = () => {
+      const hash = window.location.hash;
+      if (!hash || hash.length <= 1) return;
+      const id = hash.slice(1);
+      const attempts = [0, 120, 240, 400, 650, 900, 1300, 1800];
+      let done = false;
+      const tryAnchor = () => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        try {
+          const header = document.querySelector('header');
+          const headerHeight = header ? header.offsetHeight : 0;
+          const rect = el.getBoundingClientRect();
+          const currentY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+          const y = rect.top + currentY - Math.max(headerHeight, 80);
+          const scrollingElement = document.scrollingElement || document.documentElement || document.body;
+          requestAnimationFrame(() => {
+            try { window.scrollTo({ top: y, left: 0, behavior: 'auto' }); } catch {}
+            try { scrollingElement.scrollTop = y; } catch {}
+            try { document.documentElement.scrollTop = y; } catch {}
+            try { document.body.scrollTop = y; } catch {}
+          });
+          setTimeout(() => {
+            const near = Math.abs((window.pageYOffset || document.documentElement.scrollTop || 0) - y) < 2;
+            if (!near) {
+              try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
+            }
+          }, 60);
+        } catch {}
+        return true;
+      };
+      const timers = attempts.map((ms) => setTimeout(() => {
+        if (done) return;
+        if (tryAnchor()) done = true;
+      }, ms));
+      setTimeout(() => { timers.forEach(clearTimeout); }, Math.max(...attempts) + 300);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
 
 

@@ -7,6 +7,7 @@ import { getProductImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
+import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from '@/lib/cacheUtils';
 
 export default function RecentlyViewedProducts({ limit = 6, showTitle = true, title = "Recently Viewed", onLoadComplete }) {
   const [user, setUser] = useState(null);
@@ -24,6 +25,15 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
 
   useEffect(() => {
     if (user) {
+      // Try cache first per-user
+      const cacheKey = `${CACHE_KEYS.RECENTLY_VIEWED}:${user.uid}:${limit}`;
+      const cached = cacheUtils.getCache(cacheKey, CACHE_DURATIONS.MAIN_PRODUCTS);
+      if (cached && Array.isArray(cached)) {
+        setRecentlyViewed(cached);
+        setLoading(false);
+        if (onLoadComplete) onLoadComplete();
+        return;
+      }
       fetchRecentlyViewed();
     } else {
       setLoading(false);
@@ -31,13 +41,16 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
         onLoadComplete();
       }
     }
-  }, [user, onLoadComplete]);
+  }, [user, onLoadComplete, limit]);
 
   const fetchRecentlyViewed = async () => {
     try {
       setLoading(true);
       const items = await CustomerExperienceService.getRecentlyViewed(user.uid, limit);
       setRecentlyViewed(items);
+      // Cache per-user
+      const cacheKey = `${CACHE_KEYS.RECENTLY_VIEWED}:${user.uid}:${limit}`;
+      cacheUtils.setCache(cacheKey, items, CACHE_DURATIONS.MAIN_PRODUCTS);
     } catch (error) {
       console.error('Error fetching recently viewed:', error);
     } finally {
@@ -74,20 +87,20 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
   }
 
   if (loading) {
+    // Lightweight fixed-height placeholder to avoid layout shift
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4" style={{ minHeight: 160 }}>
         {showTitle && (
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <ClockIcon className="h-5 w-5 mr-2" />
             {title}
           </h2>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {Array.from({ length: limit }).map((_, index) => (
-            <div key={index} className="animate-pulse">
+        <div className="flex gap-4">
+          {Array.from({ length: Math.max(3, Math.min(6, limit)) }).map((_, index) => (
+            <div key={index} className="w-32">
               <div className="bg-gray-200 h-32 rounded-lg mb-2"></div>
-              <div className="bg-gray-200 h-4 rounded mb-1"></div>
-              <div className="bg-gray-200 h-3 rounded w-2/3"></div>
+              <div className="bg-gray-200 h-3 rounded w-3/4"></div>
             </div>
           ))}
         </div>

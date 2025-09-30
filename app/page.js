@@ -322,7 +322,7 @@ export default function Home() {
 
       {/* Main Layout - Only render when loading screen is hidden */}
       {!showLoadingScreen && (
-        <div className="min-h-screen bg-[#2e4493] overflow-hidden">
+        <div className="min-h-screen bg-[#2e4493]">
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-1 py-3">
@@ -384,6 +384,7 @@ export default function Home() {
         {/* Mobile Layout */}
         <div className="block md:hidden">
           <div className="px-1 py-1">
+
             {/* Mobile Categories */}
             <div className="bg-white rounded-xl py-3 mb-1 mt-2">
               <Categories 

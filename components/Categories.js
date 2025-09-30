@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
+import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
@@ -38,7 +39,14 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        
+        // Try cache first
+        const cached = cacheUtils.getCache(CACHE_KEYS.CATEGORIES, CACHE_DURATIONS.CATEGORIES);
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+          setCategories(cached);
+          setLoading(false);
+          return;
+        }
+
         const querySnapshot = await getDocs(collection(db, "categories"));
         const fetched = [];
         querySnapshot.forEach((doc) => {
@@ -49,6 +57,8 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
         });
         const allCategories = [allCategory, ...fetched];
         setCategories(allCategories);
+        // Save to cache
+        cacheUtils.setCache(CACHE_KEYS.CATEGORIES, allCategories, CACHE_DURATIONS.CATEGORIES);
       } catch (err) {
         console.error("Error loading categories:", err);
       } finally {

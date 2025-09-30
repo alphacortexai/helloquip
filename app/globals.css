@@ -13,12 +13,16 @@ html.loaded {
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  /* Prevent browser overflow anchoring from nudging viewport when content above loads */
+  overflow-anchor: none;
 }
 
 /* Ensure main content doesn't overflow */
 main {
   overflow-x: hidden;
   max-width: 100vw;
+  /* Reduce viewport jumps within main content */
+  overflow-anchor: none;
 }
 
 /* Hide scrollbar for webkit browsers */
