@@ -7,7 +7,6 @@ import { getProductImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
-import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from '@/lib/cacheUtils';
 
 export default function RecentlyViewedProducts({ limit = 6, showTitle = true, title = "Recently Viewed", onLoadComplete }) {
   const [user, setUser] = useState(null);
@@ -25,15 +24,6 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
 
   useEffect(() => {
     if (user) {
-      // Try cache first per-user
-      const cacheKey = `${CACHE_KEYS.RECENTLY_VIEWED}:${user.uid}:${limit}`;
-      const cached = cacheUtils.getCache(cacheKey, CACHE_DURATIONS.MAIN_PRODUCTS);
-      if (cached && Array.isArray(cached)) {
-        setRecentlyViewed(cached);
-        setLoading(false);
-        if (onLoadComplete) onLoadComplete();
-        return;
-      }
       fetchRecentlyViewed();
     } else {
       setLoading(false);
@@ -48,9 +38,6 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
       setLoading(true);
       const items = await CustomerExperienceService.getRecentlyViewed(user.uid, limit);
       setRecentlyViewed(items);
-      // Cache per-user
-      const cacheKey = `${CACHE_KEYS.RECENTLY_VIEWED}:${user.uid}:${limit}`;
-      cacheUtils.setCache(cacheKey, items, CACHE_DURATIONS.MAIN_PRODUCTS);
     } catch (error) {
       console.error('Error fetching recently viewed:', error);
     } finally {

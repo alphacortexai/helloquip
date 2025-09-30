@@ -27,7 +27,6 @@ import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
 import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
-import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import { useScrollPosition } from "@/lib/useScrollPosition";
 
 
@@ -348,13 +347,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   useEffect(() => {
     const loadLatest = async () => {
       try {
-        // Use cache first if available
-        const cachedLatest = cacheUtils.getCache(CACHE_KEYS.LATEST_PRODUCTS, CACHE_DURATIONS.MAIN_PRODUCTS);
-        if (cachedLatest && Array.isArray(cachedLatest) && cachedLatest.length > 0) {
-          setLatestProducts(cachedLatest);
-          return;
-        }
-
         // Client-side filter from main list if available; otherwise do a best-effort fetch-all
         const now = new Date(); // Current time (up to this very hour)
         const twoMonthsAgo = new Date();
@@ -425,10 +417,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           const fallback = anyDateProducts.length > 0 ? anyDateProducts : source.slice(0, 20); // Increased from 8 to 20
           console.log('Using fallback latest products:', fallback.length);
           setLatestProducts(fallback);
-          cacheUtils.setCache(CACHE_KEYS.LATEST_PRODUCTS, fallback, CACHE_DURATIONS.MAIN_PRODUCTS);
         } else {
           setLatestProducts(latest);
-          cacheUtils.setCache(CACHE_KEYS.LATEST_PRODUCTS, latest, CACHE_DURATIONS.MAIN_PRODUCTS);
         }
       } catch (e) {
         console.warn('Failed to load latest uploads:', e);
@@ -436,7 +426,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         const fallback = products.length > 0 ? products.slice(0, 20) : [];
         console.log('Error fallback latest products:', fallback.length);
         setLatestProducts(fallback);
-        cacheUtils.setCache(CACHE_KEYS.LATEST_PRODUCTS, fallback, CACHE_DURATIONS.MAIN_PRODUCTS);
       }
     };
     loadLatest();
