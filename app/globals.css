@@ -1,12 +1,18 @@
 @import "tailwindcss";
 
-/* Prevent content flash during loading - only on home page */
-html:has(body [data-page="home"]) {
+/* Prevent content flash during loading */
+html {
   visibility: hidden;
 }
 
 html.loaded {
   visibility: visible;
+}
+
+/* Force admin and login pages to always be visible */
+html:has([data-page="admin"]),
+html:has([data-page="admin-login"]) {
+  visibility: visible !important;
 }
 
 /* Prevent horizontal overflow */

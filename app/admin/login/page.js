@@ -82,7 +82,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4" data-page="admin-login">
       <div className="w-full max-w-md md:bg-white md:p-6 md:rounded-lg md:shadow-md">
         <div className="flex flex-col items-center mb-6">
           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
