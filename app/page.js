@@ -322,7 +322,7 @@ export default function Home() {
 
       {/* Main Layout - Only render when loading screen is hidden */}
       {!showLoadingScreen && (
-        <div className="min-h-screen bg-[#2e4493]">
+        <div className="min-h-screen bg-[#2e4493]" data-page="home">
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-1 py-3">

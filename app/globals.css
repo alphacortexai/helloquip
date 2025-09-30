@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Prevent content flash during loading */
-html {
+/* Prevent content flash during loading - only on home page */
+html:has(body [data-page="home"]) {
   visibility: hidden;
 }
 
