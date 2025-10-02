@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter, usePathname } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import SearchBar from "@/components/SearchBar";
+import CachedLogo from "@/components/CachedLogo";
 import { collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from "firebase/firestore";
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon } from "@heroicons/react/24/outline";
 
@@ -154,11 +155,11 @@ export default function Navbar() {
           <div className="flex items-center justify-between gap-2">
             {/* Logo */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              <img
-                src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo.png?alt=media&token=580aa6cc-f6d0-4ace-bcda-8e7b6b573821"
-                alt="HeloQuip Logo"
+              <CachedLogo
+                variant="default"
                 className="h-12 md:h-14 w-auto cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => router.push("/")}
+                priority={true}
               />
             </div>
 

@@ -47,8 +47,22 @@ const nextConfig = {
     // Add device sizes for responsive images
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    // Minimize layout shift
-    minimumCacheTTL: 60,
+    // Cache images for 30 days (2592000 seconds)
+    minimumCacheTTL: 2592000,
+  },
+  // Add headers for Firebase Storage images
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400',
+          },
+        ],
+      },
+    ];
   },
 };
 

@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import CachedLogo from "./CachedLogo";
 import { 
   PhoneIcon,
   EnvelopeIcon,
@@ -16,9 +17,8 @@ const Footer = () => {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <div className="mb-4">
-              <img
-                src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
-                alt="HeloQuip Logo"
+              <CachedLogo
+                variant="footer"
                 className="h-16 w-auto"
               />
             </div>

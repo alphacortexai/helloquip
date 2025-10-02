@@ -5,6 +5,7 @@ import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
+import CachedLogo from "@/components/CachedLogo";
 
 import Categories from "@/components/Categories";
 import Testimonials from "@/components/Testimonials";
@@ -301,12 +302,11 @@ export default function Home() {
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
-        <Image
-          src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
-          alt="HeloQuip Logo"
+        <CachedLogo
+          variant="loading"
           width={64}
           height={64}
-          priority
+          priority={true}
           className="h-16 w-auto"
         />
       </div>

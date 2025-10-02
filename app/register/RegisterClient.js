@@ -198,6 +198,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import CachedLogo from "@/components/CachedLogo";
 
 export default function RegisterClient() {
   const router = useRouter();
@@ -381,9 +382,8 @@ export default function RegisterClient() {
 
       {/* Bottom logo */}
       <div className="mt-10 opacity-90">
-        <img
-          src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
-          alt="HelloQuip Logo"
+        <CachedLogo
+          variant="register"
           className="h-10 w-auto"
         />
       </div>

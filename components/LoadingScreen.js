@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import CachedLogo from './CachedLogo';
 
 export default function LoadingScreen({ onComplete }) {
   const [progress, setProgress] = useState(0);
@@ -34,10 +35,10 @@ export default function LoadingScreen({ onComplete }) {
         {/* Logo Area */}
         <div className="mb-8">
           <div className="mx-auto mb-4 flex items-center justify-center">
-            <img
-              src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
-              alt="HeloQuip Logo"
+            <CachedLogo
+              variant="loading"
               className="h-14 md:h-16 w-auto"
+              priority={true}
             />
           </div>
         </div>
