@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import WishlistButton from './WishlistButton';
 import ProductComparisonButton from './ProductComparisonButton';
 import { useProductSettings, formatProductName, shouldShowMOQ, shouldShowSKU } from '@/hooks/useProductSettings';
@@ -44,14 +45,14 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     ? Math.round(originalPrice - (originalPrice * discount) / 100)
     : originalPrice;
 
-  // Centralized image props with LCP optimizations applied for the first image
+  // Centralized image props for Next.js Image component
   const imageProps = {
-    src: imageUrl,
+    src: imageUrl || '/fallback.jpg',
     alt: product.name || 'Product',
-    loading: isFirst ? 'eager' : 'lazy',         // eager for LCP image, lazy otherwise
-    fetchPriority: isFirst ? 'high' : 'auto',    // high fetch priority for LCP
+    priority: isFirst, // Use priority instead of loading="eager" for Next.js Image
     onLoad: () => setImageLoaded(true),
     onError: () => setImageLoaded(true), // Avoid skeleton staying forever
+    unoptimized: imageUrl?.startsWith('data:') || false, // Don't optimize data URLs or SVGs
   };
 
   const wrapperStyle = imageLoaded ? 'opacity-100' : 'opacity-0';
@@ -64,7 +65,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
         <ProductComparisonButton product={product} size="small" />
       </div>
       
-      <img {...imageProps} className="w-full h-48 object-cover rounded-xl mb-3" />
+      <div className="relative w-full h-48 mb-3">
+        <Image {...imageProps} fill sizes="(max-width: 768px) 100vw, 400px" className="object-cover rounded-xl" />
+      </div>
       <h2 className="hidden md:block text-lg font-semibold">{formatProductName(product.name, settings)}</h2>
       <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-600 mt-1">{product.description}</p>
@@ -74,7 +77,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderLandscape = () => (
     <div className={`${commonClasses} p-4 flex gap-4 items-center ${wrapperStyle}`}>
-      <img {...imageProps} className="w-32 h-32 object-cover rounded-xl flex-shrink-0" />
+      <div className="relative w-32 h-32 flex-shrink-0">
+        <Image {...imageProps} fill sizes="128px" className="object-cover rounded-xl" />
+      </div>
       <div>
         <h2 className="hidden md:block text-lg font-semibold">{formatProductName(product.name, settings)}</h2>
         <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
@@ -86,8 +91,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderLandscapeMain = () => (
     <div className={`bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden hover:shadow-md transition flex w-full max-w-2xl mx-auto mb-3 ${wrapperStyle}`}>
-      <div className="w-32 sm:w-40 h-32 sm:h-40 bg-gray-50 flex-shrink-0">
-        <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
+      <div className="relative w-32 sm:w-40 h-32 sm:h-40 bg-gray-50 flex-shrink-0">
+        <Image {...imageProps} fill sizes="(max-width: 640px) 128px, 160px" className="object-cover rounded-l-2xl" />
       </div>
       <div className="flex flex-col justify-between p-4 w-full">
         <div>
@@ -121,8 +126,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
         </div>
       )}
 
-      <div className={`${largeDesktop ? 'w-96 h-80 md:w-[500px] md:h-96' : 'w-48 sm:w-52 h-48 sm:h-52'} bg-gray-50 flex-shrink-0`}>
-        <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
+      <div className={`relative ${largeDesktop ? 'w-96 h-80 md:w-[500px] md:h-96' : 'w-48 sm:w-52 h-48 sm:h-52'} bg-gray-50 flex-shrink-0`}>
+        <Image {...imageProps} fill sizes={largeDesktop ? "(max-width: 768px) 384px, 500px" : "(max-width: 640px) 192px, 208px"} className="object-cover rounded-l-2xl" />
       </div>
 
       <div className={`flex flex-col justify-between ${largeDesktop ? 'p-8' : 'p-5'} w-full`}>
@@ -166,8 +171,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       )}
 
       {/* Taller image to match Featured Deal height */}
-      <div className="w-80 h-full bg-gray-50 flex-shrink-0 overflow-hidden">
-        <img {...imageProps} className="w-full h-full object-cover rounded-l-2xl" />
+      <div className="relative w-80 h-full bg-gray-50 flex-shrink-0 overflow-hidden">
+        <Image {...imageProps} fill sizes="320px" className="object-cover rounded-l-2xl" />
       </div>
 
       {/* Content area with more padding */}
@@ -209,8 +214,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     >
       
       {/* Image container - increased width to fill more space */}
-      <div className="w-52 h-44 flex-shrink-0 overflow-hidden">
-        <img {...imageProps} className="w-full h-full object-cover" style={{ objectPosition: 'center', transform: 'scale(0.99)' }} />
+      <div className="relative w-52 h-44 flex-shrink-0 overflow-hidden">
+        <Image {...imageProps} fill sizes="208px" className="object-cover" style={{ objectPosition: 'center', transform: 'scale(0.99)' }} />
         
         {/* Trending Badge on Image */}
         {badge && (
@@ -254,7 +259,9 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderPortrait = () => (
     <div className={`${commonClasses} p-4 w-48 ${wrapperStyle}`}>
-      <img {...imageProps} className="w-full h-56 object-cover rounded-xl mb-3" />
+      <div className="relative w-full h-56 mb-3">
+        <Image {...imageProps} fill sizes="192px" className="object-cover rounded-xl" />
+      </div>
       <h2 className="hidden md:block text-base font-semibold">{formatProductName(product.name, settings)}</h2>
       <p className="text-[7px] text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-500 text-sm mt-1 line-clamp-3">{product.description}</p>
@@ -289,7 +296,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            )}
          </div>
 
-                                                                                                                                                               <img {...imageProps} className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} style={{ objectPosition: 'center' }} />
+                                                                                                                                                               <Image {...imageProps} fill sizes="(max-width: 640px) 50vw, 200px" className={`object-cover transition-transform duration-300 group-hover:scale-105 rounded-2xl ${imageLoaded ? "opacity-100" : "opacity-0"}`} style={{ objectPosition: 'center' }} />
       </div>
 
                                                                                                                                                                        <div className="px-0 text-center">
@@ -338,7 +345,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            )}
          </div>
         
-                                                                                                                                               <img {...imageProps} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center' }} />
+                                                                                                                                               <Image {...imageProps} fill sizes="(max-width: 640px) 50vw, 200px" className="object-cover transition-transform duration-300 group-hover:scale-105" style={{ objectPosition: 'center' }} />
       </div>
                                                                                                                <div className="px-0 text-center">
                              <p className="text-sm font-medium text-gray-800 truncate mb-0.5 pt-2" title={formatProductName(product.name, settings)}>{formatProductName(product.name, settings)}</p>

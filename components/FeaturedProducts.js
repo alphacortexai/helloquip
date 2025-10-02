@@ -5,6 +5,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -82,8 +83,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
   const [targetProductId, setTargetProductId] = useState(null);
   const router = useRouter();
-  const batchSize = 50; // 50 products per load
-  const initialLoadSize = 100; // Initial load size - 100 products on first load
+  const batchSize = 30; // 30 products per batch for faster loading
+  const initialLoadSize = 30; // Initial load size - 30 products on first load for better LCP
 
   // Products are now sorted consistently by creation date (newest first)
   // No more randomization to ensure users can track their progress
@@ -488,10 +489,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Auto-load products to ensure users always have content
   useEffect(() => {
     const autoLoadProducts = () => {
-      // If we have fewer than 100 products and there are more to load, auto-load
-      if (products.length < 100 && hasMore && !loading) {
+      // If we have fewer than 60 products and there are more to load, auto-load
+      if (products.length < 60 && hasMore && !loading) {
         console.log('🔄 Auto-loading more products to ensure minimum content...');
-        fetchProducts(lastVisible, false, initialLoadSize);
+        fetchProducts(lastVisible, false, batchSize);
       }
     };
 
@@ -503,9 +504,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     const handleUserActivity = () => {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        if (products.length < 150 && hasMore && !loading) {
+        if (products.length < 90 && hasMore && !loading) {
           console.log('🔄 Auto-loading more products during idle time...');
-          fetchProducts(lastVisible, false, initialLoadSize);
+          fetchProducts(lastVisible, false, batchSize);
         }
       }, 3000);
     };
@@ -814,11 +815,13 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                           className="snap-start shrink-0 w-32 cursor-pointer group"
                           onClick={() => handleProductClick(id)}
                         >
-                          <div className="relative">
-                            <img
+                          <div className="relative w-full h-32">
+                            <Image
                               src={getPreferredImageUrl(imageUrl, featuredCardResolution)}
                               alt={name || 'Product'}
-                              className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
+                              fill
+                              sizes="128px"
+                              className="object-cover rounded-lg group-hover:opacity-90 transition-opacity"
                             />
                             <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
                               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

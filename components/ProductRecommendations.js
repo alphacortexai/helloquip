@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { CustomerExperienceService } from '@/lib/customerExperienceService';
 import { getProductImageUrl } from '@/lib/imageUtils';
@@ -219,11 +220,13 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
               href={`/product/${product.id}`}
               className="group block"
             >
-              <div className="relative">
-                <img
+              <div className="relative w-full h-32">
+                <Image
                   src={getImageUrl(product)}
                   alt={product.name}
-                  className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 200px"
+                  className="object-cover rounded-lg group-hover:opacity-90 transition-opacity"
                 />
                 <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded ${badge.color}`}>
                   {badge.text}

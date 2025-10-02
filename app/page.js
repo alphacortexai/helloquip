@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
@@ -76,17 +77,17 @@ export default function Home() {
     } catch {}
   }, []);
 
-  // Hide loading screen when components are ready or after minimum time
+  // Hide loading screen when components are ready
   useEffect(() => {
     if (!showLoadingScreen) return;
     const timer = setTimeout(() => {
       setShowLoadingScreen(false);
-    }, 2500); // Minimum 2.5 seconds for loading screen to show logo properly
+    }, 100); // Minimal delay for smooth transition
     
     return () => clearTimeout(timer);
   }, [showLoadingScreen]);
 
-  // Also hide loading screen when all components are loaded (if faster than 2.5 seconds)
+  // Hide loading screen when all components are loaded
   useEffect(() => {
     if (!showLoadingScreen) return;
     console.log('🔍 Loading states:', {
@@ -100,12 +101,8 @@ export default function Home() {
     });
     
     if (featuredProductsLoaded && categoriesLoaded && trendingProductsLoaded && allProductsLoaded && recommendationsLoaded && !loading) {
-      const timer = setTimeout(() => {
-        console.log('✅ All components loaded, hiding loading screen');
-        setShowLoadingScreen(false);
-      }, 0); // No delay - hide immediately when all components are loaded
-      
-      return () => clearTimeout(timer);
+      console.log('✅ All components loaded, hiding loading screen');
+      setShowLoadingScreen(false);
     }
   }, [featuredProductsLoaded, categoriesLoaded, trendingProductsLoaded, allProductsLoaded, recommendationsLoaded, loading, showLoadingScreen]);
 
@@ -304,9 +301,12 @@ export default function Home() {
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
-        <img
+        <Image
           src="https://firebasestorage.googleapis.com/v0/b/helloquip-80e20.firebasestorage.app/o/HQlogo3.png?alt=media&token=22b28cda-b3db-4508-a374-9c374d2a4294"
           alt="HeloQuip Logo"
+          width={64}
+          height={64}
+          priority
           className="h-16 w-auto"
         />
       </div>
