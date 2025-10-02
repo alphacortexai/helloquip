@@ -16,7 +16,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       switch (variant) {
         case 'carousel':
         case 'landscapemain02':
-          return product.imageUrl['800x800'] || product.imageUrl['680x680'] || product.imageUrl.original;
+          return product.imageUrl['680x680']; // || product.imageUrl.original;
         case 'mobilecarousel':
           return product.imageUrl['200x200'] || product.imageUrl['100x100'] || product.imageUrl.original;
         case 'compact':
