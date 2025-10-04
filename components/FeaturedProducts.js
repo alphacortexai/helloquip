@@ -272,9 +272,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     const exists = products.some((p) => p.id === targetProductId);
 
     if (exists) {
-      // Scroll to the target element with extended retries (mobile images/layout settle slower)
+      // Scroll to the target element with max 2 retries
       const anchorId = `p-${targetProductId}`;
-      const attempts = [0, 120, 240, 400, 650, 900, 1300, 1800, 2500, 3300, 4200, 5200, 6500, 8000];
+      const attempts = [0, 500];
       let cancelled = false;
 
       const scrollWithOffset = () => {
@@ -294,13 +294,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             try { document.documentElement.scrollTop = targetY; } catch {}
             try { document.body.scrollTop = targetY; } catch {}
           });
-
-          setTimeout(() => {
-            const near = Math.abs((window.pageYOffset || document.documentElement.scrollTop || 0) - targetY) < 2;
-            if (!near) {
-              try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
-            }
-          }, 60);
         } catch {
           try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
         }
