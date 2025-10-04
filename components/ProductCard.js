@@ -50,6 +50,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     src: imageUrl || '/fallback.jpg',
     alt: product.name || 'Product',
     priority: isFirst, // Use priority instead of loading="eager" for Next.js Image
+    fetchPriority: 'high', // High fetch priority for all product images
     onLoad: () => setImageLoaded(true),
     onError: () => setImageLoaded(true), // Avoid skeleton staying forever
     unoptimized: imageUrl?.startsWith('data:') || false, // Don't optimize data URLs or SVGs

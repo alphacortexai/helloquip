@@ -87,7 +87,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const batchSize = 30; // 30 products per batch for faster loading
   const initialLoadSize = 30; // Initial load size - 30 products on first load for better LCP
 
-  // Products are now sorted consistently by creation date (newest first)
+  // Products are now sorted consistently by creation date (oldest first)
   // No more randomization to ensure users can track their progress
 
 
@@ -110,7 +110,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         console.log('🔍 Search criteria:', { keyword, name, manufacturer, tags, selectedCategory });
         
         // Always fetch fresh data - no caching for infinite scroll
-        const constraints = [orderBy("createdAt", "desc")];
+        const constraints = [orderBy("createdAt", "asc")];
 
         if (startAfterDoc) {
           constraints.push(startAfter(startAfterDoc));
@@ -836,6 +836,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                               alt={name || 'Product'}
                               fill
                               sizes="128px"
+                              fetchPriority="high"
                               className="object-cover rounded-lg group-hover:opacity-90 transition-opacity"
                             />
                             <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
