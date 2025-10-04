@@ -730,7 +730,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
               <ProductCard
                 variant="compact"
-                isFirst={index === 0}
+                isFirst={index < 6} // First 6 products get priority loading
                 badge={trendingProductIds.has(id) ? "Trending" : undefined}
                 product={{
                   id,
@@ -762,7 +762,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                     <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
                       <ProductCard
                         variant="compact"
-                        isFirst={index === 0}
+                        isFirst={index < 4} // First 4 products get priority loading on mobile
                         badge={trendingProductIds.has(id) ? "Trending" : undefined}
                         product={{
                           id,

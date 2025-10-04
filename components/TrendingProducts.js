@@ -222,6 +222,15 @@ export default function TrendingProducts({ onLoadComplete }) {
     <>
       <Head>
         <title>Trending Products - HalloQuip</title>
+        {/* Preload first trending product image for better LCP */}
+        {products.length > 0 && products[0]?.image && (
+          <link
+            rel="preload"
+            as="image"
+            href={`/_next/image?url=${encodeURIComponent(products[0].image)}&w=680&q=75`}
+            fetchPriority="high"
+          />
+        )}
       </Head>
 
 
@@ -241,6 +250,7 @@ export default function TrendingProducts({ onLoadComplete }) {
                   variant="carousel"
                   badge="Trending"
                   hideSKU={true}
+                  isFirst={index === 0} // First trending product gets priority
                   onClick={() => handleProductClick(product.id)}
                 />
               </div>
@@ -265,6 +275,7 @@ export default function TrendingProducts({ onLoadComplete }) {
                 variant="mobilecarousel"
                 badge="Trending"
                 hideSKU={true}
+                isFirst={index === 0} // First trending product gets priority
                 onClick={() => handleProductClick(product.id)}
               />
             </div>

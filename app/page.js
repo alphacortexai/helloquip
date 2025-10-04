@@ -100,6 +100,49 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Preload critical images for better LCP
+  useEffect(() => {
+    if (!isClient || allProducts.length === 0) return;
+
+    // Preload first few product images
+    const preloadImages = () => {
+      const firstImages = allProducts.slice(0, 6);
+      
+      firstImages.forEach((product, index) => {
+        const imageUrl = product.imageUrl;
+        if (!imageUrl) return;
+        
+        // Get the appropriate image URL based on variant
+        let preloadUrl = imageUrl;
+        if (typeof imageUrl === 'object') {
+          preloadUrl = imageUrl['100x100'] || imageUrl['90x90'] || imageUrl.original || Object.values(imageUrl)[0];
+        }
+        
+        // Create and preload image
+        const img = new Image();
+        img.src = preloadUrl;
+        img.loading = 'eager';
+        img.fetchPriority = index < 3 ? 'high' : 'low';
+        
+        console.log(`🖼️ Preloading image ${index + 1}/6:`, preloadUrl);
+      });
+    };
+
+    // Preload images after a short delay to not block initial render
+    const timer = setTimeout(preloadImages, 100);
+    
+    return () => clearTimeout(timer);
+  }, [isClient, allProducts]);
+
+  // Update trending product preload when trending products load
+  useEffect(() => {
+    if (!isClient || !trendingProductsLoaded) return;
+
+    // This will be called when trending products are loaded
+    // The TrendingProducts component will handle its own preloading
+    console.log('🔥 Trending products loaded, preload hints active');
+  }, [isClient, trendingProductsLoaded]);
+
   // Progressive loading: Critical content (Trending + Categories)
   useEffect(() => {
     if (trendingProductsLoaded && categoriesLoaded) {
@@ -364,6 +407,46 @@ export default function Home() {
 
   return (
     <>
+      {/* Preload critical images for better LCP */}
+      {allProducts.length > 0 && (
+        <>
+          {/* Preload first few product images */}
+          {allProducts.slice(0, 6).map((product, index) => {
+            const imageUrl = product.imageUrl;
+            if (!imageUrl) return null;
+            
+            // Get the appropriate image URL based on variant
+            let preloadUrl = imageUrl;
+            if (typeof imageUrl === 'object') {
+              preloadUrl = imageUrl['100x100'] || imageUrl['90x90'] || imageUrl.original || Object.values(imageUrl)[0];
+            }
+            
+            // Create Next.js optimized URL for preload
+            const optimizedUrl = `/_next/image?url=${encodeURIComponent(preloadUrl)}&w=200&q=75`;
+            
+            return (
+              <link
+                key={`preload-${product.id}`}
+                rel="preload"
+                as="image"
+                href={optimizedUrl}
+                fetchPriority={index < 3 ? "high" : "low"}
+              />
+            );
+          })}
+        </>
+      )}
+
+      {/* Preload trending product image (likely LCP element) */}
+      {/* This will be dynamically updated when trending products load */}
+      <link
+        rel="preload"
+        as="image"
+        href="/_next/image?url=https%3A%2F%2Ffirebasestorage.googleapis.com%2Fv0%2Fb%2Fhelloquip-80e20.appspot.com%2Fo%2Fproducts%2Fdental-chair.jpg&w=680&q=75"
+        fetchPriority="high"
+        id="trending-preload"
+      />
+
       {/* Always show loading screen first to prevent content flash */}
       {showLoadingScreen && (
         <LoadingScreen onComplete={() => setShowLoadingScreen(false)} />
