@@ -123,8 +123,34 @@ export default function SkeletonLoader({ type = "product" }) {
   if (type === "category") {
     return (
       <div className="animate-pulse">
-        <div className="bg-gray-200 h-16 rounded-lg mb-2"></div>
-        <div className="bg-gray-200 h-3 rounded w-1/2"></div>
+        {/* Mobile: Horizontal scroll skeleton */}
+        <div className="block md:hidden">
+          <div className="overflow-x-auto no-scrollbar px-1">
+            <div
+              className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-2 gap-y-4"
+              style={{ width: "max-content", paddingRight: "16px" }}
+            >
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="cursor-pointer text-center w-[70px]">
+                  <div className="relative w-[60px] h-[60px] bg-gray-200 rounded-[18px] overflow-hidden mx-auto shadow-md"></div>
+                  <div className="mt-1 bg-gray-200 h-3 rounded w-3/4 mx-auto"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop: Vertical list skeleton */}
+        <div className="hidden md:block">
+          <div className="flex flex-col gap-0.5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="cursor-pointer flex items-center gap-2 py-0.5 px-1 rounded-lg">
+                <div className="relative w-[28px] h-[28px] bg-gray-200 rounded-md overflow-hidden shadow-sm"></div>
+                <div className="bg-gray-200 h-4 rounded w-20"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

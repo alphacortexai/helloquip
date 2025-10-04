@@ -28,6 +28,7 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [imageLoadingStates, setImageLoadingStates] = useState({});
 
   const allCategory = {
     id: "all",
@@ -96,6 +97,14 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     if (onCategorySelect) onCategorySelect(cat.name);
   };
 
+  const handleImageLoad = (catId) => {
+    setImageLoadingStates(prev => ({ ...prev, [catId]: true }));
+  };
+
+  const handleImageError = (catId) => {
+    setImageLoadingStates(prev => ({ ...prev, [catId]: true }));
+  };
+
   const getImageSrc = (cat) => {
     if (cat.id === "all") return cat.imageUrl;
 
@@ -125,23 +134,30 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
               className="cursor-pointer flex items-center gap-2 p-1 rounded-lg hover:bg-gray-50 transition-colors"
               onClick={() => handleCategoryClick(cat)}
             >
-              <div
-                className={`relative w-[24px] h-[24px] bg-gray-100 rounded-md overflow-hidden shadow-sm flex items-center justify-center ${
-                  selectedCategoryId === cat.id
-                    ? "border-2 border-blue-500 bg-blue-50"
-                    : ""
-                }`}
-              >
-                <Image
-                  src={getImageSrc(cat) || 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>'}
-                  alt={cat.name}
-                  fill
-                  sizes="24px"
-                  className="object-contain p-1"
-                  draggable={false}
-                  unoptimized={getImageSrc(cat).startsWith('data:') || getImageSrc(cat).includes('flaticon.com')}
-                />
-              </div>
+                <div
+                  className={`relative w-[24px] h-[24px] bg-gray-100 rounded-md overflow-hidden shadow-sm flex items-center justify-center ${
+                    selectedCategoryId === cat.id
+                      ? "border-2 border-blue-500 bg-blue-50"
+                      : ""
+                  }`}
+                >
+                  {/* Skeleton placeholder */}
+                  {!imageLoadingStates[cat.id] && (
+                    <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-md" />
+                  )}
+                  <Image
+                    src={getImageSrc(cat) || 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>'}
+                    alt={cat.name}
+                    fill
+                    sizes="24px"
+                    fetchPriority="high"
+                    className="object-contain p-1"
+                    draggable={false}
+                    unoptimized={getImageSrc(cat).startsWith('data:') || getImageSrc(cat).includes('flaticon.com')}
+                    onLoad={() => handleImageLoad(cat.id)}
+                    onError={() => handleImageError(cat.id)}
+                  />
+                </div>
               <span className={`text-xs font-medium line-clamp-2 ${
                 selectedCategoryId === cat.id
                   ? "text-blue-700 font-semibold"
@@ -178,14 +194,21 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
                         : ""
                     }`}
                   >
+                    {/* Skeleton placeholder */}
+                    {!imageLoadingStates[cat.id] && (
+                      <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-[18px]" />
+                    )}
                     <Image
                       src={getImageSrc(cat) || 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>'}
                       alt={cat.name}
                       fill
                       sizes="60px"
+                      fetchPriority="high"
                       className="object-contain"
                       draggable={false}
                       unoptimized={getImageSrc(cat).startsWith('data:') || getImageSrc(cat).includes('flaticon.com')}
+                      onLoad={() => handleImageLoad(cat.id)}
+                      onError={() => handleImageError(cat.id)}
                     />
                   </div>
                   <p className="mt-1 text-[12px] font-medium text-gray-700 leading-tight line-clamp-2">
@@ -207,23 +230,30 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
                 className="cursor-pointer flex items-center gap-2 py-0.5 px-1 rounded-lg hover:bg-gray-50 transition-colors"
                 onClick={() => handleCategoryClick(cat)}
               >
-                <div
-                  className={`relative w-[28px] h-[28px] bg-gray-100 rounded-md overflow-hidden shadow-sm flex items-center justify-center ${
-                    selectedCategoryId === cat.id
-                      ? "border-2 border-blue-500 bg-blue-50"
-                      : ""
-                  }`}
-                >
-                  <Image
-                    src={getImageSrc(cat) || 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>'}
-                    alt={cat.name}
-                    fill
-                    sizes="28px"
-                    className="object-contain p-0.5"
-                    draggable={false}
-                    unoptimized={getImageSrc(cat).startsWith('data:') || getImageSrc(cat).includes('flaticon.com')}
-                  />
-                </div>
+              <div
+                className={`relative w-[28px] h-[28px] bg-gray-100 rounded-md overflow-hidden shadow-sm flex items-center justify-center ${
+                  selectedCategoryId === cat.id
+                    ? "border-2 border-blue-500 bg-blue-50"
+                    : ""
+                }`}
+              >
+                {/* Skeleton placeholder */}
+                {!imageLoadingStates[cat.id] && (
+                  <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-md" />
+                )}
+                <Image
+                  src={getImageSrc(cat) || 'data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2790%27 height=%2790%27><rect width=%27100%25%27 height=%27100%25%27 fill=%27%23e5e7eb%27/></svg>'}
+                  alt={cat.name}
+                  fill
+                  sizes="28px"
+                  fetchPriority="high"
+                  className="object-contain p-0.5"
+                  draggable={false}
+                  unoptimized={getImageSrc(cat).startsWith('data:') || getImageSrc(cat).includes('flaticon.com')}
+                  onLoad={() => handleImageLoad(cat.id)}
+                  onError={() => handleImageError(cat.id)}
+                />
+              </div>
                 <span className={`text-sm font-medium line-clamp-1 ${
                   selectedCategoryId === cat.id
                     ? "text-blue-700 font-semibold"
