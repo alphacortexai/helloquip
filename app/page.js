@@ -7,16 +7,15 @@ import { db } from "@/lib/firebase";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import CachedLogo from "@/components/CachedLogo";
 
-import Categories from "@/components/Categories";
-import Testimonials from "@/components/Testimonials";
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
-import ProductRecommendations from "@/components/ProductRecommendations";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import LoadingScreen from "@/components/LoadingScreen";
 import SkeletonLoader from "@/components/SkeletonLoader";
 
+// Priority 1: Critical above-the-fold content (SSR enabled)
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
+  ssr: true,
   loading: () => (
     <div className="bg-white rounded-xl p-4">
       <SkeletonLoader type="trending" />
@@ -24,7 +23,9 @@ const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), 
   ),
 });
 
+// Priority 2: Main content (SSR enabled for better LCP)
 const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), {
+  ssr: true,
   loading: () => (
     <div className="bg-gray/70 pt-0 md:pt-3 pb-0 relative">
       <div className="max-w-7xl mx-auto px-0">
@@ -34,6 +35,39 @@ const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), 
           ))}
         </div>
       </div>
+    </div>
+  ),
+});
+
+// Priority 3: Secondary content (deferred loading)
+const Categories = dynamic(() => import("@/components/Categories"), {
+  ssr: true,
+  loading: () => (
+    <div className="bg-gray-50 rounded-2xl shadow-sm p-4 mt-2">
+      <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
+      <div className="flex items-center justify-center text-gray-400 text-sm">
+        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500 mr-2"></div>
+        Loading categories...
+      </div>
+    </div>
+  ),
+});
+
+// Priority 4: Non-critical content (client-side only)
+const Testimonials = dynamic(() => import("@/components/Testimonials"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white rounded-xl p-4">
+      <SkeletonLoader type="testimonials" />
+    </div>
+  ),
+});
+
+const ProductRecommendations = dynamic(() => import("@/components/ProductRecommendations"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white rounded-xl p-4">
+      <SkeletonLoader type="recommendations" />
     </div>
   ),
 });
@@ -52,6 +86,10 @@ export default function Home() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
+  
+  // Progressive loading states
+  const [criticalContentLoaded, setCriticalContentLoaded] = useState(false);
+  const [secondaryContentLoaded, setSecondaryContentLoaded] = useState(false);
 
 
   // Check if we're on client side
@@ -66,6 +104,20 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Progressive loading: Critical content (Trending + Categories)
+  useEffect(() => {
+    if (trendingProductsLoaded && categoriesLoaded) {
+      setCriticalContentLoaded(true);
+    }
+  }, [trendingProductsLoaded, categoriesLoaded]);
+
+  // Progressive loading: Secondary content (Featured Products)
+  useEffect(() => {
+    if (featuredProductsLoaded) {
+      setSecondaryContentLoaded(true);
+    }
+  }, [featuredProductsLoaded]);
+
   // Decide whether to show the loading screen for this session (once per browser session)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -78,15 +130,16 @@ export default function Home() {
     } catch {}
   }, []);
 
-  // Hide loading screen when components are ready
+  // Hide loading screen when critical content is ready (faster FCP)
   useEffect(() => {
     if (!showLoadingScreen) return;
-    const timer = setTimeout(() => {
-      setShowLoadingScreen(false);
-    }, 100); // Minimal delay for smooth transition
-    
-    return () => clearTimeout(timer);
-  }, [showLoadingScreen]);
+    if (criticalContentLoaded) {
+      const timer = setTimeout(() => {
+        setShowLoadingScreen(false);
+      }, 50); // Minimal delay for smooth transition
+      return () => clearTimeout(timer);
+    }
+  }, [showLoadingScreen, criticalContentLoaded]);
 
   // Hide loading screen when all components are loaded
   useEffect(() => {

@@ -30,14 +30,19 @@ const ProductSettingsProvider = dynamic(() => import("../hooks/useProductSetting
 
 export default function ClientWrapper({ children }) {
   const [isClient, setIsClient] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    // Small delay to ensure smooth hydration
+    const timer = setTimeout(() => setIsHydrated(true), 50);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Don't render anything on the server
-  if (!isClient) {
-    return null;
+  // Render children immediately on server and during hydration
+  // Only wrap with client providers after hydration
+  if (!isHydrated) {
+    return children;
   }
 
   return (

@@ -13,12 +13,23 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* Preconnect to Firebase Storage for faster image loading */}
+        {/* Critical resource hints for faster loading */}
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
-        {/* Preconnect to Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
+        {/* Preload critical resources */}
+        <link rel="preload" href="/logo.png" as="image" type="image/png" />
+        <link rel="preload" href="/fallback.jpg" as="image" type="image/jpeg" />
+        
+        {/* DNS prefetch for external domains */}
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+        <link rel="dns-prefetch" href="https://cdn-icons-png.flaticon.com" />
+        
+        {/* Preconnect to Firebase Auth */}
+        <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+        <link rel="preconnect" href="https://securetoken.googleapis.com" />
       </head>
       <body className={inter.className}>
         <ClientWrapper>{children}</ClientWrapper>
