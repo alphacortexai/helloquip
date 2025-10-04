@@ -6,6 +6,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
+import SkeletonLoader from "./SkeletonLoader";
 
 function cleanFirebaseUrl(url) {
   if (!url || typeof url !== "string") return "";
@@ -82,14 +83,9 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     }
   }, [loading, categories.length, onLoadComplete]);
 
-  // Show loading state
+  // Show loading state with skeleton
   if (loading) {
-    return (
-      <div className="flex items-center justify-center text-gray-400 text-sm">
-        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500 mr-2"></div>
-        Loading categories...
-      </div>
-    );
+    return <SkeletonLoader type="category" />;
   }
 
   const handleCategoryClick = (cat) => {
