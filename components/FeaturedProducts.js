@@ -27,6 +27,7 @@ import {
 import { db } from "@/lib/firebase";
 import ProductCard from "./ProductCard";
 import RecentlyViewedProducts from "./RecentlyViewedProducts";
+import SkeletonLoader from "./SkeletonLoader";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
 
@@ -72,7 +73,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const { data: session } = useSession();
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -677,6 +678,20 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     router.push(`/product/${id}`);
   };
 
+  // Show skeleton while loading or when no products are loaded yet
+  if (products.length === 0 && (loading || settingsLoading)) {
+    return (
+      <section className="bg-gray/70 pt-0 md:pt-3 pb-0 relative" data-featured-products>
+        <div className="max-w-7xl mx-auto px-0">
+          <div className="min-h-[2000px] md:min-h-[1500px]">
+            <SkeletonLoader type="product-grid" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show no products message only when we're sure there are no products
   if (products.length === 0 && !loading && !settingsLoading) {
     return (
       <div>

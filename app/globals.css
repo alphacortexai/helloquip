@@ -7,6 +7,7 @@ html {
 
 html.loaded {
   visibility: visible;
+  transition: visibility 0.1s ease-in-out;
 }
 
 /* Force admin and login pages to always be visible */

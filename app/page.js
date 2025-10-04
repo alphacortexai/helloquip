@@ -17,7 +17,7 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
   ssr: true,
   loading: () => (
-    <div className="bg-white rounded-xl p-4">
+    <div className="bg-gray-50 rounded-2xl shadow-sm p-4">
       <SkeletonLoader type="trending" />
     </div>
   ),
@@ -27,15 +27,14 @@ const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), 
 const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), {
   ssr: true,
   loading: () => (
-    <div className="bg-gray/70 pt-0 md:pt-3 pb-0 relative">
+    <section className="bg-gray/70 pt-0 md:pt-3 pb-0 relative" data-featured-products>
       <div className="max-w-7xl mx-auto px-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SkeletonLoader key={i} type="product-card" />
-          ))}
+        {/* Fixed height container to prevent layout shift */}
+        <div className="min-h-[2000px] md:min-h-[1500px]">
+          <SkeletonLoader type="product-grid" />
         </div>
       </div>
-    </div>
+    </section>
   ),
 });
 
@@ -45,10 +44,7 @@ const Categories = dynamic(() => import("@/components/Categories"), {
   loading: () => (
     <div className="bg-gray-50 rounded-2xl shadow-sm p-4 mt-2">
       <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
-      <div className="flex items-center justify-center text-gray-400 text-sm">
-        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500 mr-2"></div>
-        Loading categories...
-      </div>
+      <SkeletonLoader type="category" />
     </div>
   ),
 });
@@ -57,7 +53,7 @@ const Categories = dynamic(() => import("@/components/Categories"), {
 const Testimonials = dynamic(() => import("@/components/Testimonials"), {
   ssr: false,
   loading: () => (
-    <div className="bg-white rounded-xl p-4">
+    <div className="bg-white rounded-2xl shadow-sm p-4">
       <SkeletonLoader type="testimonials" />
     </div>
   ),
@@ -66,7 +62,7 @@ const Testimonials = dynamic(() => import("@/components/Testimonials"), {
 const ProductRecommendations = dynamic(() => import("@/components/ProductRecommendations"), {
   ssr: false,
   loading: () => (
-    <div className="bg-white rounded-xl p-4">
+    <div className="bg-white rounded-2xl shadow-sm p-4">
       <SkeletonLoader type="recommendations" />
     </div>
   ),
