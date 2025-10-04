@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import LoadingScreen from "@/components/LoadingScreen";
 import SkeletonLoader from "@/components/SkeletonLoader";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Priority 1: Critical above-the-fold content (SSR enabled)
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
@@ -567,6 +568,9 @@ export default function Home() {
         </div>
         </div>
       )}
+      
+      {/* Speed Insights for monitoring LCP performance */}
+      <SpeedInsights />
     </>
   );
 }
