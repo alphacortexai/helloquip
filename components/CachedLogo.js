@@ -9,7 +9,8 @@ const CachedLogo = ({
   onClick,
   priority = false,
   width,
-  height
+  height,
+  forceRefresh = false // Add this prop to force refresh the logo
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -31,12 +32,15 @@ const CachedLogo = ({
 
   const logoUrl = logoUrls[variant] || logoUrls.default;
   const dimensions = width && height ? { width, height } : defaultDimensions[variant];
+  
+  // Add cache-busting parameter if forceRefresh is true
+  const finalLogoUrl = forceRefresh ? `${logoUrl}&t=${Date.now()}` : logoUrl;
 
   // Fallback to regular img tag if Image component fails
   if (imageError) {
     return (
       <img
-        src={logoUrl}
+        src={finalLogoUrl}
         alt="HeloQuip Logo"
         className={className}
         onClick={onClick}
@@ -51,20 +55,22 @@ const CachedLogo = ({
 
   return (
     <Image
-      src={logoUrl}
+      src={finalLogoUrl}
       alt="HeloQuip Logo"
       width={dimensions.width}
       height={dimensions.height}
       className={className}
       onClick={onClick}
       priority={priority}
-      quality={90}
+      quality={100}
       // Cache for 30 days
-      unoptimized={false}
+      unoptimized={true}
       onError={() => setImageError(true)}
       // Add cache headers via Next.js Image optimization
       style={{
-        objectFit: 'contain'
+        objectFit: 'contain',
+        imageRendering: 'crisp-edges',
+        imageRendering: '-webkit-optimize-contrast'
       }}
     />
   );

@@ -119,8 +119,8 @@ export default function Home() {
           preloadUrl = imageUrl['100x100'] || imageUrl['90x90'] || imageUrl.original || Object.values(imageUrl)[0];
         }
         
-        // Create and preload image
-        const img = new Image();
+        // Create and preload image using native HTML Image constructor
+        const img = new window.Image();
         img.src = preloadUrl;
         img.loading = 'eager';
         img.fetchPriority = index < 3 ? 'high' : 'low';
