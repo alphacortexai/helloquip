@@ -16,14 +16,13 @@ export async function GET(request) {
     
     // Initialize Firebase Admin if not already initialized
     if (!admin.apps.length) {
-      // You'll need to set up service account credentials
-      // For now, we'll return a response indicating setup is needed
+      console.error('Firebase Admin not initialized - check environment variables');
       return NextResponse.json(
         { 
-          error: 'Firebase Admin not configured. Please set up service account credentials.',
-          setup: 'Add FIREBASE_SERVICE_ACCOUNT_KEY to environment variables'
+          error: 'Service temporarily unavailable',
+          message: 'Please try again later'
         },
-        { status: 500 }
+        { status: 503 }
       );
     }
 

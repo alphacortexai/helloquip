@@ -10,8 +10,9 @@ export async function POST(req) {
 
     // Check if the session ID exists and is valid
     if (currentSessionId) {
+      const agentUrl = process.env.AGENT_API_URL || "http://127.0.0.1:8000";
       const check = await fetch(
-        `http://127.0.0.1:8000/apps/multi_tool_agent/users/user/sessions/${currentSessionId}`
+        `${agentUrl}/apps/multi_tool_agent/users/user/sessions/${currentSessionId}`
       );
       sessionValid = check.status === 200;
       console.log("Checked session validity:", sessionValid);
@@ -19,8 +20,9 @@ export async function POST(req) {
 
     // Create new session and send initial state
     if (!currentSessionId || !sessionValid) {
+      const agentUrl = process.env.AGENT_API_URL || "http://127.0.0.1:8000";
       const sessionRes = await fetch(
-        "http://127.0.0.1:8000/apps/multi_tool_agent/users/user/sessions",
+        `${agentUrl}/apps/multi_tool_agent/users/user/sessions`,
         {
           method: "POST",
           headers: {
@@ -35,8 +37,9 @@ export async function POST(req) {
       currentSessionId = sessionData.id;
 
       // ✅ Send stateDelta ONCE after session creation
+      const agentUrl = process.env.AGENT_API_URL || "http://127.0.0.1:8000";
       const stateRes = await fetch(
-        `http://127.0.0.1:8000/users/user/sessions/${currentSessionId}/state`,
+        `${agentUrl}/users/user/sessions/${currentSessionId}/state`,
         {
           method: "POST",
           headers: {
@@ -62,7 +65,8 @@ export async function POST(req) {
     }
 
     // Call /run with user message (state already set above)
-    const res = await fetch("http://127.0.0.1:8000/run", {
+    const agentUrl = process.env.AGENT_API_URL || "http://127.0.0.1:8000";
+    const res = await fetch(`${agentUrl}/run`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
