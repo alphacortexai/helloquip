@@ -10,13 +10,12 @@ export async function GET() {
     
     // Check if Firebase Admin is initialized
     if (!admin.apps.length) {
-      console.error('Firebase Admin not initialized - check environment variables');
       return NextResponse.json(
         { 
-          error: 'Service temporarily unavailable',
-          message: 'Please try again later'
+          error: 'Firebase Admin not configured',
+          setup: 'Add FIREBASE_SERVICE_ACCOUNT_KEY to environment variables'
         },
-        { status: 503 }
+        { status: 500 }
       );
     }
 

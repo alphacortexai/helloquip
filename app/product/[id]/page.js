@@ -93,12 +93,7 @@ export default function ProductDetail() {
       
       // Track product view when user is available and product is loaded
       if (user && product) {
-        try {
-          CustomerExperienceService.trackProductView(user.uid, product.id, product);
-        } catch (error) {
-          console.error('Failed to track product view:', error);
-          // Don't prevent the page from loading
-        }
+        CustomerExperienceService.trackProductView(user.uid, product.id, product);
       }
     });
     return () => unsubscribe();
