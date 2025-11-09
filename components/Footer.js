@@ -23,8 +23,10 @@ const Footer = () => {
               />
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
-              Your trusted partner for high-quality medical equipment. We are committed to providing reliable, 
-              accessible, and affordable solutions to support healthcare across Africa.
+            Exceptional, Premium and Budget healthcare commodities at your fingertips
+            We are committed to supporting healthcare across Africa by improving access
+            to healthcare commodities as well transformming procurement process making it faster,
+            more transparent and cost effective through innovative e-commerce platform
             </p>
             
             {/* Social Media Links */}
@@ -83,11 +85,11 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <PhoneIcon className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">+256 700 000 000</span>
+                <span className="text-gray-300">+256 774 660 089</span>
               </div>
               <div className="flex items-center space-x-3">
                 <EnvelopeIcon className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">support@helloquip.com</span>
+                <span className="text-gray-300">hello@heloquip.com</span>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPinIcon className="h-5 w-5 text-blue-400" />

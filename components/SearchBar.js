@@ -275,7 +275,7 @@ export default function SearchBar() {
         <input
           type="text"
           placeholder={getCurrentPlaceholder()}
-          className="w-full pl-10 pr-4 py-1.5 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-base transition-all duration-300"
+          className="w-full pl-6 pr-12 py-2 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-base transition-all duration-300"
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
@@ -287,24 +287,24 @@ export default function SearchBar() {
           aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${suggestions[highlightedIndex]?.id}` : undefined}
           
         />
-        <button type="submit" className="absolute left-3 top-1.5 text-gray-500 hover:text-gray-700">
+        <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" aria-label="Search">
           <Search className="w-4 h-4" />
         </button>
       </form>
 
       {/* Search Suggestions Dropdown */}
       {isFocused && searchTerm && suggestions.length > 0 && (
-        <ul id={listboxId} role="listbox" className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg max-h-80 overflow-y-auto search-suggestions" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
+        <ul id={listboxId} role="listbox" className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-2 shadow-lg max-h-80 overflow-y-auto search-suggestions" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
           {suggestions.map((product, index) => (
             <li key={product.id} id={`suggestion-${product.id}`} role="option" aria-selected={index === highlightedIndex} className="p-0 border-b border-gray-100 last:border-b-0">
               <button
                 type="button"
-                className={`w-full px-3 py-2 cursor-pointer transition-colors text-left pointer-events-auto ${index === highlightedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                className={`w-full px-4 py-2.5 cursor-pointer transition-colors text-left pointer-events-auto ${index === highlightedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
                 onMouseDown={handleSuggestionMouseDown}
                 onClick={(e) => handleSuggestionClickSafe(e, product)}
                 onTouchEnd={(e) => handleTouchEnd(e, product)}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   {/* Product Image */}
                   <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden search-suggestion-image">
                     {(product.image || product.imageUrl) ? (
