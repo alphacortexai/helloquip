@@ -476,7 +476,7 @@ export default function Home() {
               </section>
 
               {/* Featured Deal */}
-              <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
+              {/* <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
                 <div className="h-full flex flex-col justify-center items-center text-center">
                   <div>
                     <h3 className="text-2xl font-bold mb-4">Special Offer</h3>
@@ -486,7 +486,7 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-              </section>
+              </section> */}
             </div>
 
             {/* Featured Products */}
@@ -504,7 +504,7 @@ export default function Home() {
             {/* Bottom Row - Product Recommendations and Testimonials */}
             <div className="grid grid-cols-[1fr_300px] gap-3">
               {/* Product Recommendations */}
-              <ProductRecommendations limit={6} onLoadComplete={() => setRecommendationsLoaded(true)} />
+              {/* <ProductRecommendations limit={6} onLoadComplete={() => setRecommendationsLoaded(true)} /> */}
 
               {/* Customer Testimonials */}
               <section className="bg-white rounded-2xl shadow-sm p-4">
@@ -550,7 +550,7 @@ export default function Home() {
             <ProductRecommendations limit={4} onLoadComplete={() => setRecommendationsLoaded(true)} />
 
             {/* Promotional Banner */}
-            <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">
+            {/* <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">
               <div className="text-center">
                 <h3 className="text-xl font-bold mb-2">Special Offers</h3>
                 <p className="text-sm mb-4">Get amazing deals on medical equipment</p>
@@ -558,7 +558,7 @@ export default function Home() {
                   View Offers
                 </button>
               </div>
-            </section>
+            </section> */}
 
             {/* Customer Testimonials - Mobile */}
             <section className="bg-white rounded-xl p-4 mb-4">
