@@ -48,12 +48,11 @@ function calculateTotal(items) {
 }
 
 function isAddressComplete(address) {
-  const customerType = address.customerType || 'individual';
-  if (customerType === 'company') {
+  const customerType = address.customerType || "individual";
+  if (customerType === "company") {
     return (
       address.contactPerson &&
       address.organizationName &&
-      address.email &&
       address.phoneNumber &&
       address.area &&
       address.city
@@ -608,7 +607,7 @@ export default function OrderClient() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
                         <input
                           type="email"
                           value={safeAddress.email}
