@@ -547,7 +547,7 @@ export default function OrderClient() {
               <div className="space-y-4">
                 {/* Customer Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer Type</label>
+                  <label className="block text-sm font-semibold text-blue-900 mb-1">Customer Type</label>
                   <div className="flex items-center gap-4 text-sm">
                     <label className="inline-flex items-center gap-2">
                       <input
@@ -574,7 +574,7 @@ export default function OrderClient() {
 
                 {safeAddress.customerType === 'individual' ? (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      <label className="block text-sm font-semibold text-blue-900 mb-1">Full Name</label>
                     <input
                       type="text"
                       value={safeAddress.fullName}
@@ -586,7 +586,7 @@ export default function OrderClient() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person Name</label>
+                      <label className="block text-sm font-semibold text-blue-900 mb-1">Contact Person Name</label>
                       <input
                         type="text"
                         value={safeAddress.contactPerson}
@@ -596,7 +596,7 @@ export default function OrderClient() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Institution / Company / Facility Name</label>
+                      <label className="block text-sm font-semibold text-blue-900 mb-1">Institution / Company / Facility Name</label>
                       <input
                         type="text"
                         value={safeAddress.organizationName}
@@ -607,7 +607,7 @@ export default function OrderClient() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                        <label className="block text-sm font-semibold text-blue-900 mb-1">Email (optional)</label>
                         <input
                           type="email"
                           value={safeAddress.email}
@@ -617,7 +617,7 @@ export default function OrderClient() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Designation (optional)</label>
+                        <label className="block text-sm font-semibold text-blue-900 mb-1">Designation (optional)</label>
                         <input
                           type="text"
                           value={safeAddress.designation}
@@ -632,7 +632,7 @@ export default function OrderClient() {
                 
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                  <label className="block text-sm font-semibold text-blue-900 mb-1">Region</label>
                   <select
                     value={safeAddress.city}
                     onChange={(e) => setAddress({ ...address, city: e.target.value, area: "" })}
@@ -648,7 +648,7 @@ export default function OrderClient() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                  <label className="block text-sm font-semibold text-blue-900 mb-1">Area</label>
                   <select
                     value={safeAddress.area}
                     onChange={(e) => setAddress({ ...address, area: e.target.value })}
@@ -665,7 +665,7 @@ export default function OrderClient() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <label className="block text-sm font-semibold text-blue-900 mb-1">Phone Number</label>
                   <input
                     type="tel"
                     value={safeAddress.phoneNumber}
