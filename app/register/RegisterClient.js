@@ -192,8 +192,6 @@ import {
   getAuth,
   signInWithPopup,
   GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
 } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
@@ -205,10 +203,6 @@ export default function RegisterClient() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
 
   const auth = getAuth();
@@ -234,28 +228,6 @@ export default function RegisterClient() {
     }
   };
 
-  const handleEmailAuth = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (isRegistering && password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    try {
-      let userCredential;
-      if (isRegistering) {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
-      }
-      await checkIfNewUser(userCredential.user);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   useEffect(() => {
     if (auth.currentUser) {
       try { sessionStorage.setItem('forceScrollTop', '1'); } catch {}
@@ -266,12 +238,10 @@ export default function RegisterClient() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#2e4493] px-4 text-white">
       <h1 className="text-4xl font-extrabold mb-2">
-        {isRegistering ? "Join Us Today!" : "Hello Quip!"}
+        Hello Quip!
       </h1>
       <p className="text-white/90 text-lg mb-8 text-center max-w-md">
-        {isRegistering
-          ? "Create your account and start your journey with us."
-          : "Sign in to proceed with your order."}
+        Sign in with Google to proceed with your order.
       </p>
 
       {error && (
@@ -279,89 +249,6 @@ export default function RegisterClient() {
           {error}
         </div>
       )}
-
-      <form
-        onSubmit={handleEmailAuth}
-        className="flex flex-col gap-4 max-w-md w-full"
-      >
-        <input
-          type="email"
-          placeholder="Email address"
-          className="w-full rounded-lg px-5 py-3 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/60"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full rounded-lg px-5 py-3 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/60"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        {isRegistering && (
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            className="w-full rounded-lg px-5 py-3 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/60"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-        )}
-
-        <button
-          type="submit"
-          className="w-full bg-white text-[#2e4493] py-3 rounded-lg font-semibold hover:bg-white/90 transition"
-        >
-          {isRegistering ? "Register" : "Sign In"}
-        </button>
-      </form>
-
-      <p className="text-white/90 mt-6 max-w-md text-center">
-        {isRegistering ? (
-          <>
-            Already have an account?{' '}
-            <button
-              onClick={() => {
-                setIsRegistering(false);
-                setError("");
-                setPassword("");
-                setConfirmPassword("");
-              }}
-              className="text-white font-semibold hover:underline"
-              type="button"
-            >
-              Sign In
-            </button>
-          </>
-        ) : (
-          <>
-            Don’t have an account?{' '}
-            <button
-              onClick={() => {
-                setIsRegistering(true);
-                setError("");
-                setPassword("");
-                setConfirmPassword("");
-              }}
-              className="text-white font-semibold hover:underline"
-              type="button"
-            >
-              Register
-            </button>
-          </>
-        )}
-      </p>
-
-      <div className="flex items-center justify-center gap-3 my-6 max-w-md w-full">
-        <span className="text-white/70 font-semibold uppercase tracking-wider">
-          OR
-        </span>
-      </div>
 
       <button
         onClick={handleGoogleSignIn}
