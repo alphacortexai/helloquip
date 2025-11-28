@@ -94,7 +94,7 @@ export default function AdminLogin() {
               <path d="M12 12c2.67 0 8 1.34 8 4v2H4v-2c0-2.66 5.33-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z" />
             </svg>
           </div>
-          <h1 className="text-lg font-semibold mt-2">HalloQuip Admin</h1>
+          <h1 className="text-lg font-semibold mt-2">HeloQuip Admin</h1>
           <p className="text-sm text-gray-500 text-center">
             Enter your email and password to log in
           </p>
@@ -132,7 +132,7 @@ export default function AdminLogin() {
         </p>
 
         <p className="text-center text-sm text-gray-600 mt-6 font-semibold">
-          HELLOQUIP
+          HELOQUIP
         </p>
       </div>
     </div>

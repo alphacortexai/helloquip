@@ -9,7 +9,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import CachedLogo from "@/components/CachedLogo";
 
 export default function RegisterClient() {
   const router = useRouter();
@@ -53,12 +52,7 @@ export default function RegisterClient() {
   }, [auth, redirect, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#2e4493] px-4 text-white">
-      <h1 className="text-4xl font-extrabold mb-2">Hello Quip!</h1>
-      <p className="text-white/90 text-lg mb-8 text-center max-w-md">
-        Sign in with Google to proceed with your order.
-      </p>
-
+    <>
       {error && (
         <div className="text-center text-red-600 bg-red-100 py-2 px-4 rounded-lg font-semibold mb-6 max-w-md w-full">
           {error}
@@ -74,18 +68,7 @@ export default function RegisterClient() {
         </svg>
         Continue with Google
       </button>
-
-      <button
-        onClick={() => router.push("/")}
-        className="mt-10 max-w-md w-full text-white border border-white py-3 rounded-lg font-semibold hover:bg-white/10 transition"
-      >
-        ← Return to Shop
-      </button>
-
-      <div className="mt-10 opacity-90">
-        <CachedLogo variant="register" className="h-10 w-auto" />
-      </div>
-    </div>
+    </>
   );
 }
 
