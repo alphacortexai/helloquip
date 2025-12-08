@@ -31,7 +31,7 @@ messaging.onBackgroundMessage(function (payload) {
 // Handle notification clicks
 self.addEventListener('notificationclick', function(event) {
   console.log('[firebase-messaging-sw.js] Notification click received:', event);
-  
+
   event.notification.close();
 
   // Extract data from the notification
@@ -56,15 +56,49 @@ self.addEventListener('notificationclick', function(event) {
     });
   }
 
-  // Open the target URL if available
-  if (link) {
-    event.waitUntil(
-      clients.openWindow(link)
-    );
-  } else {
-    // Default behavior - open the app
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
+  event.waitUntil(
+    handleNotificationClick(link)
+  );
 });
+
+// Improved notification click handler for PWA
+async function handleNotificationClick(link) {
+  const targetUrl = link || '/';
+
+  try {
+    // First, try to find existing app windows
+    const clientsList = await clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    });
+
+    // Look for an existing app window that's not about:blank or chrome://
+    const existingAppWindow = clientsList.find(client =>
+      client.url && !client.url.startsWith('about:') && !client.url.startsWith('chrome://')
+    );
+
+    if (existingAppWindow) {
+      // Focus the existing window and navigate to the target URL
+      console.log('[firebase-messaging-sw.js] Focusing existing app window:', existingAppWindow.url);
+      await existingAppWindow.focus();
+
+      // If the target is different from current URL, navigate
+      if (existingAppWindow.url !== targetUrl) {
+        // Use postMessage to navigate within the app (safer for PWA)
+        existingAppWindow.postMessage({
+          type: 'NAVIGATE_TO',
+          url: targetUrl
+        });
+      }
+      return existingAppWindow;
+    } else {
+      // No existing app window found, open a new one
+      console.log('[firebase-messaging-sw.js] Opening new window:', targetUrl);
+      return clients.openWindow(targetUrl);
+    }
+  } catch (error) {
+    console.error('[firebase-messaging-sw.js] Error handling notification click:', error);
+    // Fallback to opening new window
+    return clients.openWindow(targetUrl);
+  }
+}

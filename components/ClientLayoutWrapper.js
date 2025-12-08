@@ -383,6 +383,34 @@ export default function ClientLayoutWrapper({ children }) {
     return () => { cancelled = true; timers.forEach(clearTimeout); };
   }, [pathname]);
 
+  // Listen for service worker navigation messages (for push notification clicks)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleServiceWorkerMessage = (event) => {
+      if (event.data && event.data.type === 'NAVIGATE_TO') {
+        const targetUrl = event.data.url;
+        console.log('[ClientLayoutWrapper] Received navigation message from SW:', targetUrl);
+
+        try {
+          // Use Next.js router for client-side navigation
+          router.push(targetUrl);
+        } catch (error) {
+          console.error('[ClientLayoutWrapper] Error navigating:', error);
+          // Fallback to window.location
+          window.location.href = targetUrl;
+        }
+      }
+    };
+
+    // Listen for messages from service worker
+    window.addEventListener('message', handleServiceWorkerMessage);
+
+    return () => {
+      window.removeEventListener('message', handleServiceWorkerMessage);
+    };
+  }, [router]);
+
   // Global hashchange precise scroll handler (mobile friendly) with gating after first success
   useEffect(() => {
     if (typeof window === 'undefined') return;

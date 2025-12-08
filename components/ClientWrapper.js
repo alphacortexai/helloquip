@@ -62,52 +62,14 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-
-// Dynamically import all client-only providers
-const ClientLayoutWrapper = dynamic(() => import("./ClientLayoutWrapper"), {
-  ssr: false,
-});
-
-const CartProvider = dynamic(
-  () => import("./CartContext").then((mod) => ({ default: mod.CartProvider })),
-  { ssr: false }
-);
-
-const NotificationSetup = dynamic(() => import("./NotificationSetup"), {
-  ssr: false,
-});
-
-const SessionProvider = dynamic(() => import("./SessionProvider"), {
-  ssr: false,
-});
-
-const AutoSignIn = dynamic(() => import("./AutoSignIn"), {
-  ssr: false,
-});
-
-const ProductSettingsProvider = dynamic(
-  () =>
-    import("../hooks/useProductSettings").then((mod) => ({
-      default: mod.ProductSettingsProvider,
-    })),
-  { ssr: false }
-);
+import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
+import NotificationSetup from "@/components/NotificationSetup";
+import AutoSignIn from "@/components/AutoSignIn";
+import SessionProvider from "@/components/SessionProvider";
+import { CartProvider } from "@/components/CartContext";
+import { ProductSettingsProvider } from "@/hooks/useProductSettings";
 
 export default function ClientWrapper({ children }) {
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
-  // Render the page content immediately during SSR/initial hydration
-  // so the user never sees a blank screen while client-only wrappers load.
-  if (!isHydrated) {
-    return <>{children}</>;
-  }
-
   return (
     <SessionProvider>
       <AutoSignIn />
