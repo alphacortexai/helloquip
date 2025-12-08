@@ -388,25 +388,38 @@ export default function ClientLayoutWrapper({ children }) {
     if (typeof window === 'undefined') return;
 
     const handleServiceWorkerMessage = (event) => {
+      console.log('[ClientLayoutWrapper] Received message:', event.data);
+
       if (event.data && event.data.type === 'NAVIGATE_TO') {
         const targetUrl = event.data.url;
         console.log('[ClientLayoutWrapper] Received navigation message from SW:', targetUrl);
 
         try {
           // Use Next.js router for client-side navigation
+          console.log('[ClientLayoutWrapper] Attempting router navigation to:', targetUrl);
           router.push(targetUrl);
+          console.log('[ClientLayoutWrapper] Navigation completed to:', targetUrl);
         } catch (error) {
-          console.error('[ClientLayoutWrapper] Error navigating:', error);
-          // Fallback to window.location
-          window.location.href = targetUrl;
+          console.error('[ClientLayoutWrapper] Router navigation failed:', error);
+          // Fallback to window.location with small delay
+          try {
+            setTimeout(() => {
+              console.log('[ClientLayoutWrapper] Using window.location fallback to:', targetUrl);
+              window.location.href = targetUrl;
+            }, 100);
+          } catch (fallbackError) {
+            console.error('[ClientLayoutWrapper] Fallback navigation failed:', fallbackError);
+          }
         }
       }
     };
 
+    console.log('[ClientLayoutWrapper] Setting up message listener');
     // Listen for messages from service worker
     window.addEventListener('message', handleServiceWorkerMessage);
 
     return () => {
+      console.log('[ClientLayoutWrapper] Removing message listener');
       window.removeEventListener('message', handleServiceWorkerMessage);
     };
   }, [router]);

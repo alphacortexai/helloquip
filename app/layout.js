@@ -8,6 +8,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "HelloQuip",
   description: "Medical eCommerce",
+  manifest: "/manifest.json",
+  themeColor: "#0f4a73",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HelloQuip",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -31,6 +39,19 @@ export default function RootLayout({ children }) {
         {/* Preconnect to Firebase Auth */}
         <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
         <link rel="preconnect" href="https://securetoken.googleapis.com" />
+
+        {/* PWA Meta Tags */}
+        <meta name="application-name" content="HelloQuip" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="HelloQuip" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content="#0f4a73" />
+        <meta name="msapplication-tap-highlight" content="no" />
+
+        {/* PWA Links */}
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icu.png" />
       </head>
       <body className={inter.className}>
         <ClientWrapper>{children}</ClientWrapper>

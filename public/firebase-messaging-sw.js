@@ -63,42 +63,51 @@ self.addEventListener('notificationclick', function(event) {
 
 // Improved notification click handler for PWA
 async function handleNotificationClick(link) {
-  const targetUrl = link || '/';
+  let targetUrl = link || '/';
+  console.log('[firebase-messaging-sw.js] Processing notification click for:', targetUrl);
 
   try {
-    // First, try to find existing app windows
-    const clientsList = await clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    });
-
-    // Look for an existing app window that's not about:blank or chrome://
-    const existingAppWindow = clientsList.find(client =>
-      client.url && !client.url.startsWith('about:') && !client.url.startsWith('chrome://')
-    );
-
-    if (existingAppWindow) {
-      // Focus the existing window and navigate to the target URL
-      console.log('[firebase-messaging-sw.js] Focusing existing app window:', existingAppWindow.url);
-      await existingAppWindow.focus();
-
-      // If the target is different from current URL, navigate
-      if (existingAppWindow.url !== targetUrl) {
-        // Use postMessage to navigate within the app (safer for PWA)
-        existingAppWindow.postMessage({
-          type: 'NAVIGATE_TO',
-          url: targetUrl
-        });
+    // Convert full URL to relative path for navigation
+    let relativePath = targetUrl;
+    try {
+      const url = new URL(targetUrl);
+      // If it's a full URL from our domain, extract the pathname
+      if (url.origin === self.location.origin) {
+        relativePath = url.pathname + url.search + url.hash;
+        console.log('[firebase-messaging-sw.js] Converted to relative path:', relativePath);
       }
-      return existingAppWindow;
-    } else {
-      // No existing app window found, open a new one
-      console.log('[firebase-messaging-sw.js] Opening new window:', targetUrl);
-      return clients.openWindow(targetUrl);
+    } catch (e) {
+      // If URL parsing fails, assume it's already a relative path
+      console.log('[firebase-messaging-sw.js] Treating as relative path:', targetUrl);
     }
+
+    // For PWAs, always try to open/focus the main app window
+    const appUrl = self.location.origin + '/';
+    console.log('[firebase-messaging-sw.js] Opening/focusing app at:', appUrl);
+
+    // Use clients.openWindow which will focus existing window or open new one
+    const client = await clients.openWindow(appUrl);
+
+    // If we have a specific page to navigate to, send message after window is ready
+    if (client && relativePath !== '/') {
+      console.log('[firebase-messaging-sw.js] Sending navigation message for:', relativePath);
+      // Small delay to let the app load, then navigate
+      setTimeout(() => {
+        try {
+          client.postMessage({
+            type: 'NAVIGATE_TO',
+            url: relativePath
+          });
+        } catch (e) {
+          console.error('[firebase-messaging-sw.js] Failed to send navigation message:', e);
+        }
+      }, 1500); // Reduced delay for faster navigation
+    }
+
+    return client;
   } catch (error) {
     console.error('[firebase-messaging-sw.js] Error handling notification click:', error);
-    // Fallback to opening new window
-    return clients.openWindow(targetUrl);
+    // Last resort fallback - open the home page
+    return clients.openWindow('/');
   }
 }
