@@ -71,7 +71,10 @@ import { ProductSettingsProvider } from "@/hooks/useProductSettings";
 import { useEffect } from "react";
 
 export default function ClientWrapper({ children }) {
-  // Ensure the global "loaded" class is applied so pages are visible (CSS hides html until loaded)
+  // NOTE: Keep this — globals.css sets `html { visibility: hidden; }` until
+  // the "loaded" class is present. Applying it here ensures ALL pages become
+  // visible after mount (not just home). Removing this would bring back
+  // white/hidden pages on reload.
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.classList.add("loaded");

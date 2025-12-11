@@ -214,8 +214,11 @@ export async function POST(req) {
     }
 
     const dataPayload = { ...(extraData || {}) };
-    if (target) dataPayload.target = target;
-    if (resolvedLink) dataPayload.link = resolvedLink;
+    if (target) {
+      dataPayload.target = target; // relative path (preferred for in-app navigation)
+      dataPayload.relativeLink = target;
+    }
+    if (resolvedLink) dataPayload.link = resolvedLink; // absolute URL for webpush link
 
     const message = {
       token: fcmToken,

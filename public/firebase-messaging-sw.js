@@ -35,10 +35,11 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
   // Extract data from the notification
-  const data = event.notification.data;
+  const data = event.notification.data || {};
   const fcmMessageId = data?.fcmMessageId;
   const userId = data?.userId;
-  const link = data?.link;
+  // Prefer explicit target/relative paths, fall back to link
+  const link = data?.relativeLink || data?.target || data?.link;
 
   if (fcmMessageId && userId) {
     // Mark the FCM notification as read
@@ -67,11 +68,17 @@ async function handleNotificationClick(link) {
   console.log('[firebase-messaging-sw.js] Processing notification click for:', targetUrl);
 
   try {
-    // Normalize to relative path when same-origin
+    // Normalize to relative path when same-origin (or allowed host)
     let relativePath = targetUrl;
     try {
       const url = new URL(targetUrl);
-      if (url.origin === self.location.origin) {
+      const isSameOrigin = url.origin === self.location.origin;
+      const isAllowedHost =
+        url.hostname === "localhost" ||
+        url.hostname === "127.0.0.1" ||
+        url.hostname.endsWith("helloquip.vercel.app");
+
+      if (isSameOrigin || isAllowedHost) {
         relativePath = url.pathname + url.search + url.hash;
         console.log('[firebase-messaging-sw.js] Converted to relative path:', relativePath);
       }
