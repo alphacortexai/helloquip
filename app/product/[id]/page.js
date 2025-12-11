@@ -154,6 +154,16 @@ export default function ProductDetail() {
   if (error) return <p className="text-center py-6 text-red-600">{error}</p>;
   if (!product) return <p className="text-center py-6">Product not found.</p>;
 
+  // Normalize attributes so we can render array, map, or object formats
+  const normalizedAttributes = Array.isArray(product.attributes)
+    ? product.attributes
+    : product.attributes && typeof product.attributes === "object"
+      ? Object.entries(product.attributes).map(([name, value]) => ({
+          name,
+          description: typeof value === "string" ? value : String(value ?? ""),
+        }))
+      : [];
+
   const allImages = [product.imageUrl, ...(product.extraImageUrls || [])].filter(Boolean);
 
   return (
@@ -211,12 +221,25 @@ export default function ProductDetail() {
                 </p>
               </div>
 
+              {/* Additional Details */}
+              {product.warranty && (
+                <div className="bg-white p-4 rounded-md border border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Additional Details</h3>
+                  <div className="text-xs text-gray-600">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="font-medium text-gray-700">Warranty</span>
+                      <span className="text-right">{product.warranty}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Attributes */}
-              {product.attributes && product.attributes.length > 0 && (
+              {normalizedAttributes.length > 0 && (
                 <div className="bg-white p-4 rounded-md border border-gray-100">
                   <h3 className="text-sm font-semibold text-gray-800 mb-1">Product Attributes</h3>
                   <ul className="text-xs text-gray-600 space-y-1">
-                    {product.attributes.map((attr, index) => (
+                    {normalizedAttributes.map((attr, index) => (
                       <li key={index} className="flex justify-between">
                         <span className="font-medium">{attr.name}:</span>
                         <span>{attr.description}</span>
