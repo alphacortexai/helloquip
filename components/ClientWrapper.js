@@ -68,8 +68,16 @@ import AutoSignIn from "@/components/AutoSignIn";
 import SessionProvider from "@/components/SessionProvider";
 import { CartProvider } from "@/components/CartContext";
 import { ProductSettingsProvider } from "@/hooks/useProductSettings";
+import { useEffect } from "react";
 
 export default function ClientWrapper({ children }) {
+  // Ensure the global "loaded" class is applied so pages are visible (CSS hides html until loaded)
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.add("loaded");
+    }
+  }, []);
+
   return (
     <SessionProvider>
       <AutoSignIn />
