@@ -83,7 +83,6 @@ export default function Home() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
-  const [savedHomeScroll, setSavedHomeScroll] = useState(0);
   
   // Progressive loading states
   const [criticalContentLoaded, setCriticalContentLoaded] = useState(false);
@@ -222,40 +221,6 @@ export default function Home() {
     return () => clearTimeout(hardFallback);
   }, []);
 
-  // Debug helper: read saved home scroll from sessionStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const readSaved = () => {
-      try {
-        const raw = sessionStorage.getItem("restoreHomeScroll");
-        const y = raw ? parseInt(raw, 10) : 0;
-        setSavedHomeScroll(Number.isFinite(y) ? y : 0);
-      } catch {
-        setSavedHomeScroll(0);
-      }
-    };
-    readSaved();
-    // Refresh when page gains focus
-    window.addEventListener("focus", readSaved);
-    return () => window.removeEventListener("focus", readSaved);
-  }, []);
-
-  const refreshSavedScroll = () => {
-    try {
-      const raw = sessionStorage.getItem("restoreHomeScroll");
-      const y = raw ? parseInt(raw, 10) : 0;
-      setSavedHomeScroll(Number.isFinite(y) ? y : 0);
-    } catch {
-      setSavedHomeScroll(0);
-    }
-  };
-
-  const scrollToSaved = () => {
-    if (!savedHomeScroll || savedHomeScroll < 0) return;
-    try {
-      window.scrollTo({ top: savedHomeScroll, left: 0, behavior: "auto" });
-    } catch {}
-  };
 
   // Function to clear cache and refresh data
   const refreshData = () => {
@@ -525,26 +490,6 @@ export default function Home() {
                   onCategorySelect={setSelectedCategory} 
                   onLoadComplete={() => setCategoriesLoaded(true)}
                 />
-                <div className="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">Debug: Saved scroll Y</span>
-                    <span className="text-sm font-mono">{savedHomeScroll}</span>
-                  </div>
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={refreshSavedScroll}
-                      className="flex-1 text-xs px-3 py-2 border border-yellow-300 rounded-md hover:bg-yellow-100 transition"
-                    >
-                      Refresh
-                    </button>
-                    <button
-                      onClick={scrollToSaved}
-                      className="flex-1 text-xs px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition"
-                    >
-                      Scroll to saved
-                    </button>
-                  </div>
-                </div>
               </section>
 
               {/* Trending Products */}
@@ -601,26 +546,6 @@ export default function Home() {
                 onCategorySelect={setSelectedCategory} 
                 onLoadComplete={() => setCategoriesLoaded(true)}
               />
-              <div className="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">Debug: Saved scroll Y</span>
-                  <span className="text-sm font-mono">{savedHomeScroll}</span>
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={refreshSavedScroll}
-                    className="flex-1 text-xs px-3 py-2 border border-yellow-300 rounded-md hover:bg-yellow-100 transition"
-                  >
-                    Refresh
-                  </button>
-                  <button
-                    onClick={scrollToSaved}
-                    className="flex-1 text-xs px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition"
-                  >
-                    Scroll to saved
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Trending Products */}
