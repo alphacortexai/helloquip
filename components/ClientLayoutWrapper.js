@@ -116,7 +116,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -145,6 +145,10 @@ export default function ClientLayoutWrapper({ children }) {
   const [user, setUser] = useState(null);
   const [orderCount, setOrderCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const previousPathRef = useRef(pathname);
+  const homeScrollSaveTimer = useRef(null);
+  const homeScrollInterval = useRef(null);
+  const clickSaveHandler = useRef(null);
 
   const showMobileNav = user && !hideMobileNavOn.includes(pathname) && !pathname.startsWith('/admin');
 
@@ -228,159 +232,120 @@ export default function ClientLayoutWrapper({ children }) {
     };
   }, [pathname]);
 
-  // Mobile bfcache support: save on pagehide, restore on pageshow (persisted)
+  // Continuously save home scroll (throttled) so we have it before navigation
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
+    if (pathname !== "/") return;
 
-    const handlePageHide = () => {
-      try {
-        sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY));
-      } catch {}
+    const saveScroll = () => {
+      if (homeScrollSaveTimer.current) return;
+      homeScrollSaveTimer.current = requestAnimationFrame(() => {
+        homeScrollSaveTimer.current = null;
+        try {
+          sessionStorage.setItem("restoreHomeScroll", String(window.scrollY));
+        } catch {}
+      });
     };
 
-    const handlePageShow = (event) => {
-      // Only apply on bfcache restores
-      if (!event || !event.persisted) return;
+    // Periodic safety save for mobile/PWA where scroll events may throttle
+    homeScrollInterval.current = setInterval(saveScroll, 800);
 
-      // If there's an anchor hash (e.g., #p-123), let page components perform precise restore
-      const hash = window.location.hash;
-      if (hash && hash.length > 1) return;
-
-      // Numeric restoration for general pages
-      const key = `scroll:${pathname}`;
-      let raw = null;
-      try { raw = sessionStorage.getItem(key); } catch {}
-      const targetY = raw ? parseInt(raw, 10) : 0;
-      if (!Number.isFinite(targetY) || targetY <= 0) return;
-
-      // Account for fixed header height on mobile
-      let headerOffset = 0;
-      try {
-        const header = document.querySelector('header');
-        headerOffset = header ? header.offsetHeight : 0;
-      } catch {}
-
-      const attempts = [0, 80, 160, 300, 500, 800, 1200, 1800];
-      let cancelled = false;
-      const timers = attempts.map((ms) => setTimeout(() => {
-        if (cancelled) return;
-        const y = Math.max(0, targetY - Math.max(headerOffset, 80));
-        window.scrollTo(0, y);
-      }, ms));
-      const cleanup = () => { cancelled = true; timers.forEach(clearTimeout); };
-      // Auto-clean after last attempt
-      setTimeout(() => {
-        cleanup();
-      }, Math.max(...attempts) + 200);
+    window.addEventListener("scroll", saveScroll, { passive: true });
+    window.addEventListener("beforeunload", saveScroll);
+    const onVisibility = () => {
+      if (document.hidden) saveScroll();
     };
+    window.addEventListener("visibilitychange", onVisibility);
 
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('pageshow', handlePageShow);
+    // Initial save in case user taps quickly before scrolling
+    saveScroll();
+
+    // Save just before navigation when clicking/tapping product links
+    const handleIntent = (event) => {
+      try {
+        const target = event.target;
+        if (!target) return;
+        const anchor = target.closest
+          ? target.closest('a[href^="/product/"], button[data-product-id], div[data-product-id]')
+          : null;
+        if (!anchor) return;
+        // Only save if we are currently on home
+        if (window.location.pathname !== "/") return;
+        saveScroll();
+      } catch {}
+    };
+    clickSaveHandler.current = handleIntent;
+    window.addEventListener("click", handleIntent, true);
+    window.addEventListener("touchstart", handleIntent, true);
+
     return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('pageshow', handlePageShow);
+      if (homeScrollSaveTimer.current) cancelAnimationFrame(homeScrollSaveTimer.current);
+      homeScrollSaveTimer.current = null;
+      if (homeScrollInterval.current) clearInterval(homeScrollInterval.current);
+      homeScrollInterval.current = null;
+      window.removeEventListener("scroll", saveScroll);
+      window.removeEventListener("beforeunload", saveScroll);
+      window.removeEventListener("visibilitychange", onVisibility);
+       if (clickSaveHandler.current) {
+        window.removeEventListener("click", clickSaveHandler.current, true);
+        window.removeEventListener("touchstart", clickSaveHandler.current, true);
+      }
     };
   }, [pathname]);
 
-  // Restore via explicit saved numeric position when returning from product (back navigation) - Home only
+  // Save home scroll when leaving for a product page; restore once when back on home
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (pathname !== '/') return;
-    const tryNumericRestore = () => {
-      let raw = null;
-      try { raw = sessionStorage.getItem('restoreScrollY'); } catch {}
-      const y = raw ? parseInt(raw, 10) : NaN;
-      if (!Number.isFinite(y) || y <= 0) return;
-      // Clear it immediately to avoid future unintended restores
-      try { sessionStorage.removeItem('restoreScrollY'); } catch {}
+    if (typeof window === "undefined") return;
 
-      const attempts = [0, 80, 160, 300, 500, 800, 1200, 1800];
-      let cancelled = false;
-      const timers = attempts.map((ms) => setTimeout(() => {
-        if (cancelled) return;
-        window.scrollTo(0, y);
-      }, ms));
-      setTimeout(() => {
-        cancelled = true;
-        timers.forEach(clearTimeout);
-      }, Math.max(...attempts) + 600);
-    };
-
-    // On mount of Home, attempt numeric restore once
-    tryNumericRestore();
-  }, [pathname]);
-
-  // Restore saved scroll position when mounting a pathname
-  useEffect(() => {
-
-    // If URL has a hash, try to scroll to the anchor element first (precise restore)
-    const hash = window.location.hash;
-    if (hash && hash.length > 1) {
-      const id = hash.slice(1);
-      const tryAnchor = () => {
-        const el = document.getElementById(id);
-        if (el) {
-          // Prefer a precise scroll that accounts for fixed headers on mobile
-          try {
-            const rect = el.getBoundingClientRect();
-            const header = document.querySelector('header');
-            const headerHeight = header ? header.offsetHeight : 0;
-            const currentY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-            const y = rect.top + currentY - Math.max(headerHeight, 80);
-            const scrollingElement = document.scrollingElement || document.documentElement || document.body;
-            requestAnimationFrame(() => {
-              try { window.scrollTo({ top: y, left: 0, behavior: 'auto' }); } catch {}
-              try { scrollingElement.scrollTop = y; } catch {}
-              try { document.documentElement.scrollTop = y; } catch {}
-              try { document.body.scrollTop = y; } catch {}
-            });
-          } catch {
-            try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
-          }
-          return true;
-        }
-        return false;
-      };
-      // Try multiple times (longer on mobile due to dynamic imports and images)
-      const tries = [0, 120, 240, 400, 700, 1000, 1500, 2200, 3000, 4000, 5500];
-      let done = false;
-      const timers = tries.map((ms) => setTimeout(() => {
-        if (!done && tryAnchor()) done = true;
-      }, ms));
-
-      // Fallback to numeric restoration if anchor not found after all tries
-      const fallbackTimer = setTimeout(() => {
-        if (!done) {
-          const key = `scroll:${pathname}`;
-          let raw = null;
-          try { raw = sessionStorage.getItem(key); } catch {}
-          const targetY = raw ? parseInt(raw, 10) : 0;
-          if (Number.isFinite(targetY) && targetY > 0) {
-            window.scrollTo(0, targetY);
-          }
-        }
-      }, Math.max(...tries) + 200);
-
-      return () => { timers.forEach(clearTimeout); clearTimeout(fallbackTimer); };
+    const prev = previousPathRef.current;
+    // Save scroll if navigating from home to a product page
+    if (prev === "/" && pathname.startsWith("/product/")) {
+      try {
+        sessionStorage.setItem("restoreHomeScroll", String(window.scrollY));
+      } catch {}
     }
+    previousPathRef.current = pathname;
+  }, [pathname]);
 
-    // Fallback to numeric scroll position restore
-    const key = `scroll:${pathname}`;
-    const raw = (() => { try { return sessionStorage.getItem(key); } catch { return null; } })();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (pathname !== "/") return;
+
+    let raw = null;
+    try {
+      raw = sessionStorage.getItem("restoreHomeScroll");
+    } catch {}
     const targetY = raw ? parseInt(raw, 10) : 0;
-    if (Number.isNaN(targetY) || targetY <= 0) {
-      // Do not force top by default; let the page remain where it is
-      return;
-    }
+    if (!Number.isFinite(targetY) || targetY <= 0) return;
 
-    const attempts = [0, 80, 160, 300, 500, 800, 1200, 1600, 2200, 3000, 4000, 5000];
-    let cancelled = false;
-    const tryScroll = (y) => {
-      if (cancelled) return;
-      if (Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y);
+    // Consume the stored value so it doesn't fire again
+    try {
+      sessionStorage.removeItem("restoreHomeScroll");
+    } catch {}
+
+    const restore = () => {
+      try {
+        window.scrollTo(0, targetY);
+      } catch {}
     };
-    const timers = attempts.map((ms) => setTimeout(() => tryScroll(targetY), ms));
-    return () => { cancelled = true; timers.forEach(clearTimeout); };
+
+    // Few attempts around mount/load to cover late layout shifts on mobile
+    const timers = [
+      requestAnimationFrame(restore),
+      setTimeout(restore, 180), // single retry
+    ];
+    const onLoad = () => restore(); // load-based retry (counts as the single retry window)
+    window.addEventListener("load", onLoad, { once: true });
+
+    return () => {
+      timers.forEach((t) => {
+        if (typeof t === "number") clearTimeout(t);
+        else if (typeof t === "object" || typeof t === "undefined") {
+          try { cancelAnimationFrame(t); } catch {}
+        }
+      });
+      window.removeEventListener("load", onLoad);
+    };
   }, [pathname]);
 
   // Listen for service worker navigation messages (for push notification clicks)

@@ -83,6 +83,7 @@ export default function Home() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
+  const [savedHomeScroll, setSavedHomeScroll] = useState(0);
   
   // Progressive loading states
   const [criticalContentLoaded, setCriticalContentLoaded] = useState(false);
@@ -162,12 +163,19 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
+      // Skip loading screen on back/forward navigations (e.g., returning from product)
+      const navEntry = performance.getEntriesByType('navigation')[0];
+      const isBackForward = navEntry && navEntry.type === 'back_forward';
       const shownThisSession = sessionStorage.getItem('loadingScreenShown') === '1';
-      if (!shownThisSession) {
+      if (!shownThisSession && !isBackForward) {
         setShowLoadingScreen(true);
         sessionStorage.setItem('loadingScreenShown', '1');
+      } else {
+        setShowLoadingScreen(false);
       }
-    } catch {}
+    } catch {
+      setShowLoadingScreen(false);
+    }
   }, []);
 
   // Hide loading screen when critical content is ready (faster FCP)
@@ -199,6 +207,55 @@ export default function Home() {
       setShowLoadingScreen(false);
     }
   }, [featuredProductsLoaded, categoriesLoaded, trendingProductsLoaded, allProductsLoaded, recommendationsLoaded, loading, showLoadingScreen]);
+
+  // Fallback: force-hide loading screen after a short timeout to avoid getting stuck on back navigation
+  useEffect(() => {
+    if (!showLoadingScreen) return;
+    const fallback = setTimeout(() => setShowLoadingScreen(false), 1200);
+    return () => clearTimeout(fallback);
+  }, [showLoadingScreen]);
+
+  // Hard guard: always hide loader quickly when on home, regardless of nav type
+  useEffect(() => {
+    setShowLoadingScreen(false);
+    const hardFallback = setTimeout(() => setShowLoadingScreen(false), 500);
+    return () => clearTimeout(hardFallback);
+  }, []);
+
+  // Debug helper: read saved home scroll from sessionStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const readSaved = () => {
+      try {
+        const raw = sessionStorage.getItem("restoreHomeScroll");
+        const y = raw ? parseInt(raw, 10) : 0;
+        setSavedHomeScroll(Number.isFinite(y) ? y : 0);
+      } catch {
+        setSavedHomeScroll(0);
+      }
+    };
+    readSaved();
+    // Refresh when page gains focus
+    window.addEventListener("focus", readSaved);
+    return () => window.removeEventListener("focus", readSaved);
+  }, []);
+
+  const refreshSavedScroll = () => {
+    try {
+      const raw = sessionStorage.getItem("restoreHomeScroll");
+      const y = raw ? parseInt(raw, 10) : 0;
+      setSavedHomeScroll(Number.isFinite(y) ? y : 0);
+    } catch {
+      setSavedHomeScroll(0);
+    }
+  };
+
+  const scrollToSaved = () => {
+    if (!savedHomeScroll || savedHomeScroll < 0) return;
+    try {
+      window.scrollTo({ top: savedHomeScroll, left: 0, behavior: "auto" });
+    } catch {}
+  };
 
   // Function to clear cache and refresh data
   const refreshData = () => {
@@ -468,6 +525,26 @@ export default function Home() {
                   onCategorySelect={setSelectedCategory} 
                   onLoadComplete={() => setCategoriesLoaded(true)}
                 />
+                <div className="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">Debug: Saved scroll Y</span>
+                    <span className="text-sm font-mono">{savedHomeScroll}</span>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={refreshSavedScroll}
+                      className="flex-1 text-xs px-3 py-2 border border-yellow-300 rounded-md hover:bg-yellow-100 transition"
+                    >
+                      Refresh
+                    </button>
+                    <button
+                      onClick={scrollToSaved}
+                      className="flex-1 text-xs px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition"
+                    >
+                      Scroll to saved
+                    </button>
+                  </div>
+                </div>
               </section>
 
               {/* Trending Products */}
@@ -524,6 +601,26 @@ export default function Home() {
                 onCategorySelect={setSelectedCategory} 
                 onLoadComplete={() => setCategoriesLoaded(true)}
               />
+              <div className="mt-3 bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Debug: Saved scroll Y</span>
+                  <span className="text-sm font-mono">{savedHomeScroll}</span>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={refreshSavedScroll}
+                    className="flex-1 text-xs px-3 py-2 border border-yellow-300 rounded-md hover:bg-yellow-100 transition"
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    onClick={scrollToSaved}
+                    className="flex-1 text-xs px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition"
+                  >
+                    Scroll to saved
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Trending Products */}
