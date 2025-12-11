@@ -68,6 +68,7 @@ import AutoSignIn from "@/components/AutoSignIn";
 import SessionProvider from "@/components/SessionProvider";
 import { CartProvider } from "@/components/CartContext";
 import { ProductSettingsProvider } from "@/hooks/useProductSettings";
+import InstallPrompt from "@/components/InstallPrompt";
 import { useEffect } from "react";
 
 export default function ClientWrapper({ children }) {
@@ -88,6 +89,7 @@ export default function ClientWrapper({ children }) {
         <CartProvider>
           <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
           <NotificationSetup />
+          <InstallPrompt />
         </CartProvider>
       </ProductSettingsProvider>
     </SessionProvider>
