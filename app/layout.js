@@ -51,7 +51,7 @@ export default function RootLayout({ children }) {
 
         {/* PWA Links */}
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icu.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body className={inter.className}>
         <ClientWrapper>{children}</ClientWrapper>
