@@ -22,6 +22,7 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [activeImage, setActiveImage] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -36,26 +37,33 @@ export default function ProductDetail() {
     if (!id) return;
 
     const fetchProduct = async () => {
-      const docRef = doc(db, "products", id);
-      const docSnap = await getDoc(docRef);
+      try {
+        const docRef = doc(db, "products", id);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const data = { id: docSnap.id, ...docSnap.data() };
+        if (docSnap.exists()) {
+          const data = { id: docSnap.id, ...docSnap.data() };
 
-        // ✅ Defensive fallback image logic
-        data.imageUrl = data.imageUrl || fallbackImage;
-        data.extraImageUrls =
-          Array.isArray(data.extraImageUrls) && data.extraImageUrls.length > 0
-            ? data.extraImageUrls
-            : [fallbackImage];
+          // ✅ Defensive fallback image logic
+          data.imageUrl = data.imageUrl || fallbackImage;
+          data.extraImageUrls =
+            Array.isArray(data.extraImageUrls) && data.extraImageUrls.length > 0
+              ? data.extraImageUrls
+              : [fallbackImage];
 
-        setProduct(data);
-        setActiveImage(data.imageUrl);
-      } else {
-        setProduct(null);
+          setProduct(data);
+          setActiveImage(data.imageUrl);
+          setError(null);
+        } else {
+          setProduct(null);
+          setError("Product not found.");
+        }
+      } catch (err) {
+        console.error("Failed to load product:", err);
+        setError("Failed to load product. Please retry.");
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchProduct();
@@ -143,9 +151,10 @@ export default function ProductDetail() {
   };
 
   if (loading) return <p className="text-center py-6">Loading...</p>;
+  if (error) return <p className="text-center py-6 text-red-600">{error}</p>;
   if (!product) return <p className="text-center py-6">Product not found.</p>;
 
-  const allImages = [product.imageUrl, ...product.extraImageUrls];
+  const allImages = [product.imageUrl, ...(product.extraImageUrls || [])].filter(Boolean);
 
   return (
     <>

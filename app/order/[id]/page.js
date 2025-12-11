@@ -34,6 +34,11 @@ export default function OrderDetailPage() {
   if (error) return <div className="p-4 text-red-600">{error}</div>;
   if (!order) return null;
 
+  const createdAt =
+    order.createdAt?.toDate ? order.createdAt.toDate() :
+    Number.isFinite(order.createdAt) ? new Date(order.createdAt) :
+    null;
+
   const total = order.items?.reduce((sum, it) => {
     const price = it.discount > 0 ? it.price * (1 - it.discount / 100) : it.price;
     return sum + price * (it.quantity || 1);
@@ -52,7 +57,9 @@ export default function OrderDetailPage() {
         {order.paymentMethod && (
           <p className="text-xs text-gray-600 mb-2">Payment: {order.paymentMethod.toUpperCase()} ({order.paymentStatus || 'pending'})</p>
         )}
-        <p className="text-xs text-gray-600 mb-4">Placed: {new Date(order.createdAt).toLocaleString()}</p>
+        <p className="text-xs text-gray-600 mb-4">
+          Placed: {createdAt ? createdAt.toLocaleString() : "N/A"}
+        </p>
 
         <h2 className="text-sm font-semibold mb-2">Items</h2>
         <ul className="divide-y divide-gray-200 mb-4">
