@@ -13,6 +13,7 @@ import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import LoadingScreen from "@/components/LoadingScreen";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import Head from "next/head";
 
 // Priority 1: Critical above-the-fold content (SSR enabled)
 const TrendingProducts = dynamic(() => import("@/components/TrendingProducts"), {
@@ -30,7 +31,6 @@ const FeaturedProducts = dynamic(() => import("@/components/FeaturedProducts"), 
   loading: () => (
     <section className="bg-gray/70 pt-0 md:pt-3 pb-0 relative" data-featured-products>
       <div className="max-w-7xl mx-auto px-0">
-        {/* Fixed height container to prevent layout shift */}
         <div className="min-h-[2000px] md:min-h-[1500px]">
           <SkeletonLoader type="product-grid" />
         </div>
@@ -81,88 +81,27 @@ export default function Home() {
   const [recommendationsLoaded, setRecommendationsLoaded] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   
   // Progressive loading states
   const [criticalContentLoaded, setCriticalContentLoaded] = useState(false);
-  const [secondaryContentLoaded, setSecondaryContentLoaded] = useState(false);
 
-
-  // Check if we're on client side
   useEffect(() => {
     setIsClient(true);
-    
-    // Show content when loading screen is ready
     const timer = setTimeout(() => {
       document.documentElement.classList.add('loaded');
     }, 100);
-    
     return () => clearTimeout(timer);
   }, []);
 
-  // Preload critical images for better LCP
-  useEffect(() => {
-    if (!isClient || allProducts.length === 0) return;
-
-    // Preload first few product images
-    const preloadImages = () => {
-      const firstImages = allProducts.slice(0, 6);
-      
-      firstImages.forEach((product, index) => {
-        const imageUrl = product.imageUrl;
-        if (!imageUrl) return;
-        
-        // Get the appropriate image URL based on variant
-        let preloadUrl = imageUrl;
-        if (typeof imageUrl === 'object') {
-          preloadUrl = imageUrl['100x100'] || imageUrl['90x90'] || imageUrl.original || Object.values(imageUrl)[0];
-        }
-        
-        // Create and preload image using native HTML Image constructor
-        const img = new window.Image();
-        img.src = preloadUrl;
-        img.loading = 'eager';
-        img.fetchPriority = index < 3 ? 'high' : 'low';
-        
-        console.log(`🖼️ Preloading image ${index + 1}/6:`, preloadUrl);
-      });
-    };
-
-    // Preload images after a short delay to not block initial render
-    const timer = setTimeout(preloadImages, 100);
-    
-    return () => clearTimeout(timer);
-  }, [isClient, allProducts]);
-
-  // Update trending product preload when trending products load
-  useEffect(() => {
-    if (!isClient || !trendingProductsLoaded) return;
-
-    // This will be called when trending products are loaded
-    // The TrendingProducts component will handle its own preloading
-    console.log('🔥 Trending products loaded, preload hints active');
-  }, [isClient, trendingProductsLoaded]);
-
-  // Progressive loading: Critical content (Trending + Categories)
   useEffect(() => {
     if (trendingProductsLoaded && categoriesLoaded) {
       setCriticalContentLoaded(true);
     }
   }, [trendingProductsLoaded, categoriesLoaded]);
 
-  // Progressive loading: Secondary content (Featured Products)
-  useEffect(() => {
-    if (featuredProductsLoaded) {
-      setSecondaryContentLoaded(true);
-    }
-  }, [featuredProductsLoaded]);
-
-  // Decide whether to show the loading screen for this session (once per browser session)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      // Skip loading screen on back/forward navigations (e.g., returning from product)
       const navEntry = performance.getEntriesByType('navigation')[0];
       const isBackForward = navEntry && navEntry.type === 'back_forward';
       const shownThisSession = sessionStorage.getItem('loadingScreenShown') === '1';
@@ -177,421 +116,174 @@ export default function Home() {
     }
   }, []);
 
-  // Hide loading screen when critical content is ready (faster FCP)
   useEffect(() => {
     if (!showLoadingScreen) return;
     if (criticalContentLoaded) {
       const timer = setTimeout(() => {
         setShowLoadingScreen(false);
-      }, 50); // Minimal delay for smooth transition
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [showLoadingScreen, criticalContentLoaded]);
 
-  // Hide loading screen when all components are loaded
-  useEffect(() => {
-    if (!showLoadingScreen) return;
-    console.log('🔍 Loading states:', {
-      featuredProductsLoaded,
-      categoriesLoaded,
-      trendingProductsLoaded,
-      allProductsLoaded,
-      recommendationsLoaded,
-      loading,
-      showLoadingScreen
-    });
-    
-    if (featuredProductsLoaded && categoriesLoaded && trendingProductsLoaded && allProductsLoaded && recommendationsLoaded && !loading) {
-      console.log('✅ All components loaded, hiding loading screen');
-      setShowLoadingScreen(false);
-    }
-  }, [featuredProductsLoaded, categoriesLoaded, trendingProductsLoaded, allProductsLoaded, recommendationsLoaded, loading, showLoadingScreen]);
-
-  // Fallback: force-hide loading screen after a short timeout to avoid getting stuck on back navigation
-  useEffect(() => {
-    if (!showLoadingScreen) return;
-    const fallback = setTimeout(() => setShowLoadingScreen(false), 1200);
-    return () => clearTimeout(fallback);
-  }, [showLoadingScreen]);
-
-  // Hard guard: always hide loader quickly when on home, regardless of nav type
-  useEffect(() => {
-    setShowLoadingScreen(false);
-    const hardFallback = setTimeout(() => setShowLoadingScreen(false), 500);
-    return () => clearTimeout(hardFallback);
-  }, []);
-
-
-  // Function to clear cache and refresh data
-  const refreshData = () => {
-    if (!isClient) return;
-    
-    console.log('🔄 Manually refreshing data...');
-    
-    try {
-      cacheUtils.clearCache(CACHE_KEYS.MAIN_PRODUCTS);
-      setLoading(true);
-      
-      // Force refresh the page data
-      const fetchProducts = async () => {
-        try {
-          const snapshot = await getDocs(collection(db, "products"));
-          const products = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          
-          setAllProducts(products);
-          
-          // Cache the products for future use
-          cacheUtils.setCache(CACHE_KEYS.MAIN_PRODUCTS, products, CACHE_DURATIONS.MAIN_PRODUCTS);
-          
-          console.log('📦 Fetched and cached products:', products.length);
-        } catch (error) {
-          console.error("Error fetching products:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      fetchProducts();
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-      setLoading(false);
-    }
-  };
-
-  // Listen for page visibility changes to refresh stale cache
   useEffect(() => {
     if (!isClient) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        try {
-          const cacheAge = cacheUtils.getCacheAge(CACHE_KEYS.MAIN_PRODUCTS);
-          if (cacheAge !== null && cacheAge > 10 * 60) { // 10 minutes in seconds
-            console.log('🔄 Page became visible, cache is stale, refreshing...');
-            refreshData();
-          }
-        } catch (error) {
-          console.warn('Error checking cache age:', error);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isClient]);
-
-  useEffect(() => {
-    if (!isClient) return;
-
     const fetchProducts = async () => {
-      // Check if we have cached products first
       const cachedProducts = cacheUtils.getCache(CACHE_KEYS.MAIN_PRODUCTS, CACHE_DURATIONS.MAIN_PRODUCTS);
-      
       if (cachedProducts) {
         setAllProducts(cachedProducts);
         setLoading(false);
         setAllProductsLoaded(true);
-        console.log('📦 Using cached products:', cachedProducts.length);
         return;
       }
-      
       try {
         const snapshot = await getDocs(collection(db, "products"));
         const products = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
-        
         setAllProducts(products);
         setAllProductsLoaded(true);
-        
-        // Cache the products for future use
         cacheUtils.setCache(CACHE_KEYS.MAIN_PRODUCTS, products, CACHE_DURATIONS.MAIN_PRODUCTS);
-        
-        console.log('📦 Fetched and cached products:', products.length);
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, [isClient]);
 
-  // Check if all components are loaded
-  const allComponentsLoaded = featuredProductsLoaded && categoriesLoaded;
-
-  // Show loading spinner only when components are loading
-  const showLoading = loading || !allComponentsLoaded;
-
-  // Internet connection check before loading main page components
-  const [isOnline, setIsOnline] = useState(true);
-  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
-
-  useEffect(() => {
-    if (!isClient) return;
-
-    // Check internet connection
-    const checkConnection = async () => {
-      try {
-        const response = await fetch('https://www.google.com/favicon.ico', { 
-          method: 'HEAD',
-          mode: 'no-cors',
-          cache: 'no-cache'
-        });
-        setIsOnline(true);
-      } catch (error) {
-        console.log('📡 No internet connection detected');
-        setIsOnline(false);
-      } finally {
-        setIsCheckingConnection(false);
-      }
-    };
-
-    checkConnection();
-
-    // Set up online/offline event listeners
-    const handleOnline = () => {
-      console.log('🌐 Internet connection restored');
-      setIsOnline(true);
-    };
-
-    const handleOffline = () => {
-      console.log('📡 Internet connection lost');
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [isClient]);
-
-  // Show connection status and handle loading
-  useEffect(() => {
-    if (!isClient) return;
-
-    if (!isCheckingConnection && !isOnline) {
-      // Show offline message and prevent loading
-      console.log('📡 Offline - preventing component loading');
-      return;
-    }
-
-    if (!isCheckingConnection && isOnline) {
-      // Online - allow normal loading
-      console.log('🌐 Online - allowing component loading');
-    }
-  }, [isClient, showLoading, isOnline, isCheckingConnection]);
-
-  // Basic mobile screenshot prevention only
-  useEffect(() => {
-    if (!isClient) return;
-
-    // Detect mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      console.log('📱 Mobile device detected - applying basic screenshot protection');
-      
-      // Only prevent context menu, allow all touch events for scrolling
-      const preventContextMenu = (e) => {
-        e.preventDefault();
-      };
-
-      document.addEventListener('contextmenu', preventContextMenu);
-      
-      return () => {
-        document.removeEventListener('contextmenu', preventContextMenu);
-      };
-    }
-  }, [isClient]);
-
-  // Don't render anything until client-side
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
-        <CachedLogo
-          variant="loading"
-          width={64}
-          height={64}
-          priority={true}
-          className="h-16 w-auto"
-        />
+        <CachedLogo variant="loading" width={64} height={64} priority={true} className="h-16 w-auto" />
       </div>
     );
   }
 
   return (
     <>
-      {/* Preload critical images for better LCP */}
-      {allProducts.length > 0 && (
-        <>
-          {/* Preload first few product images */}
-          {allProducts.slice(0, 6).map((product, index) => {
-            const imageUrl = product.imageUrl;
-            if (!imageUrl) return null;
-            
-            // Get the appropriate image URL based on variant
-            let preloadUrl = imageUrl;
-            if (typeof imageUrl === 'object') {
-              preloadUrl = imageUrl['100x100'] || imageUrl['90x90'] || imageUrl.original || Object.values(imageUrl)[0];
-            }
-            
-            // Create Next.js optimized URL for preload
-            const optimizedUrl = `/_next/image?url=${encodeURIComponent(preloadUrl)}&w=200&q=75`;
-            
-            return (
-              <link
-                key={`preload-${product.id}`}
-                rel="preload"
-                as="image"
-                href={optimizedUrl}
-                fetchPriority={index < 3 ? "high" : "low"}
-              />
-            );
-          })}
-        </>
-      )}
+      <Head>
+        <title>Heloquip - Quality Medical Equipment</title>
+        <meta name="description" content="Your trusted partner for medical equipment in Uganda" />
+      </Head>
 
-      {/* Preload trending product image (likely LCP element) */}
-      {/* This will be dynamically updated when trending products load */}
-      <link
-        rel="preload"
-        as="image"
-        href="/_next/image?url=https%3A%2F%2Ffirebasestorage.googleapis.com%2Fv0%2Fb%2Fhelloquip-80e20.appspot.com%2Fo%2Fproducts%2Fdental-chair.jpg&w=680&q=75"
-        fetchPriority="high"
-        id="trending-preload"
-      />
-
-      {/* Always show loading screen first to prevent content flash */}
       {showLoadingScreen && (
         <LoadingScreen onComplete={() => setShowLoadingScreen(false)} />
       )}
 
-      {/* Main Layout - Only render when loading screen is hidden */}
       {!showLoadingScreen && (
-        <div className="min-h-screen bg-[#2e4493]" data-page="home">
-        {/* Desktop Layout */}
-        <div className="hidden md:block">
-          <div className="max-w-7xl mx-auto px-1 py-3">
-            {/* Top Row - Categories, Trending Products, and Featured Deal */}
-            <div className="grid grid-cols-[280px_1fr_300px] gap-3 mb-4">
-              {/* Categories */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 mt-2">
-                <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
-                <Categories 
-                  onCategorySelect={setSelectedCategory} 
-                  onLoadComplete={() => setCategoriesLoaded(true)}
+        <div className="min-h-screen bg-gray-50" data-page="home">
+          {/* Desktop Layout */}
+          <div className="hidden md:block">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {/* Hero Section - Grid Layout */}
+              <div className="grid grid-cols-12 gap-6 mb-12">
+                {/* Sidebar Categories */}
+                <aside className="col-span-3 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 h-fit sticky top-24">
+                  <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                    <span className="w-1.5 h-6 bg-[#2e4493] rounded-full mr-3"></span>
+                    Categories
+                  </h2>
+                  <Categories 
+                    onCategorySelect={setSelectedCategory} 
+                    onLoadComplete={() => setCategoriesLoaded(true)}
+                  />
+                </aside>
+
+                {/* Main Hero Content */}
+                <main className="col-span-6 space-y-6">
+                  {/* Trending Slider */}
+                  <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden h-[400px] relative group">
+                    <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
+                  </section>
+
+                  {/* Quick Stats/Features */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center">
+                      <p className="text-[#2e4493] font-bold text-lg">100%</p>
+                      <p className="text-blue-600 text-xs font-medium">Genuine Products</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
+                      <p className="text-green-700 font-bold text-lg">Fast</p>
+                      <p className="text-green-600 text-xs font-medium">Delivery</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100 text-center">
+                      <p className="text-purple-700 font-bold text-lg">24/7</p>
+                      <p className="text-purple-600 text-xs font-medium">Support</p>
+                    </div>
+                  </div>
+                </main>
+
+                {/* Right Side - Featured Deal */}
+                <aside className="col-span-3 space-y-6">
+                  <section className="bg-gradient-to-br from-[#2e4493] to-[#1a2a5e] rounded-3xl p-8 text-white h-[400px] flex flex-col justify-between relative overflow-hidden">
+                    <div className="relative z-10">
+                      <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Limited Offer</span>
+                      <h3 className="text-3xl font-bold mt-4 leading-tight">Premium Medical Supplies</h3>
+                      <p className="text-blue-100 mt-4 text-sm">Get up to 20% off on selected diagnostic equipment this week.</p>
+                    </div>
+                    <button 
+                      onClick={() => window.location.href = '/search'}
+                      className="relative z-10 bg-white text-[#2e4493] w-full py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all shadow-lg active:scale-95"
+                    >
+                      Shop Now
+                    </button>
+                    <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                  </section>
+
+                  <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+                    <h4 className="font-bold text-gray-900 mb-2">Need Help?</h4>
+                    <p className="text-gray-500 text-xs mb-4">Our experts are ready to assist you with your purchase.</p>
+                    <button className="text-[#2e4493] text-sm font-bold hover:underline">Contact Support →</button>
+                  </div>
+                </aside>
+              </div>
+
+              {/* Featured Products Section */}
+              <section className="mb-16">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900">Featured Products</h2>
+                  <button className="text-[#2e4493] font-semibold hover:underline">View All</button>
+                </div>
+                <FeaturedProducts 
+                  selectedCategory={selectedCategory} 
+                  onLoadComplete={() => setFeaturedProductsLoaded(true)}
                 />
               </section>
 
-              {/* Trending Products */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
-                <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
-              </section>
-
-              {/* Featured Deal */}
-              <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
-                <div className="h-full flex flex-col justify-center items-center text-center">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-4">Special Offer</h3>
-                    <p className="text-lg mb-6">Get 20% off on all medical equipment this month!</p>
-                    <button className="bg-white text-green-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-                      Shop Now
-                    </button>
-                  </div>
-                </div>
+              {/* Testimonials Section */}
+              <section className="bg-white rounded-[40px] shadow-sm border border-gray-100 p-12 mb-16">
+                <Testimonials />
               </section>
             </div>
-
-            {/* Featured Products */}
-            <section className="mb-4">
-              <FeaturedProducts 
-                selectedCategory={selectedCategory} 
-                onLoadComplete={() => setFeaturedProductsLoaded(true)}
-                onScrollProgressChange={(progress, hasScrolledAll) => {
-                  setScrollProgress(progress);
-                  setHasScrolledAllProducts(hasScrolledAll);
-                }}
-              />
-            </section>
-
-            {/* Bottom Row - Product Recommendations and Testimonials */}
-            {/* <div className="grid grid-cols-[1fr_300px] gap-3">
-              Product Recommendations
-              <ProductRecommendations limit={6} onLoadComplete={() => setRecommendationsLoaded(true)} />
-            </div> */}
-
-            {/* Customer Testimonials - Full Width */}
-            <section className="bg-white rounded-2xl shadow-sm p-4">
-              <Testimonials />
-            </section>
           </div>
-        </div>
 
-        {/* Mobile Layout */}
-        <div className="block md:hidden">
-          <div className="px-1 py-1">
-
-            {/* Mobile Categories */}
-            <div className="bg-white rounded-xl py-3 mb-1 mt-2">
+          {/* Mobile Layout */}
+          <div className="block md:hidden px-4 py-6 space-y-6">
+            <section>
               <Categories 
                 onCategorySelect={setSelectedCategory} 
                 onLoadComplete={() => setCategoriesLoaded(true)}
               />
-            </div>
-
-            {/* Trending Products */}
-            <section className="bg-white rounded-xl mb-1">
-              <h2 className="hidden text-xl font-bold text-gray-800 mb-3 px-2">Trending Products</h2>
+            </section>
+            <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
             </section>
-
-            {/* Featured Products */}
-            <section className="mb-1">
-              <h2 className="hidden text-xl font-bold text-gray-800 mb-3 px-2">Featured Products</h2>
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Featured Products</h2>
               <FeaturedProducts 
                 selectedCategory={selectedCategory} 
                 onLoadComplete={() => setFeaturedProductsLoaded(true)}
-                onScrollProgressChange={(progress, hasScrolledAll) => {
-                  setScrollProgress(progress);
-                  setHasScrolledAllProducts(hasScrolledAll);
-                }}
               />
             </section>
-
-
-            {/* Product Recommendations - Mobile */}
-            {/* <ProductRecommendations limit={4} onLoadComplete={() => setRecommendationsLoaded(true)} /> */}
-
-            {/* Promotional Banner */}
-            {/* <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white mb-4">
-              <div className="text-center">
-                <h3 className="text-xl font-bold mb-2">Special Offers</h3>
-                <p className="text-sm mb-4">Get amazing deals on medical equipment</p>
-                <button className="bg-white text-blue-600 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-                  View Offers
-                </button>
-              </div>
-            </section> */}
-
-            {/* Customer Testimonials - Mobile */}
-            <section className="bg-white rounded-xl p-4 mb-4">
+            <section className="bg-white rounded-2xl shadow-sm p-6">
               <Testimonials />
             </section>
           </div>
         </div>
-        </div>
       )}
-      
-      {/* Speed Insights for monitoring LCP performance */}
       <SpeedInsights />
     </>
   );
