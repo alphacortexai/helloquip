@@ -13,12 +13,15 @@ import RelatedProducts from "@/components/RelatedProducts";
 import ContactButtons from "@/components/ContactButtons";
 import WishlistButton from "@/components/WishlistButton";
 import ProductComparisonButton from "@/components/ProductComparisonButton";
+import CurrencyDropdown from "@/components/CurrencyDropdown";
 import { CustomerExperienceService } from "@/lib/customerExperienceService";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function ProductDetail() {
   const router = useRouter();
   const { id } = useParams();
   const pathname = usePathname();
+  const { formatPrice, currency } = useCurrency();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -226,15 +229,15 @@ export default function ProductDetail() {
                 <div className="bg-orange-50 border border-orange-200 rounded-full p-4 mb-2 space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-[15px] font-bold text-gray-900">
-                      UGX {(product.discount > 0
+                      {formatPrice(product.discount > 0
                         ? product.price * (1 - product.discount / 100)
                         : product.price
-                      ).toLocaleString()}
+                      )}
                     </span>
                     <div className="flex items-center gap-2">
                       {product.discount > 0 && (
                         <span className="line-through text-gray-500 text-[15px]">
-                          UGX {product.price.toLocaleString()}
+                          {formatPrice(product.price)}
                         </span>
                       )}
                       {product.discount > 0 && (
@@ -242,6 +245,7 @@ export default function ProductDetail() {
                           {`${product.discount}%`}
                         </span>
                       )}
+                      <CurrencyDropdown />
                     </div>
                   </div>
                 </div>

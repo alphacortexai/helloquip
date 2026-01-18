@@ -273,27 +273,27 @@ export default function SearchBar() {
       )}
       <form onSubmit={handleSubmit} className="relative flex items-center gap-2" role="search">
         <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder={getCurrentPlaceholder()}
+        <input
+          type="text"
+          placeholder={getCurrentPlaceholder()}
             className="w-full pl-6 pr-12 md:pr-4 py-2 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-base transition-all duration-300"
-            value={searchTerm}
-            onChange={handleInputChange}
-            onFocus={() => setIsFocused(true)}
-            onKeyDown={handleKeyDown}
-            role="combobox"
-            aria-expanded={isFocused && suggestions.length > 0}
-            aria-controls={listboxId}
-            aria-autocomplete="list"
-            aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${suggestions[highlightedIndex]?.id}` : undefined}
-          />
+          value={searchTerm}
+          onChange={handleInputChange}
+          onFocus={() => setIsFocused(true)}
+          onKeyDown={handleKeyDown}
+          role="combobox"
+          aria-expanded={isFocused && suggestions.length > 0}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${suggestions[highlightedIndex]?.id}` : undefined}
+        />
           {/* Mobile: Icon button inside input */}
           <button 
             type="submit" 
             className="absolute right-3 top-1/2 -translate-y-1/2 md:hidden text-gray-500 hover:text-gray-700" 
             aria-label="Search"
           >
-            <Search className="w-4 h-4" />
+          <Search className="w-4 h-4" />
           </button>
         </div>
         {/* Desktop: Visible search button */}

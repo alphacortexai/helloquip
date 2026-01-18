@@ -487,17 +487,17 @@ export default function Home() {
               <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[444px] flex flex-col overflow-hidden">
                 <h2 className="text-xl font-bold text-gray-800 mb-3 flex-shrink-0">Categories</h2>
                 <div className="flex-1 overflow-y-auto pr-2 categories-scroll">
-                  <Categories 
-                    onCategorySelect={setSelectedCategory} 
-                    onLoadComplete={() => setCategoriesLoaded(true)}
-                  />
+                <Categories 
+                  onCategorySelect={setSelectedCategory} 
+                  onLoadComplete={() => setCategoriesLoaded(true)}
+                />
                 </div>
               </section>
 
               {/* Trending Products */}
               <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[444px] flex flex-col overflow-hidden">
                 <div className="h-full w-full min-h-0 flex flex-col">
-                  <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
+                <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
                 </div>
               </section>
 
