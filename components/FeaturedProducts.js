@@ -181,6 +181,29 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
+      // First, check if we're returning from a product page
+      const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+      const savedProductId = sessionStorage.getItem('restoreProductId');
+      const savedPage = sessionStorage.getItem('restorePage');
+      
+      if (returnFromProduct === '1' && savedProductId) {
+        // Restore pagination state immediately
+        if (savedPage) {
+          const pageNum = parseInt(savedPage, 10);
+          if (pageNum >= 1 && pageNum !== currentPage) {
+            setCurrentPage(pageNum);
+          }
+        }
+        // Set target product for scrolling
+        setTargetProductId(savedProductId);
+        // Clear the flags
+        sessionStorage.removeItem('returnFromProduct');
+        sessionStorage.removeItem('restoreProductId');
+        sessionStorage.removeItem('restorePage');
+        return;
+      }
+      
+      // Fallback to URL hash detection
       const hash = window.location.hash;
       if (hash && hash.startsWith('#p-') && hash.length > 3) {
         const id = hash.slice(3);
@@ -194,6 +217,29 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     if (typeof window === 'undefined') return;
     const handler = () => {
       try {
+        // Check for saved restoration state first (for back navigation from product page)
+        const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+        const savedProductId = sessionStorage.getItem('restoreProductId');
+        const savedPage = sessionStorage.getItem('restorePage');
+        
+        if (returnFromProduct === '1' && savedProductId) {
+          // Restore pagination state immediately
+          if (savedPage) {
+            const pageNum = parseInt(savedPage, 10);
+            if (pageNum >= 1 && pageNum !== currentPage) {
+              setCurrentPage(pageNum);
+            }
+          }
+          // Set target product for scrolling
+          setTargetProductId(savedProductId);
+          // Clear the flags
+          sessionStorage.removeItem('returnFromProduct');
+          sessionStorage.removeItem('restoreProductId');
+          sessionStorage.removeItem('restorePage');
+          return;
+        }
+        
+        // Fallback to URL hash detection
         const hash = window.location.hash;
         if (hash && hash.startsWith('#p-') && hash.length > 3) {
           const id = hash.slice(3);
@@ -207,7 +253,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       window.removeEventListener('pageshow', handler);
       window.removeEventListener('hashchange', handler);
     };
-  }, []);
+  }, [currentPage]);
 
   // If there's a target product hash, ensure it's loaded and scroll to it
   useEffect(() => {
@@ -280,7 +326,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       };
     }
 
-    // Find which page contains the target product
+    // Find which page contains the target product (only if we haven't already set the page from sessionStorage)
     const productIndex = allProducts.findIndex(p => p.id === targetProductId);
     if (productIndex !== -1) {
       // Calculate which page this product is on (same logic for both desktop and mobile)
@@ -292,12 +338,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         targetPage = 2 + Math.floor(remainingIndex / pageSize);
       }
       
+      // Only change page if it's different (avoid unnecessary re-renders)
       if (targetPage !== currentPage) {
         setCurrentPage(targetPage);
       }
-    } else {
-      // Product not found in current batch, give up
-      setTargetProductId(null);
+    } else if (allProducts.length > 0) {
+      // Products are loaded but product not found - might be on a different page
+      // Don't clear targetProductId yet, wait for products to load fully
+      console.warn('Target product not found in current products list, waiting...');
     }
   }, [targetProductId, allProducts, currentPage, initialPageSize, pageSize]);
 
@@ -683,11 +731,15 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
 
   const handleProductClick = async (id) => {
-    // Save scroll position before navigation (only on main page)
+    // Save scroll position and pagination state before navigation (only on main page)
     if (window.location.pathname === '/') {
       saveScrollPosition();
       try {
         sessionStorage.setItem('restoreScrollY', String(window.scrollY));
+        // Save current page number for restoration
+        sessionStorage.setItem('restorePage', String(currentPage));
+        // Save product ID for precise restoration
+        sessionStorage.setItem('restoreProductId', id);
       } catch {}
     }
     
