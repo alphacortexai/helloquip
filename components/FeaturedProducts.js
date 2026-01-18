@@ -435,10 +435,10 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Scroll to products section when page changes (for all pagination clicks)
   useEffect(() => {
     if (currentPage >= 1 && products.length > 0) {
-      // Small delay to ensure products are rendered
+      // Delay to ensure products are rendered
       const scrollTimer = setTimeout(() => {
-        // Check if mobile directly (fallback if state hasn't updated)
-        const isMobileDevice = window.innerWidth < 768;
+        // Check if mobile directly
+        const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
         
         // Try to find the products grid first (more specific)
         const mobileGrid = document.getElementById('products-grid-mobile');
@@ -447,26 +447,36 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         const productsSection = productsGrid || mobileGrid || desktopGrid || document.querySelector('[data-featured-products]');
         
         if (productsSection) {
-          // Use scrollIntoView for better mobile support, with fallback to scrollTo
-          try {
+          // For mobile, use immediate scroll; for desktop, use smooth
+          if (isMobileDevice) {
+            // Mobile: Use immediate scroll for reliability
+            const rect = productsSection.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+            const targetPosition = rect.top + scrollTop;
+            
+            // Scroll immediately on mobile
+            window.scrollTo({
+              top: Math.max(0, targetPosition - 10),
+              behavior: 'auto' // Immediate scroll on mobile
+            });
+            
+            // Also try scrollIntoView as backup
+            setTimeout(() => {
+              productsSection.scrollIntoView({ 
+                behavior: 'auto',
+                block: 'start'
+              });
+            }, 100);
+          } else {
+            // Desktop: Use smooth scroll
             productsSection.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'start',
               inline: 'nearest'
             });
-          } catch (e) {
-            // Fallback for older browsers
-            const rect = productsSection.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
-            const targetPosition = rect.top + scrollTop;
-            
-            window.scrollTo({
-              top: Math.max(0, targetPosition - (isMobileDevice ? 20 : 40)),
-              behavior: 'smooth'
-            });
           }
         }
-      }, 250); // Slightly longer delay for mobile to ensure DOM is fully updated
+      }, isMobile ? 300 : 200); // Longer delay for mobile to ensure DOM is fully updated
       
       return () => clearTimeout(scrollTimer);
     }
@@ -511,8 +521,28 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Handle page change
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
+      const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+      
+      // On mobile, scroll immediately before changing page
+      if (isMobileDevice) {
+        const mobileGrid = document.getElementById('products-grid-mobile');
+        const productsSection = mobileGrid || document.querySelector('[data-featured-products]');
+        
+        if (productsSection) {
+          // Get current position
+          const rect = productsSection.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+          const targetPosition = rect.top + scrollTop;
+          
+          // Scroll immediately to products section
+          window.scrollTo({
+            top: Math.max(0, targetPosition - 20),
+            behavior: 'auto' // Immediate scroll
+          });
+        }
+      }
+      
       setCurrentPage(newPage);
-      // Scroll handling is done in useEffect when currentPage changes
     }
   };
 
