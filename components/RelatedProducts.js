@@ -148,7 +148,7 @@ export default function RelatedProducts({
   manufacturer, 
   name, 
   excludeId,
-  cardVariant = "default" 
+  cardVariant = "compact" 
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -228,9 +228,9 @@ export default function RelatedProducts({
   // Arrow navigation functions
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      // Scroll by approximately one card width (280px mobile, 240px desktop) + gap (16px)
+      // Scroll by approximately one card width (160px mobile, 180px desktop) + gap (16px)
       const isMobile = window.innerWidth < 768;
-      const cardWidth = isMobile ? 280 : 240;
+      const cardWidth = isMobile ? 160 : 180;
       const gap = 16;
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -239,9 +239,9 @@ export default function RelatedProducts({
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      // Scroll by approximately one card width (280px mobile, 240px desktop) + gap (16px)
+      // Scroll by approximately one card width (160px mobile, 180px desktop) + gap (16px)
       const isMobile = window.innerWidth < 768;
-      const cardWidth = isMobile ? 280 : 240;
+      const cardWidth = isMobile ? 160 : 180;
       const gap = 16;
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
@@ -333,7 +333,7 @@ export default function RelatedProducts({
                 <div
                   key={id}
                   onClick={() => handleProductClick(id)}
-                  className="cursor-pointer group flex-shrink-0 snap-start w-[280px] min-w-[280px] max-w-[280px] md:w-[240px] md:min-w-[240px] md:max-w-[240px]"
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[160px] min-w-[160px] max-w-[160px] md:w-[180px] md:min-w-[180px] md:max-w-[180px]"
                 >
                   <ProductCard
                     variant={cardVariant}

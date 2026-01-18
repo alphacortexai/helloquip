@@ -342,7 +342,7 @@ export default function ProductDetail() {
           manufacturer={product?.manufacturer}
           tags={product?.tags}
           excludeId={product.id}
-          cardVariant="default"
+          cardVariant="compact"
         />
       </div>
     </>
