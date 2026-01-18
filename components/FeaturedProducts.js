@@ -440,35 +440,46 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         // Check if mobile directly
         const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
         
-        // Try to find the products grid first (more specific)
-        const mobileGrid = document.getElementById('products-grid-mobile');
-        const desktopGrid = document.getElementById('products-grid');
-        const productsGrid = isMobileDevice ? mobileGrid : desktopGrid;
-        const productsSection = productsGrid || mobileGrid || desktopGrid || document.querySelector('[data-featured-products]');
-        
-        if (productsSection) {
-          // For mobile, use immediate scroll; for desktop, use smooth
-          if (isMobileDevice) {
-            // Mobile: Use immediate scroll for reliability
-            const rect = productsSection.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-            const targetPosition = rect.top + scrollTop;
-            
-            // Scroll immediately on mobile
-            window.scrollTo({
-              top: Math.max(0, targetPosition - 10),
-              behavior: 'auto' // Immediate scroll on mobile
-            });
-            
-            // Also try scrollIntoView as backup
-            setTimeout(() => {
-              productsSection.scrollIntoView({ 
-                behavior: 'auto',
-                block: 'start'
+        if (isMobileDevice) {
+          // Mobile: Try multiple targets
+          const scrollAnchor = document.getElementById('mobile-products-scroll-anchor');
+          const firstProduct = document.querySelector('#products-grid-mobile [id^="p-"]');
+          const mobileGrid = document.getElementById('products-grid-mobile');
+          const productsSection = document.querySelector('[data-featured-products]');
+          
+          // Priority: scroll anchor > first product > mobile grid > section
+          const scrollTarget = scrollAnchor || firstProduct || mobileGrid || productsSection;
+          
+          if (scrollTarget) {
+            // Use requestAnimationFrame for better mobile reliability
+            requestAnimationFrame(() => {
+              const rect = scrollTarget.getBoundingClientRect();
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+              const targetPosition = rect.top + scrollTop;
+              
+              // Scroll immediately on mobile
+              window.scrollTo({
+                top: Math.max(0, targetPosition - 10),
+                behavior: 'auto'
               });
-            }, 100);
-          } else {
-            // Desktop: Use smooth scroll
+              
+              // Backup scrollIntoView
+              setTimeout(() => {
+                if (scrollTarget.scrollIntoView) {
+                  scrollTarget.scrollIntoView({ 
+                    behavior: 'auto',
+                    block: 'start'
+                  });
+                }
+              }, 100);
+            });
+          }
+        } else {
+          // Desktop: Use smooth scroll
+          const desktopGrid = document.getElementById('products-grid');
+          const productsSection = desktopGrid || document.querySelector('[data-featured-products]');
+          
+          if (productsSection) {
             productsSection.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'start',
@@ -476,7 +487,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             });
           }
         }
-      }, isMobile ? 300 : 200); // Longer delay for mobile to ensure DOM is fully updated
+      }, isMobile ? 400 : 200); // Longer delay for mobile to ensure DOM is fully updated
       
       return () => clearTimeout(scrollTimer);
     }
@@ -525,19 +536,37 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       
       // On mobile, scroll immediately before changing page
       if (isMobileDevice) {
+        // Try multiple scroll targets for mobile
+        const scrollAnchor = document.getElementById('mobile-products-scroll-anchor');
         const mobileGrid = document.getElementById('products-grid-mobile');
-        const productsSection = mobileGrid || document.querySelector('[data-featured-products]');
+        const firstProduct = document.querySelector('#products-grid-mobile [id^="p-"]');
+        const productsSection = document.querySelector('[data-featured-products]');
         
-        if (productsSection) {
-          // Get current position
-          const rect = productsSection.getBoundingClientRect();
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-          const targetPosition = rect.top + scrollTop;
-          
-          // Scroll immediately to products section
-          window.scrollTo({
-            top: Math.max(0, targetPosition - 20),
-            behavior: 'auto' // Immediate scroll
+        // Priority: scroll anchor > first product > mobile grid > section
+        const scrollTarget = scrollAnchor || firstProduct || mobileGrid || productsSection;
+        
+        if (scrollTarget) {
+          // Use requestAnimationFrame for better mobile scroll reliability
+          requestAnimationFrame(() => {
+            const rect = scrollTarget.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+            const targetPosition = rect.top + scrollTop;
+            
+            // Scroll immediately to products section
+            window.scrollTo({
+              top: Math.max(0, targetPosition - 10),
+              behavior: 'auto' // Immediate scroll
+            });
+            
+            // Double-check with scrollIntoView as backup
+            setTimeout(() => {
+              if (scrollTarget.scrollIntoView) {
+                scrollTarget.scrollIntoView({ 
+                  behavior: 'auto',
+                  block: 'start'
+                });
+              }
+            }, 50);
           });
         }
       }
@@ -731,7 +760,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         {/* Mobile: two rows after Trending, Recently Viewed, two rows, Latest, then remaining */}
-        <div id="products-grid-mobile" className="sm:hidden">
+        <div id="products-grid-mobile" className="sm:hidden relative">
+          {/* Scroll anchor for mobile pagination */}
+          <div id="mobile-products-scroll-anchor" style={{ position: 'absolute', top: '-20px', left: 0, width: '1px', height: '1px', visibility: 'hidden', pointerEvents: 'none' }} />
           {(() => {
             const firstCount = 4;
             const secondCount = 8;
