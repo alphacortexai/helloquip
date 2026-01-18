@@ -228,10 +228,10 @@ export default function RelatedProducts({
   // Arrow navigation functions
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      // Scroll by approximately one card width (160px mobile, 180px desktop) + gap (16px)
+      // Scroll by approximately one card width (200px mobile, 210px desktop) + gap (2px for gap-0.5)
       const isMobile = window.innerWidth < 768;
-      const cardWidth = isMobile ? 160 : 180;
-      const gap = 16;
+      const cardWidth = isMobile ? 200 : 210;
+      const gap = 2; // gap-0.5 = 2px
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
     }
@@ -239,10 +239,10 @@ export default function RelatedProducts({
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      // Scroll by approximately one card width (160px mobile, 180px desktop) + gap (16px)
+      // Scroll by approximately one card width (200px mobile, 210px desktop) + gap (2px for gap-0.5)
       const isMobile = window.innerWidth < 768;
-      const cardWidth = isMobile ? 160 : 180;
-      const gap = 16;
+      const cardWidth = isMobile ? 200 : 210;
+      const gap = 2; // gap-0.5 = 2px
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
@@ -328,12 +328,12 @@ export default function RelatedProducts({
               scrollBehavior: 'smooth'
             }}
           >
-            <div className="flex gap-4" style={{ width: 'max-content' }}>
+            <div className="flex gap-0.5" style={{ width: 'max-content' }}>
               {products.map(({ id, name, description, price, discount, imageUrl, sku, relevanceScore }, index) => (
                 <div
                   key={id}
                   onClick={() => handleProductClick(id)}
-                  className="cursor-pointer group flex-shrink-0 snap-start w-[160px] min-w-[160px] max-w-[160px] md:w-[180px] md:min-w-[180px] md:max-w-[180px]"
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[200px] min-w-[200px] max-w-[200px] md:w-[210px] md:min-w-[210px] md:max-w-[210px]"
                 >
                   <ProductCard
                     variant={cardVariant}
