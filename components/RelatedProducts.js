@@ -228,9 +228,13 @@ export default function RelatedProducts({
   // Arrow navigation functions
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      // Scroll by approximately one card width (200px mobile, 210px desktop) + gap (2px for gap-0.5)
+      // Scroll by one card width + gap
+      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 3) + 2px
       const isMobile = window.innerWidth < 768;
-      const cardWidth = isMobile ? 200 : 210;
+      const viewportWidth = window.innerWidth;
+      const cardWidth = isMobile 
+        ? (viewportWidth - 64) / 2  // 4rem = 64px
+        : (viewportWidth - 128) / 3; // 8rem = 128px
       const gap = 2; // gap-0.5 = 2px
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -239,9 +243,13 @@ export default function RelatedProducts({
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      // Scroll by approximately one card width (200px mobile, 210px desktop) + gap (2px for gap-0.5)
+      // Scroll by one card width + gap
+      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 3) + 2px
       const isMobile = window.innerWidth < 768;
-      const cardWidth = isMobile ? 200 : 210;
+      const viewportWidth = window.innerWidth;
+      const cardWidth = isMobile 
+        ? (viewportWidth - 64) / 2  // 4rem = 64px
+        : (viewportWidth - 128) / 3; // 8rem = 128px
       const gap = 2; // gap-0.5 = 2px
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
@@ -292,37 +300,11 @@ export default function RelatedProducts({
         </div>
 
         {/* Horizontal scrolling container with arrow navigation */}
-        <div className="relative px-8 md:px-12">
-          {/* Left Arrow Button */}
-          {products.length > 0 && (
-            <button
-              onClick={scrollLeft}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Scroll left"
-            >
-              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-
-          {/* Right Arrow Button */}
-          {products.length > 0 && (
-            <button
-              onClick={scrollRight}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Scroll right"
-            >
-              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-
+        <div className="relative">
           {/* Scrollable Container */}
           <div 
             ref={scrollContainerRef}
-            className="overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            className="overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth px-2"
             style={{
               WebkitOverflowScrolling: 'touch',
               scrollBehavior: 'smooth'
@@ -333,7 +315,7 @@ export default function RelatedProducts({
                 <div
                   key={id}
                   onClick={() => handleProductClick(id)}
-                  className="cursor-pointer group flex-shrink-0 snap-start w-[200px] min-w-[200px] max-w-[200px] md:w-[210px] md:min-w-[210px] md:max-w-[210px]"
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[calc((100vw-4rem)/2)] min-w-[calc((100vw-4rem)/2)] max-w-[calc((100vw-4rem)/2)] md:w-[calc((100vw-8rem)/3)] md:min-w-[calc((100vw-8rem)/3)] md:max-w-[calc((100vw-8rem)/3)]"
                 >
                   <ProductCard
                     variant={cardVariant}
@@ -352,6 +334,32 @@ export default function RelatedProducts({
               ))}
             </div>
           </div>
+
+          {/* Left Arrow Button - Floating on top */}
+          {products.length > 0 && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Scroll left"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Right Arrow Button - Floating on top */}
+          {products.length > 0 && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Scroll right"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {loading && (
