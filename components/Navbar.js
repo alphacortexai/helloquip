@@ -20,8 +20,16 @@ export default function Navbar() {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [notificationItems, setNotificationItems] = useState([]);
   const dropdownRef = useRef();
+  const [skuInput, setSkuInput] = useState("");
+  const [skuLoading, setSkuLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const showSearch = ["/category", "/shop", "/search"].some((path) => pathname.startsWith(path)) || pathname === "/";
+
+  // Only render SKU form on client to avoid hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Auth listener
   useEffect(() => {
@@ -146,6 +154,124 @@ export default function Navbar() {
     }
   };
 
+  // Temporary: Navigate to product by SKU
+  const handleSkuNavigate = async (e) => {
+    e.preventDefault();
+    if (!skuInput.trim()) return;
+    
+    setSkuLoading(true);
+    try {
+      // Find product by SKU
+      const productsRef = collection(db, "products");
+      const q = query(productsRef, where("sku", "==", skuInput.trim().toUpperCase()));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        alert(`Product with SKU "${skuInput.trim()}" not found`);
+        setSkuLoading(false);
+        return;
+      }
+      
+      const productDoc = snapshot.docs[0];
+      const productId = productDoc.id;
+      
+      // Get all products to calculate page number
+      const allProductsSnapshot = await getDocs(productsRef);
+      let allProducts = allProductsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      // Sort products (same logic as FeaturedProducts)
+      allProducts.sort((a, b) => {
+        const aHasOrder = a.displayOrder !== undefined && a.displayOrder !== null;
+        const bHasOrder = b.displayOrder !== undefined && b.displayOrder !== null;
+        if (aHasOrder && bHasOrder) {
+          return (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0);
+        }
+        if (aHasOrder && !bHasOrder) return -1;
+        if (!aHasOrder && bHasOrder) return 1;
+        const aDate = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const bDate = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return aDate - bDate;
+      });
+      
+      // Find product index
+      const productIndex = allProducts.findIndex(p => p.id === productId);
+      
+      if (productIndex === -1) {
+        alert(`Product found but not in sorted list`);
+        setSkuLoading(false);
+        return;
+      }
+      
+      // Calculate page number (same logic as FeaturedProducts)
+      const initialPageSize = 48;
+      const pageSize = 30;
+      let targetPage = 1;
+      if (productIndex < initialPageSize) {
+        targetPage = 1;
+      } else {
+        const remainingIndex = productIndex - initialPageSize;
+        targetPage = 2 + Math.floor(remainingIndex / pageSize);
+      }
+      
+      // Save navigation state
+      try {
+        sessionStorage.setItem('returnFromProduct', '1');
+        sessionStorage.setItem('restoreProductId', productId);
+        sessionStorage.setItem('restorePage', String(targetPage));
+        
+        // Navigate to home page if not already there
+        if (pathname !== '/') {
+          router.push(`/#p-${productId}`);
+        } else {
+          // Already on home page - update hash and trigger navigation
+          // On mobile, we need to be more aggressive with the navigation
+          const isMobile = window.innerWidth < 768;
+          
+          // Set hash first
+          window.location.hash = `#p-${productId}`;
+          
+          // Trigger custom event with multiple attempts for mobile reliability
+          const triggerNavigation = () => {
+            window.dispatchEvent(new CustomEvent('navigateToProduct', { 
+              detail: { productId, page: targetPage } 
+            }));
+          };
+          
+          // Immediate trigger
+          triggerNavigation();
+          
+          // Additional triggers for mobile (more delays)
+          if (isMobile) {
+            setTimeout(triggerNavigation, 200);
+            setTimeout(triggerNavigation, 500);
+            setTimeout(triggerNavigation, 1000);
+          } else {
+            setTimeout(triggerNavigation, 100);
+          }
+          
+          // Also trigger hashchange manually for mobile browsers
+          if (isMobile) {
+            setTimeout(() => {
+              window.dispatchEvent(new Event('hashchange'));
+            }, 300);
+          }
+        }
+      } catch (err) {
+        console.error('Error saving navigation state:', err);
+      }
+      
+      setSkuInput("");
+      setSkuLoading(false);
+    } catch (error) {
+      console.error("Error finding product by SKU:", error);
+      alert(`Error: ${error.message}`);
+      setSkuLoading(false);
+    }
+  };
+
 
 
   return (
@@ -167,6 +293,26 @@ export default function Navbar() {
             {showSearch && (
               <div className="flex-1 hidden md:block max-w-4xl mx-8">
                 <SearchBar />
+                {/* Temporary SKU Navigation - Debug Tool (Client-only to avoid hydration) */}
+                {isMounted && (
+                  <form onSubmit={handleSkuNavigate} className="mt-1 flex items-center gap-1">
+                    <input
+                      type="text"
+                      value={skuInput}
+                      onChange={(e) => setSkuInput(e.target.value)}
+                      placeholder="SKU (temp)"
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      disabled={skuLoading}
+                    />
+                    <button
+                      type="submit"
+                      disabled={skuLoading || !skuInput.trim()}
+                      className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {skuLoading ? "..." : "Go"}
+                    </button>
+                  </form>
+                )}
               </div>
             )}
 
@@ -369,6 +515,26 @@ export default function Navbar() {
           {showSearch && (
             <div className="block md:hidden mt-1">
               <SearchBar />
+              {/* Temporary SKU Navigation - Debug Tool (Client-only to avoid hydration) */}
+              {isMounted && (
+                <form onSubmit={handleSkuNavigate} className="mt-1 flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={skuInput}
+                    onChange={(e) => setSkuInput(e.target.value)}
+                    placeholder="SKU (temp)"
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    disabled={skuLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={skuLoading || !skuInput.trim()}
+                    className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {skuLoading ? "..." : "Go"}
+                  </button>
+                </form>
+              )}
             </div>
           )}
         </div>

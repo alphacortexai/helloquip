@@ -181,35 +181,46 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Detect target product from URL hash on mount (for precise restoration)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      // First, check if we're returning from a product page
-      const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-      const savedProductId = sessionStorage.getItem('restoreProductId');
-      const savedPage = sessionStorage.getItem('restorePage');
-      
-      if (returnFromProduct === '1' && savedProductId) {
-        // Restore pagination state immediately
-        if (savedPage) {
-          const pageNum = parseInt(savedPage, 10);
-          if (pageNum >= 1 && pageNum !== currentPage) {
-            setCurrentPage(pageNum);
+    
+    const checkAndRestore = () => {
+      try {
+        // First, check if we're returning from a product page
+        const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+        const savedProductId = sessionStorage.getItem('restoreProductId');
+        const savedPage = sessionStorage.getItem('restorePage');
+        
+        if (returnFromProduct === '1' && savedProductId) {
+          // Restore pagination state immediately
+          if (savedPage) {
+            const pageNum = parseInt(savedPage, 10);
+            if (pageNum >= 1 && pageNum !== currentPage) {
+              setCurrentPage(pageNum);
+            }
           }
+          // Set target product for scrolling
+          setTargetProductId(savedProductId);
+          // Don't clear the flags yet - wait for scroll restoration to complete
+          // The flags will be cleared after successful scroll restoration
+          return;
         }
-        // Set target product for scrolling
-        setTargetProductId(savedProductId);
-        // Don't clear the flags yet - wait for scroll restoration to complete
-        // The flags will be cleared after successful scroll restoration
-        return;
-      }
-      
-      // Fallback to URL hash detection
-      const hash = window.location.hash;
-      if (hash && hash.startsWith('#p-') && hash.length > 3) {
-        const id = hash.slice(3);
-        if (id) setTargetProductId(id);
-      }
-    } catch {}
-  }, []);
+        
+        // Fallback to URL hash detection
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#p-') && hash.length > 3) {
+          const id = hash.slice(3);
+          if (id) setTargetProductId(id);
+        }
+      } catch {}
+    };
+    
+    // Check immediately
+    checkAndRestore();
+    
+    // Also check after a short delay (for mobile browsers that might delay hash updates)
+    const timeout = setTimeout(checkAndRestore, 100);
+    
+    return () => clearTimeout(timeout);
+  }, [currentPage]);
 
   // Also detect hash on back/forward cache restores and hash changes (mobile browsers often use bfcache)
   useEffect(() => {
@@ -231,10 +242,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           }
           // Set target product for scrolling
           setTargetProductId(savedProductId);
-          // Clear the flags
-          sessionStorage.removeItem('returnFromProduct');
-          sessionStorage.removeItem('restoreProductId');
-          sessionStorage.removeItem('restorePage');
+          // Don't clear the flags yet - wait for scroll restoration to complete
           return;
         }
         
@@ -246,11 +254,33 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         }
       } catch {}
     };
+    
+    // Listen for custom navigation event (from SKU navigation)
+    const handleNavigateToProduct = (event) => {
+      try {
+        const { productId, page } = event.detail;
+        if (productId && page) {
+          console.log('🎯 NavigateToProduct event received:', { productId, page });
+          // Set page first
+          if (page !== currentPage) {
+            setCurrentPage(page);
+          }
+          // Then set target product (will trigger scroll once products load)
+          setTargetProductId(productId);
+        }
+      } catch (err) {
+        console.error('Error handling navigateToProduct event:', err);
+      }
+    };
+    
     window.addEventListener('pageshow', handler);
     window.addEventListener('hashchange', handler);
+    window.addEventListener('navigateToProduct', handleNavigateToProduct);
+    
     return () => {
       window.removeEventListener('pageshow', handler);
       window.removeEventListener('hashchange', handler);
+      window.removeEventListener('navigateToProduct', handleNavigateToProduct);
     };
   }, [currentPage]);
 
