@@ -30,6 +30,7 @@ import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import SkeletonLoader from "./SkeletonLoader";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import { useScrollPosition } from "@/lib/useScrollPosition";
+import Pagination from "./Pagination";
 
 
 // Helper to decode URL and pick preferred size
@@ -72,24 +73,36 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const { saveScrollPosition } = useScrollPosition();
   const { data: session } = useSession();
   const [firebaseUser, setFirebaseUser] = useState(null);
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]); // All fetched products
+  const [products, setProducts] = useState([]); // Currently displayed products (paginated)
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(true); // Keep for latestProducts logic
   const [trendingProductIds, setTrendingProductIds] = useState(new Set());
   const [latestProducts, setLatestProducts] = useState([]);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
   const [targetProductId, setTargetProductId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
-  const batchSize = 30; // 30 products per batch for faster loading
-  const initialLoadSize = 30; // Initial load size - 30 products on first load for better LCP
+  const initialPageSize = 48; // Both desktop and mobile: Show first 48 products
+  const pageSize = 30; // Both desktop and mobile: 30 products per page after initial 48
 
   // Products are now sorted consistently by creation date (oldest first)
   // No more randomization to ensure users can track their progress
 
+
+  // Detect mobile/desktop
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Fetch trending product IDs
   const fetchTrendingProductIds = useCallback(async () => {
@@ -102,136 +115,67 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
   }, []);
 
-  const fetchProducts = useCallback(
-    async (startAfterDoc = null, reset = false, loadSize = batchSize) => {
-      setLoading(true);
-      try {
-        // Debug: Log search criteria
-        console.log('🔍 Search criteria:', { keyword, name, manufacturer, tags, selectedCategory });
-        
-        // Always fetch fresh data - no caching for infinite scroll
-        const constraints = [orderBy("createdAt", "asc")];
+  // Fetch all products for pagination
+  const fetchAllProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('🔍 Fetching all products for pagination...');
+      
+      // Fetch all products without limit - get everything
+      const q = query(collection(db, "products"));
+      const querySnapshot = await getDocs(q);
 
-        if (startAfterDoc) {
-          constraints.push(startAfter(startAfterDoc));
+      let fetchedProducts = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Sort products: displayOrder first (if set by admin), then createdAt
+      fetchedProducts.sort((a, b) => {
+        // Products with displayOrder come first
+        const aHasOrder = a.displayOrder !== undefined && a.displayOrder !== null;
+        const bHasOrder = b.displayOrder !== undefined && b.displayOrder !== null;
+        
+        if (aHasOrder && bHasOrder) {
+          // Ensure displayOrder is treated as a number for proper sorting
+          const aOrder = Number(a.displayOrder) || 0;
+          const bOrder = Number(b.displayOrder) || 0;
+          return aOrder - bOrder;
         }
-
-        // If we have search criteria, fetch more products to account for filtering
-        const hasSearchCriteria = keyword || name || manufacturer || (tags && tags.length);
-        const fetchSize = hasSearchCriteria ? loadSize * 3 : loadSize; // Fetch 3x more if filtering
+        if (aHasOrder && !bHasOrder) return -1;
+        if (!aHasOrder && bHasOrder) return 1;
         
-        console.log(`📊 Fetch strategy: hasSearchCriteria=${hasSearchCriteria}, fetchSize=${fetchSize}, loadSize=${loadSize}`);
-        
-        constraints.push(limit(fetchSize));
+        // Both don't have displayOrder, sort by createdAt
+        const aDate = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const bDate = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return aDate - bDate;
+      });
 
-        const q = query(collection(db, "products"), ...constraints);
-        const querySnapshot = await getDocs(q);
+      // Filter by similarity if search criteria exist
+      if (keyword || name || manufacturer || (tags && tags.length)) {
+        const lowerKeyword = keyword?.trim().toLowerCase();
+        const lowerName = name?.trim().toLowerCase();
+        const lowerManufacturer = manufacturer?.trim().toLowerCase();
+        const tagSet = new Set((tags || []).map((tag) => tag.toLowerCase()));
 
-        const fetchedProducts = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        // Filter by similarity
-        let filteredProducts = fetchedProducts;
-
-        if (keyword || name || manufacturer || (tags && tags.length)) {
-          const lowerKeyword = keyword?.trim().toLowerCase();
-          const lowerName = name?.trim().toLowerCase();
-          const lowerManufacturer = manufacturer?.trim().toLowerCase();
-          const tagSet = new Set((tags || []).map((tag) => tag.toLowerCase()));
-
-          console.log('🔍 Filtering with criteria:', { lowerKeyword, lowerName, lowerManufacturer, tagSet });
-
-          filteredProducts = fetchedProducts.filter((product) => {
-            const nameMatch =
-              lowerKeyword && product.name?.toLowerCase().includes(lowerKeyword);
-            const descMatch =
-              lowerKeyword &&
-              product.description?.toLowerCase().includes(lowerKeyword);
-            const nameSimMatch =
-              lowerName && product.name?.toLowerCase().includes(lowerName);
-            const manufacturerMatch =
-              lowerManufacturer &&
-              product.manufacturer?.toLowerCase().includes(lowerManufacturer);
-            const tagMatch =
-              product.tags &&
-              Array.isArray(product.tags) &&
-              product.tags.some((tag) => tagSet.has(tag.toLowerCase()));
-
-            const matches = nameMatch || descMatch || nameSimMatch || manufacturerMatch || tagMatch;
-            
-            // Debug first few products
-            if (fetchedProducts.indexOf(product) < 3) {
-              console.log(`🔍 Product "${product.name}": nameMatch=${nameMatch}, descMatch=${descMatch}, nameSimMatch=${nameSimMatch}, manufacturerMatch=${manufacturerMatch}, tagMatch=${tagMatch}, final=${matches}`);
-            }
-
-            return matches;
-          });
-
-          console.log(`🔍 Filtering: ${fetchedProducts.length} fetched → ${filteredProducts.length} after filtering`);
-        } else {
-          console.log('🔍 No search criteria, showing all fetched products');
-        }
-
-        // If filtering resulted in very few products, include some unfiltered products as fallback
-        let finalProducts = filteredProducts;
-        if (filteredProducts.length < Math.min(loadSize, 20)) {
-          console.log(`⚠️ Very few filtered products (${filteredProducts.length}), adding fallback products...`);
-          const existingIds = new Set(filteredProducts.map(p => p.id));
-          const fallbackProducts = fetchedProducts
-            .filter(p => !existingIds.has(p.id))
-            .slice(0, loadSize - filteredProducts.length);
-          finalProducts = [...filteredProducts, ...fallbackProducts];
-          console.log(`✅ Added ${fallbackProducts.length} fallback products, total: ${finalProducts.length}`);
-        }
-        
-        // Ensure we always have at least the requested number of products if available
-        if (finalProducts.length < loadSize && fetchedProducts.length >= loadSize) {
-          console.log(`⚠️ Still not enough products (${finalProducts.length}), using more unfiltered products...`);
-          const existingIds = new Set(finalProducts.map(p => p.id));
-          const additionalProducts = fetchedProducts
-            .filter(p => !existingIds.has(p.id))
-            .slice(0, loadSize - finalProducts.length);
-          finalProducts = [...finalProducts, ...additionalProducts];
-          console.log(`✅ Added ${additionalProducts.length} additional products, total: ${finalProducts.length}`);
-        }
-
-        if (reset) {
-          setProducts(finalProducts);
-        } else {
-          setProducts((prev) => {
-            const existingIds = new Set(prev.map((p) => p.id));
-            const newUnique = finalProducts.filter((p) => !existingIds.has(p.id));
-            const combined = [...prev, ...newUnique];
-            
-            console.log(`🔄 Adding products: prev=${prev.length}, new=${finalProducts.length}, unique=${newUnique.length}, combined=${combined.length}`);
-            
-            // If we got very few new products, it might indicate we're hitting duplicates
-            if (newUnique.length < 10 && finalProducts.length >= 30) {
-              console.log(`⚠️ Too many duplicates detected (${newUnique.length} new out of ${finalProducts.length}), this might indicate pagination issues`);
-            }
-            
-            return combined;
-          });
-        }
-
-        const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-        setLastVisible(lastVisibleDoc);
-        
-        // More aggressive hasMore logic - continue if we got a full batch
-        // This ensures we don't miss products due to filtering or other issues
-        const hasMoreProducts = querySnapshot.docs.length === fetchSize;
-        setHasMore(hasMoreProducts);
-        
-        console.log(`📦 Fetched ${fetchedProducts.length} products (requested: ${fetchSize}, filtered: ${filteredProducts.length}, final: ${finalProducts.length}), hasMore: ${hasMoreProducts}`);
-      } catch (err) {
-        console.error("Error fetching products:", err);
+        fetchedProducts = fetchedProducts.filter((product) => {
+          const nameMatch = lowerKeyword && product.name?.toLowerCase().includes(lowerKeyword);
+          const descMatch = lowerKeyword && product.description?.toLowerCase().includes(lowerKeyword);
+          const nameSimMatch = lowerName && product.name?.toLowerCase().includes(lowerName);
+          const manufacturerMatch = lowerManufacturer && product.manufacturer?.toLowerCase().includes(lowerManufacturer);
+          const tagMatch = product.tags && Array.isArray(product.tags) && product.tags.some((tag) => tagSet.has(tag.toLowerCase()));
+          return nameMatch || descMatch || nameSimMatch || manufacturerMatch || tagMatch;
+        });
       }
-      setLoading(false);
-    },
-    [keyword, tags, manufacturer, name, batchSize]
-  );
+
+      setAllProducts(fetchedProducts);
+      console.log(`📦 Fetched ${fetchedProducts.length} products for pagination`);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setAllProducts([]);
+    }
+    setLoading(false);
+  }, [keyword, tags, manufacturer, name]);
 
   // Detect target product from URL hash on mount (for precise restoration)
   useEffect(() => {
@@ -336,14 +280,26 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       };
     }
 
-    if (hasMore && !loading) {
-      // Load more products until the target shows up or we run out
-      fetchProducts(lastVisible, false, batchSize);
-    } else if (!hasMore) {
-      // Give up if no more products
+    // Find which page contains the target product
+    const productIndex = allProducts.findIndex(p => p.id === targetProductId);
+    if (productIndex !== -1) {
+      // Calculate which page this product is on (same logic for both desktop and mobile)
+      let targetPage = 1;
+      if (productIndex < initialPageSize) {
+        targetPage = 1;
+      } else {
+        const remainingIndex = productIndex - initialPageSize;
+        targetPage = 2 + Math.floor(remainingIndex / pageSize);
+      }
+      
+      if (targetPage !== currentPage) {
+        setCurrentPage(targetPage);
+      }
+    } else {
+      // Product not found in current batch, give up
       setTargetProductId(null);
     }
-  }, [targetProductId, products, hasMore, loading, lastVisible, fetchProducts, batchSize]);
+  }, [targetProductId, allProducts, currentPage, initialPageSize, pageSize]);
 
   // Fetch latest uploads (last 2 months up to current hour)
   useEffect(() => {
@@ -424,15 +380,15 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         }
       } catch (e) {
         console.warn('Failed to load latest uploads:', e);
-        // Fallback to first 20 products
-        const fallback = products.length > 0 ? products.slice(0, 20) : [];
+        // Fallback to first 20 products from allProducts
+        const fallback = allProducts.length > 0 ? allProducts.slice(0, 20) : [];
         console.log('Error fallback latest products:', fallback.length);
         setLatestProducts(fallback);
       }
     };
     loadLatest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products.length]);
+  }, [allProducts.length]);
 
   // Fetch trending product IDs on component mount
   useEffect(() => {
@@ -450,7 +406,33 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
   }, [loading, settingsLoading, products.length, recentlyViewedLoaded, onLoadComplete]);
 
-  // Load products when search criteria changes
+  // Paginate products based on current page
+  useEffect(() => {
+    if (allProducts.length === 0) {
+      setProducts([]);
+      return;
+    }
+
+    let startIndex = 0;
+    let endIndex = 0;
+
+    // Both desktop and mobile: First page shows 48, subsequent pages show 30
+    if (currentPage === 1) {
+      startIndex = 0;
+      endIndex = initialPageSize;
+    } else {
+      // Page 2+ starts after 48, then 30 per page
+      startIndex = initialPageSize + (currentPage - 2) * pageSize;
+      endIndex = startIndex + pageSize;
+    }
+
+    const paginatedProducts = allProducts.slice(startIndex, endIndex);
+    setProducts(paginatedProducts);
+    
+    console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
+  }, [allProducts, currentPage, initialPageSize, pageSize]);
+
+  // Fetch all products when search criteria changes
   useEffect(() => {
     const searchCriteria = {
       keyword: keyword || "",
@@ -460,107 +442,43 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     };
     
     const currentCriteriaString = JSON.stringify(searchCriteria);
-    const previousCriteriaString = JSON.stringify({
-      keyword: "",
-      name: "",
-      manufacturer: "",
-      tags: "[]"
-    });
     
-    if (currentCriteriaString !== previousCriteriaString || products.length === 0) {
-      console.log('Search criteria changed, resetting products...');
-      setProducts([]);
-      setLastVisible(null);
-      setHasMore(true);
-      fetchProducts(null, true, initialLoadSize);
-    }
-  }, [keyword, name, manufacturer, tags, fetchProducts, products.length]);
+    console.log('Search criteria changed, fetching all products...');
+    setCurrentPage(1); // Reset to first page
+    fetchAllProducts();
+  }, [keyword, name, manufacturer, tags, fetchAllProducts]);
 
-  // Force refresh on page load to ensure fresh data
+  // Initial fetch on mount
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.pathname === '/') {
-      console.log('🔄 Page loaded, forcing fresh product fetch...');
-      setProducts([]);
-      setLastVisible(null);
-      setHasMore(true);
-      fetchProducts(null, true, initialLoadSize);
+      console.log('🔄 Page loaded, fetching all products...');
+      fetchAllProducts();
     }
-  }, []); // Only run once on mount
+  }, [fetchAllProducts]);
 
-  // Auto-load products to ensure users always have content
-  useEffect(() => {
-    const autoLoadProducts = () => {
-      // If we have fewer than 60 products and there are more to load, auto-load
-      if (products.length < 60 && hasMore && !loading) {
-        console.log('🔄 Auto-loading more products to ensure minimum content...');
-        fetchProducts(lastVisible, false, batchSize);
-      }
-    };
-
-    // Auto-load after a short delay to ensure initial load is complete
-    const timer = setTimeout(autoLoadProducts, 2000);
+  // Calculate total pages
+  const calculateTotalPages = () => {
+    if (allProducts.length === 0) return 1;
     
-    // Also auto-load when user is idle (no scroll for 3 seconds)
-    let idleTimer;
-    const handleUserActivity = () => {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        if (products.length < 90 && hasMore && !loading) {
-          console.log('🔄 Auto-loading more products during idle time...');
-          fetchProducts(lastVisible, false, batchSize);
-        }
-      }, 3000);
-    };
+    // Both desktop and mobile: First page has 48, rest have 30
+    if (allProducts.length <= initialPageSize) return 1;
+    const remainingProducts = allProducts.length - initialPageSize;
+    return 1 + Math.ceil(remainingProducts / pageSize);
+  };
 
-    // Listen for scroll and mouse movement to detect user activity
-    window.addEventListener('scroll', handleUserActivity);
-    window.addEventListener('mousemove', handleUserActivity);
-    
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(idleTimer);
-      window.removeEventListener('scroll', handleUserActivity);
-      window.removeEventListener('mousemove', handleUserActivity);
-    };
-  }, [products.length, hasMore, loading, lastVisible, fetchProducts, batchSize]);
+  const totalPages = calculateTotalPages();
 
-  // Simple infinite scroll for main page only
-  useEffect(() => {
-    if (window.location.pathname !== '/') return;
-
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const scrollY = window.scrollY;
-      const documentHeight = document.body.offsetHeight;
-      const threshold = 1200; // Increased threshold for more aggressive loading
-      const shouldLoadMore = windowHeight + scrollY >= documentHeight - threshold;
-      
-      if (shouldLoadMore && !loading && hasMore) {
-        console.log('🔄 Loading more products due to scroll...');
-        fetchProducts(lastVisible, false, batchSize);
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      // Scroll to top of products section
+      const productsSection = document.querySelector('[data-featured-products]');
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-
-      // Calculate scroll progress through products
-      const featuredProductsSection = document.querySelector('[data-featured-products]');
-      if (featuredProductsSection) {
-        const sectionTop = featuredProductsSection.offsetTop;
-        const sectionHeight = featuredProductsSection.offsetHeight;
-        const scrollProgress = Math.min(Math.max((scrollY - sectionTop + windowHeight) / sectionHeight, 0), 1);
-        setScrollProgress(scrollProgress);
-        
-        // Check if user has scrolled through all products (90% of section)
-        setHasScrolledAllProducts(scrollProgress >= 0.9);
-        
-        // Pass scroll progress to parent component
-        if (onScrollProgressChange) {
-          onScrollProgressChange(scrollProgress, scrollProgress >= 0.9);
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [fetchProducts, loading, hasMore, lastVisible, batchSize]);
+    }
+  };
 
   // Function to track product views for recent section
   const trackProductView = async (userId, productId) => {
@@ -890,40 +808,17 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           })()}
         </div>
 
-        {loading && hasMore && (
-          <p className="text-center text-gray-600">Loading more products...</p>
+        {loading && (
+          <p className="text-center text-gray-600 py-4">Loading products...</p>
         )}
         
-        {/* View More / Scroll to Top button */}
-        {!loading && products.length > 0 && (
-          <div className="text-center py-2">
-            <button 
-              onClick={() => {
-                if (hasMore) {
-                  console.log('🔄 Manual load more triggered...');
-                  console.log('📊 Current state:', { 
-                    currentProducts: products.length, 
-                    hasMore, 
-                    lastVisible: lastVisible?.id,
-                    batchSize 
-                  });
-                  setHasMore(true);
-                  fetchProducts(lastVisible, false, batchSize);
-                } else {
-                  // Scroll to top when all products are loaded
-                  console.log('⬆️ Scrolling to top...');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }}
-              className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
-                hasMore 
-                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              }`}
-            >
-              {hasMore ? 'View More Products' : 'Scroll to Top'}
-            </button>
-          </div>
+        {/* Pagination - Show if we have products and more than 1 page */}
+        {!loading && allProducts.length > initialPageSize && (
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
 

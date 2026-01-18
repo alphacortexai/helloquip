@@ -147,7 +147,7 @@
 
 
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 
@@ -182,8 +182,57 @@ const getPreferredImageUrl = (imageUrl, size = "680x680") => {
 
 export default function ImageGallery({ images, activeImage, onSelect }) {
   const [showFullView, setShowFullView] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const imageContainerRef = useRef(null);
+  const hasSwiped = useRef(false);
 
-  const handleImageClick = () => {
+  // Get current image index
+  const currentIndex = images.findIndex(img => img === activeImage);
+  
+  // Handle swipe gestures on mobile
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    hasSwiped.current = false;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // Minimum distance for a swipe
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      hasSwiped.current = true;
+      if (distance > 0) {
+        // Swiped left - next image
+        const nextIndex = (currentIndex + 1) % images.length;
+        onSelect(images[nextIndex]);
+      } else {
+        // Swiped right - previous image
+        const prevIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+        onSelect(images[prevIndex]);
+      }
+    }
+
+    // Reset after a short delay to allow click event to check hasSwiped
+    setTimeout(() => {
+      touchStartX.current = 0;
+      touchEndX.current = 0;
+      hasSwiped.current = false;
+    }, 100);
+  };
+
+  const handleImageClick = (e) => {
+    // Prevent opening fullscreen if user just swiped
+    if (hasSwiped.current) {
+      e.preventDefault();
+      return;
+    }
     if (activeImage) setShowFullView(true);
   };
 
@@ -218,9 +267,13 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
     <div className="bg-white shadow-sm py-2">
     {/* Main Preview */}
     <div
-    className="w-full relative cursor-pointer"
+    ref={imageContainerRef}
+    className="w-full relative cursor-pointer select-none"
     style={{ paddingBottom: '100%' }} // Changed from 75% to 100% for taller images
     onClick={handleImageClick}
+    onTouchStart={handleTouchStart}
+    onTouchMove={handleTouchMove}
+    onTouchEnd={handleTouchEnd}
     >
     {activeImage ? (
         <Image
@@ -236,37 +289,49 @@ export default function ImageGallery({ images, activeImage, onSelect }) {
     </div>
 
 
-    {/* Thumbnails */}
-    <div className="flex gap-2 overflow-x-auto mt-2 px-4">
-        {Array.from({ length: 5 }).map((_, index) => {
-        const thumb = images[index];
-        return thumb ? (
-            <div
+    {/* Image Indicators (Mobile) - Dots */}
+    {images.length > 1 && (
+      <div className="flex justify-center gap-2 mt-2 md:hidden">
+        {images.map((img, index) => (
+          <div
             key={index}
-            className={`w-10 h-10 relative rounded-lg overflow-hidden border cursor-pointer ${
-                activeImage === thumb
-                ? "border-blue-500"
-                : "border-gray-200"
+            className={`h-2 rounded-full transition-all ${
+              activeImage === img ? "w-6 bg-blue-500" : "w-2 bg-gray-300"
             }`}
-            onClick={() => onSelect(thumb)}
-            >
-            <Image
-              src={getPreferredImageUrl(thumb, "200x200")}
-              alt={`thumbnail-${index}`}
-              fill
-              sizes="40px" // 👈 or whatever width your thumbnail occupies
-              className="object-cover"
-            />
+          />
+        ))}
+      </div>
+    )}
 
-            </div>
-        ) : (
+    {/* Thumbnails - Only show actual images, no blank placeholders */}
+    {images.length > 0 && (
+      <div className="flex gap-2 overflow-x-auto mt-2 px-4">
+        {images.map((thumb, index) => {
+          const thumbUrl = getPreferredImageUrl(thumb, "200x200");
+          if (!thumbUrl) return null;
+          
+          return (
             <div
-            key={index}
-            className="w-10 h-10 bg-gray-200 rounded-lg border border-gray-300"
-            />
-        );
+              key={index}
+              className={`w-10 h-10 relative rounded-lg overflow-hidden border cursor-pointer flex-shrink-0 ${
+                activeImage === thumb
+                  ? "border-blue-500"
+                  : "border-gray-200"
+              }`}
+              onClick={() => onSelect(thumb)}
+            >
+              <Image
+                src={thumbUrl}
+                alt={`thumbnail-${index}`}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+          );
         })}
-    </div>
+      </div>
+    )}
     </div>
 
     </>

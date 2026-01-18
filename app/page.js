@@ -480,21 +480,25 @@ export default function Home() {
         <div className="min-h-screen bg-[#2e4493]" data-page="home">
         {/* Desktop Layout */}
         <div className="hidden md:block">
-          <div className="max-w-7xl mx-auto px-1 py-3">
+          <div className="max-w-7xl mx-auto px-1 pt-2 pb-3">
             {/* Top Row - Categories, Trending Products, and Featured Deal */}
             <div className="grid grid-cols-[280px_1fr_300px] gap-3 mb-4">
               {/* Categories */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 mt-2">
-                <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
-                <Categories 
-                  onCategorySelect={setSelectedCategory} 
-                  onLoadComplete={() => setCategoriesLoaded(true)}
-                />
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[444px] flex flex-col overflow-hidden">
+                <h2 className="text-xl font-bold text-gray-800 mb-3 flex-shrink-0">Categories</h2>
+                <div className="flex-1 overflow-y-auto pr-2 categories-scroll">
+                  <Categories 
+                    onCategorySelect={setSelectedCategory} 
+                    onLoadComplete={() => setCategoriesLoaded(true)}
+                  />
+                </div>
               </section>
 
               {/* Trending Products */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
-                <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[444px] flex flex-col overflow-hidden">
+                <div className="h-full w-full min-h-0 flex flex-col">
+                  <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
+                </div>
               </section>
 
               {/* Featured Deal */}

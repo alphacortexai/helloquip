@@ -35,6 +35,7 @@ import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
 import ProductControl from "./components/ProductControl";
 import ProductSuggestions from "./components/ProductSuggestions";
+import ProductReorder from "./components/ProductReorder";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -54,6 +55,7 @@ import {
   CogIcon,
   BellIcon,
   StarIcon,
+  ArrowsUpDownIcon,
 } from "@heroicons/react/24/outline";
 
 const tabs = [
@@ -293,6 +295,15 @@ const tabs = [
     bgColor: "bg-yellow-50",
     borderColor: "border-yellow-100"
   },
+  {
+    id: "reorderProducts",
+    icon: <ArrowsUpDownIcon className="w-5 h-5" />,
+    label: "Reorder Products",
+    description: "Shuffle and set product display order",
+    color: "text-violet-600",
+    bgColor: "bg-violet-50",
+    borderColor: "border-violet-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -460,6 +471,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <ProductControl />;
       case "productSuggestions":
         return <ProductSuggestions />;
+      case "reorderProducts":
+        return <ProductReorder />;
       default:
         return null;
     }

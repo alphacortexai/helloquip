@@ -109,3 +109,24 @@ main {
   transform: translateY(-10px);
   transition: opacity 200ms, transform 200ms;
 }
+
+/* Custom scrollbar for desktop categories section */
+@media (min-width: 768px) {
+  .categories-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .categories-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  .categories-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+  
+  .categories-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+}

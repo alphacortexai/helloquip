@@ -235,16 +235,16 @@ export default function TrendingProducts({ onLoadComplete }) {
 
 
       {/* Desktop Slide Carousel */}
-      <div className="hidden md:block h-full flex items-start justify-center relative">
-        <div className="w-full h-full relative">
+      <div className="hidden md:block h-full w-full min-h-0 flex items-center justify-center relative">
+        <div className="w-full h-full min-h-0 relative">
           {products.map((product, index) => (
             <div
               key={product.id}
-              className={`absolute inset-0 ${
-                index === currentSlide ? "opacity-100" : "opacity-0"
+              className={`absolute inset-0 transition-opacity duration-300 ${
+                index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
               }`}
             >
-              <div className="w-full" id={`trend-${product.id}`}>
+              <div className="w-full h-full flex items-center" id={`trend-${product.id}`}>
                 <ProductCard
                   product={product}
                   variant="carousel"

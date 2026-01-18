@@ -44,12 +44,24 @@ export default function ProductDetail() {
         if (docSnap.exists()) {
           const data = { id: docSnap.id, ...docSnap.data() };
 
-          // ✅ Defensive fallback image logic
+          // ✅ Defensive fallback image logic - only use fallback for main image if missing
           data.imageUrl = data.imageUrl || fallbackImage;
+          // Don't add fallback to extraImageUrls - only include actual extra images
           data.extraImageUrls =
             Array.isArray(data.extraImageUrls) && data.extraImageUrls.length > 0
-              ? data.extraImageUrls
-              : [fallbackImage];
+              ? data.extraImageUrls.filter(img => {
+                  if (!img) return false;
+                  if (typeof img === 'string') {
+                    return img.trim().length > 0;
+                  }
+                  // For object URLs, check if they have valid values
+                  if (typeof img === 'object') {
+                    const values = Object.values(img);
+                    return values.some(val => val && typeof val === 'string' && val.trim().length > 0);
+                  }
+                  return true;
+                })
+              : [];
 
           setProduct(data);
           setActiveImage(data.imageUrl);
@@ -164,7 +176,34 @@ export default function ProductDetail() {
         }))
       : [];
 
-  const allImages = [product.imageUrl, ...(product.extraImageUrls || [])].filter(Boolean);
+  // Filter out empty, null, undefined, or invalid image URLs
+  const allImages = [
+    product.imageUrl,
+    ...(product.extraImageUrls || [])
+  ].filter(img => {
+    if (!img) return false;
+    
+    // Filter out empty strings, whitespace-only strings
+    if (typeof img === 'string') {
+      const trimmed = img.trim();
+      // Keep the image if it's not empty and not just whitespace
+      return trimmed.length > 0;
+    }
+    
+    // For object URLs (multiple sizes), check if they have valid values
+    if (typeof img === 'object') {
+      const values = Object.values(img);
+      return values.some(val => {
+        if (!val) return false;
+        if (typeof val === 'string') {
+          return val.trim().length > 0;
+        }
+        return true;
+      });
+    }
+    
+    return true;
+  });
 
   return (
     <>

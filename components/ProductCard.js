@@ -158,7 +158,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderCarousel = () => (
     <div 
-      className={`relative bg-white rounded-2xl overflow-hidden hover:shadow-md transition flex w-full h-[400px] max-w-5xl mx-auto cursor-pointer`}
+      className={`relative bg-white rounded-2xl overflow-hidden hover:shadow-md transition flex w-full h-full max-w-5xl mx-auto cursor-pointer`}
+      style={{ maxHeight: '100%', height: '100%' }}
       onClick={onClick}
     >
       

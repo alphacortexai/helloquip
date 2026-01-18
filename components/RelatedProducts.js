@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -153,14 +153,13 @@ export default function RelatedProducts({
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
   const [isShowingFallback, setIsShowingFallback] = useState(false);
+  const scrollContainerRef = useRef(null);
   const router = useRouter();
-  const batchSize = 20;
+  const maxProducts = 20; // Limit to 20 products total
 
   const fetchRelatedProducts = useCallback(
-    async (startAfterDoc = null, reset = false) => {
+    async () => {
       setLoading(true);
       try {
         // Build search criteria
@@ -172,14 +171,8 @@ export default function RelatedProducts({
           keyword: keyword || ''
         };
         
-        // Get a larger batch to filter and score
-        const constraints = [orderBy("name")];
-        if (startAfterDoc) {
-          constraints.push(startAfter(startAfterDoc));
-        }
-        constraints.push(limit(batchSize * 3)); // Get more to filter
-
-        const q = query(collection(db, "products"), ...constraints);
+        // Get all products to filter and score
+        const q = query(collection(db, "products"), orderBy("name"), limit(maxProducts * 3));
         const querySnapshot = await getDocs(q);
 
         let allProducts = querySnapshot.docs.map((doc) => ({
@@ -208,62 +201,44 @@ export default function RelatedProducts({
         let finalProducts;
         if (relatedProducts.length >= 1) {
           // We have at least 1 related product - show related products
-          finalProducts = relatedProducts.slice(0, batchSize);
+          finalProducts = relatedProducts.slice(0, maxProducts);
           setIsShowingFallback(false);
         } else {
           // No related products found, use fallback
-          finalProducts = fallbackProducts.slice(0, batchSize);
+          finalProducts = fallbackProducts.slice(0, maxProducts);
           setIsShowingFallback(true);
         }
 
-        if (reset) {
-          setProducts(finalProducts);
-        } else {
-          setProducts((prev) => {
-            const existingIds = new Set(prev.map((p) => p.id));
-            const newUnique = finalProducts.filter((p) => !existingIds.has(p.id));
-            return [...prev, ...newUnique];
-          });
-        }
-
-        const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-        setLastVisible(lastVisibleDoc);
-        const hasMoreProducts = querySnapshot.docs.length === batchSize * 3;
-        setHasMore(hasMoreProducts);
+        setProducts(finalProducts);
       } catch (err) {
         console.error("Error fetching related products:", err);
       }
       setLoading(false);
     },
-    [selectedCategory, keyword, tags, manufacturer, excludeId, name]
+    [selectedCategory, keyword, tags, manufacturer, excludeId, name, maxProducts]
   );
 
   // Load products when component mounts or props change
   useEffect(() => {
     setProducts([]);
-    setLastVisible(null);
-    setHasMore(true);
     setIsShowingFallback(false);
-    fetchRelatedProducts(null, true);
+    fetchRelatedProducts();
   }, [selectedCategory, keyword, manufacturer, tags, name, fetchRelatedProducts]);
 
-  // Simple infinite scroll for related products
-  useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const scrollY = window.scrollY;
-      const documentHeight = document.body.offsetHeight;
-      const threshold = 600;
-      const shouldLoadMore = windowHeight + scrollY >= documentHeight - threshold;
-      
-      if (shouldLoadMore && !loading && hasMore) {
-        fetchRelatedProducts(lastVisible, false);
-      }
-    };
+  // Arrow navigation functions
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = scrollContainerRef.current.clientWidth;
+      scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [fetchRelatedProducts, loading, hasMore, lastVisible]);
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = scrollContainerRef.current.clientWidth;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const handleProductClick = (id) => {
     // Save current scroll position for this path before navigating
@@ -308,34 +283,65 @@ export default function RelatedProducts({
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
-          {products.map(({ id, name, description, price, discount, imageUrl, sku, relevanceScore }, index) => (
-            <div
-              key={id}
-              onClick={() => handleProductClick(id)}
-              className="cursor-pointer group"
-            >
-              <ProductCard
-                variant={cardVariant}
-                isFirst={index === 0}
-                product={{
-                  id,
-                  name,
-                  description,
-                  sku,
-                  price,
-                  discount,
-                  image: getPreferredImageUrl(imageUrl),
-                }}
-              />
+        {/* Horizontal scrolling container with arrow navigation */}
+        <div className="relative">
+          {/* Left Arrow Button */}
+          <button
+            onClick={scrollLeft}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110"
+            aria-label="Scroll left"
+          >
+            <svg className="w-6 h-6 md:w-8 md:h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Right Arrow Button */}
+          <button
+            onClick={scrollRight}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110"
+            aria-label="Scroll right"
+          >
+            <svg className="w-6 h-6 md:w-8 md:h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          {/* Scrollable Container */}
+          <div 
+            ref={scrollContainerRef}
+            className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory"
+          >
+            <div className="flex gap-4" style={{ width: 'max-content' }}>
+              {products.map(({ id, name, description, price, discount, imageUrl, sku, relevanceScore }, index) => (
+                <div
+                  key={id}
+                  onClick={() => handleProductClick(id)}
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[calc(50vw-2rem)] md:w-[calc(25vw-2rem)]"
+                >
+                  <ProductCard
+                    variant={cardVariant}
+                    isFirst={index === 0}
+                    product={{
+                      id,
+                      name,
+                      description,
+                      sku,
+                      price,
+                      discount,
+                      image: getPreferredImageUrl(imageUrl),
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
-        {loading && hasMore && (
+        {loading && (
           <div className="text-center py-6">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500 mx-auto"></div>
-            <p className="text-gray-600 text-sm mt-2">Loading more products...</p>
+            <p className="text-gray-600 text-sm mt-2">Loading products...</p>
           </div>
         )}
       </div>
