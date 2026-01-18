@@ -699,7 +699,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {/* Recently Viewed Products - Embedded */}
                 <div className="mt-1 mb-1">
                   <RecentlyViewedProducts 
-                    limit={4} 
+                    limit={8} 
                     showTitle={true} 
                     onLoadComplete={() => setRecentlyViewedLoaded(true)}
                   />
