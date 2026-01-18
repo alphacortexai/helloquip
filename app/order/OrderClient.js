@@ -557,7 +557,7 @@ export default function OrderClient() {
                         checked={safeAddress.customerType === 'individual'}
                         onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
                       />
-                      <span>Individual</span>
+                      <span className="font-bold text-black">Individual</span>
                     </label>
                     <label className="inline-flex items-center gap-2">
                       <input
@@ -567,7 +567,7 @@ export default function OrderClient() {
                         checked={safeAddress.customerType === 'company'}
                         onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
                       />
-                      <span>Company / Institution</span>
+                      <span className="font-bold text-black">Company / Institution</span>
                     </label>
                   </div>
                 </div>
