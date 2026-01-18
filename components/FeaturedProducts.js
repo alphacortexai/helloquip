@@ -432,6 +432,32 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
   }, [allProducts, currentPage, initialPageSize, pageSize]);
 
+  // Scroll to products section when page changes (for mobile pagination)
+  useEffect(() => {
+    if (currentPage > 1 && products.length > 0) {
+      // Small delay to ensure products are rendered
+      const scrollTimer = setTimeout(() => {
+        // Try to find the products grid first (more specific)
+        const productsGrid = document.getElementById(isMobile ? 'products-grid-mobile' : 'products-grid');
+        const productsSection = productsGrid || document.querySelector('[data-featured-products]');
+        
+        if (productsSection) {
+          const rect = productsSection.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const targetPosition = rect.top + scrollTop;
+          
+          // Scroll to products section with offset for mobile
+          window.scrollTo({
+            top: Math.max(0, targetPosition - (isMobile ? 20 : 40)),
+            behavior: 'smooth'
+          });
+        }
+      }, 200); // Slightly longer delay to ensure DOM is updated
+      
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [currentPage, products.length, isMobile]);
+
   // Fetch all products when search criteria changes
   useEffect(() => {
     const searchCriteria = {
@@ -472,11 +498,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      // Scroll to top of products section
-      const productsSection = document.querySelector('[data-featured-products]');
-      if (productsSection) {
-        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      // Scroll handling is done in useEffect when currentPage changes
     }
   };
 
@@ -643,7 +665,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         {/* Desktop/Tablet: original grid */}
-        <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
+        <div id="products-grid" className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
             <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
               <ProductCard
@@ -665,7 +687,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         {/* Mobile: two rows after Trending, Recently Viewed, two rows, Latest, then remaining */}
-        <div className="sm:hidden">
+        <div id="products-grid-mobile" className="sm:hidden">
           {(() => {
             const firstCount = 4;
             const secondCount = 8;
