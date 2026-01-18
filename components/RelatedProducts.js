@@ -148,7 +148,7 @@ export default function RelatedProducts({
   manufacturer, 
   name, 
   excludeId,
-  cardVariant = "landscapemain" 
+  cardVariant = "default" 
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -228,14 +228,22 @@ export default function RelatedProducts({
   // Arrow navigation functions
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      const scrollAmount = scrollContainerRef.current.clientWidth;
+      // Scroll by approximately one card width (280px mobile, 240px desktop) + gap (16px)
+      const isMobile = window.innerWidth < 768;
+      const cardWidth = isMobile ? 280 : 240;
+      const gap = 16;
+      const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      const scrollAmount = scrollContainerRef.current.clientWidth;
+      // Scroll by approximately one card width (280px mobile, 240px desktop) + gap (16px)
+      const isMobile = window.innerWidth < 768;
+      const cardWidth = isMobile ? 280 : 240;
+      const gap = 16;
+      const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -284,40 +292,48 @@ export default function RelatedProducts({
         </div>
 
         {/* Horizontal scrolling container with arrow navigation */}
-        <div className="relative">
+        <div className="relative px-8 md:px-12">
           {/* Left Arrow Button */}
-          <button
-            onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110"
-            aria-label="Scroll left"
-          >
-            <svg className="w-6 h-6 md:w-8 md:h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+          {products.length > 0 && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Scroll left"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
 
           {/* Right Arrow Button */}
-          <button
-            onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110"
-            aria-label="Scroll right"
-          >
-            <svg className="w-6 h-6 md:w-8 md:h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          {products.length > 0 && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Scroll right"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
 
           {/* Scrollable Container */}
           <div 
             ref={scrollContainerRef}
-            className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory"
+            className="overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollBehavior: 'smooth'
+            }}
           >
             <div className="flex gap-4" style={{ width: 'max-content' }}>
               {products.map(({ id, name, description, price, discount, imageUrl, sku, relevanceScore }, index) => (
                 <div
                   key={id}
                   onClick={() => handleProductClick(id)}
-                  className="cursor-pointer group flex-shrink-0 snap-start w-[calc(50vw-2rem)] md:w-[calc(25vw-2rem)]"
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[280px] min-w-[280px] max-w-[280px] md:w-[240px] md:min-w-[240px] md:max-w-[240px]"
                 >
                   <ProductCard
                     variant={cardVariant}
