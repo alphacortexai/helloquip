@@ -70,6 +70,7 @@ import { CartProvider } from "@/components/CartContext";
 import { ProductSettingsProvider } from "@/hooks/useProductSettings";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import InstallPrompt from "@/components/InstallPrompt";
+import CustomerServiceChat from "@/components/CustomerServiceChat";
 import { useEffect } from "react";
 
 export default function ClientWrapper({ children }) {
@@ -92,6 +93,7 @@ export default function ClientWrapper({ children }) {
             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
             <NotificationSetup />
             <InstallPrompt />
+            <CustomerServiceChat />
           </CartProvider>
         </CurrencyProvider>
       </ProductSettingsProvider>

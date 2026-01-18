@@ -307,10 +307,16 @@ export default function AdminChatPanel({ selectedUserId = null }) {
           const isUnread = !msg.read && msg.to === "admin";
           const profile = userProfiles[userId];
 
+          // Check if user is anonymous (device ID)
+          const isAnonymous = msg.isAnonymous || userId.startsWith('device_') || userId.startsWith('anonymous_');
+          const displayName = profile?.name || msg.userEmail || (isAnonymous ? `Guest (${userId.substring(0, 15)}...)` : userId);
+          const displayEmail = profile?.email || msg.userEmail || (isAnonymous ? 'Anonymous User' : userId);
+
           userMap.set(userId, {
             id: userId,
-            name: profile?.name || msg.userEmail || userId,
-            email: profile?.email || msg.userEmail || userId,
+            name: displayName,
+            email: displayEmail,
+            isAnonymous: isAnonymous,
             unreadCount: existing.unreadCount + (isUnread ? 1 : 0),
           });
         }
@@ -410,7 +416,12 @@ export default function AdminChatPanel({ selectedUserId = null }) {
                 >
                   <UserAvatar label={user.name} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{user.name || user.email}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900 truncate">{user.name || user.email}</p>
+                      {user.isAnonymous && (
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Guest</span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 truncate">{user.email}</p>
                   </div>
                   {user.unreadCount > 0 && (
@@ -443,7 +454,12 @@ export default function AdminChatPanel({ selectedUserId = null }) {
         </button>
         <UserAvatar label={selectedUser.name} size="lg" />
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white text-lg truncate">{selectedUser.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-white text-lg truncate">{selectedUser.name}</h3>
+            {selectedUser.isAnonymous && (
+              <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Guest</span>
+            )}
+          </div>
           <p className="text-green-100 text-sm truncate">{selectedUser.email}</p>
         </div>
         <div className="w-2 h-2 bg-green-300 rounded-full"></div>
