@@ -7,7 +7,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useProductSettings, formatProductName } from "@/hooks/useProductSettings";
@@ -87,6 +87,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const initialPageSize = 48; // Both desktop and mobile: Show first 48 products
   const pageSize = 30; // Both desktop and mobile: 30 products per page after initial 48
 
@@ -196,10 +197,8 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         }
         // Set target product for scrolling
         setTargetProductId(savedProductId);
-        // Clear the flags
-        sessionStorage.removeItem('returnFromProduct');
-        sessionStorage.removeItem('restoreProductId');
-        sessionStorage.removeItem('restorePage');
+        // Don't clear the flags yet - wait for scroll restoration to complete
+        // The flags will be cleared after successful scroll restoration
         return;
       }
       
@@ -262,14 +261,40 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     const exists = products.some((p) => p.id === targetProductId);
 
     if (exists) {
+      // Check if we have a saved scroll position to restore
+      const savedScrollY = sessionStorage.getItem('restoreScrollY');
+      const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+      
       // Scroll to the target element with extended retries (mobile images/layout settle slower)
       const anchorId = `p-${targetProductId}`;
       const attempts = [0, 120, 240, 400, 650, 900, 1300, 1800, 2500, 3300, 4200, 5200, 6500, 8000];
       let cancelled = false;
+      let scrollRestored = false;
 
       const scrollWithOffset = () => {
         const el = document.getElementById(anchorId);
-        if (!el) return false;
+        if (!el) {
+          // If element not found but we have saved scroll position, restore that instead
+          if (!scrollRestored && savedScrollY && returnFromProduct === '1') {
+            const scrollY = parseInt(savedScrollY, 10);
+            if (Number.isFinite(scrollY) && scrollY > 0) {
+              requestAnimationFrame(() => {
+                try { window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); } catch {}
+              });
+              scrollRestored = true;
+              // Clear restoration flags after scroll
+              setTimeout(() => {
+                try {
+                  sessionStorage.removeItem('returnFromProduct');
+                  sessionStorage.removeItem('restoreProductId');
+                  sessionStorage.removeItem('restorePage');
+                  sessionStorage.removeItem('restoreScrollY');
+                } catch {}
+              }, 100);
+            }
+          }
+          return false;
+        }
         try {
           const header = document.querySelector('header');
           const headerHeight = header ? header.offsetHeight : 0;
@@ -289,6 +314,18 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             const near = Math.abs((window.pageYOffset || document.documentElement.scrollTop || 0) - targetY) < 2;
             if (!near) {
               try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
+            }
+            // Clear restoration flags after successful scroll
+            if (returnFromProduct === '1' && !scrollRestored) {
+              scrollRestored = true;
+              setTimeout(() => {
+                try {
+                  sessionStorage.removeItem('returnFromProduct');
+                  sessionStorage.removeItem('restoreProductId');
+                  sessionStorage.removeItem('restorePage');
+                  sessionStorage.removeItem('restoreScrollY');
+                } catch {}
+              }, 100);
             }
           }, 60);
         } catch {
@@ -317,11 +354,32 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         const ok = scrollWithOffset();
         if (ok) cancelled = true; // gate further retries once successful
       }, ms));
-      const clearTimer = setTimeout(() => setTargetProductId(null), Math.max(...attempts) + 600);
+      
+      // If we still haven't scrolled after all attempts, restore saved scroll position
+      const finalTimer = setTimeout(() => {
+        if (!scrollRestored && savedScrollY && returnFromProduct === '1') {
+          const scrollY = parseInt(savedScrollY, 10);
+          if (Number.isFinite(scrollY) && scrollY > 0) {
+            requestAnimationFrame(() => {
+              try { window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); } catch {}
+            });
+            scrollRestored = true;
+            // Clear restoration flags
+            try {
+              sessionStorage.removeItem('returnFromProduct');
+              sessionStorage.removeItem('restoreProductId');
+              sessionStorage.removeItem('restorePage');
+              sessionStorage.removeItem('restoreScrollY');
+            } catch {}
+          }
+        }
+        setTargetProductId(null);
+      }, Math.max(...attempts) + 600);
+      
       return () => {
         cancelled = true;
         timers.forEach(clearTimeout);
-        clearTimeout(clearTimer);
+        clearTimeout(finalTimer);
         pendingImageHandlers.forEach(({ img, handler }) => img.removeEventListener('load', handler));
       };
     }
@@ -343,7 +401,28 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         setCurrentPage(targetPage);
       }
     } else if (allProducts.length > 0) {
-      // Products are loaded but product not found - might be on a different page
+      // Products are loaded but product not found - restore saved scroll position as fallback
+      const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+      const savedScrollY = sessionStorage.getItem('restoreScrollY');
+      
+      if (returnFromProduct === '1' && savedScrollY) {
+        const scrollY = parseInt(savedScrollY, 10);
+        if (Number.isFinite(scrollY) && scrollY > 0) {
+          // Restore scroll position after a delay to ensure page is rendered
+          setTimeout(() => {
+            requestAnimationFrame(() => {
+              try { window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); } catch {}
+            });
+            // Clear restoration flags
+            try {
+              sessionStorage.removeItem('returnFromProduct');
+              sessionStorage.removeItem('restoreProductId');
+              sessionStorage.removeItem('restorePage');
+              sessionStorage.removeItem('restoreScrollY');
+            } catch {}
+          }, 500);
+        }
+      }
       // Don't clear targetProductId yet, wait for products to load fully
       console.warn('Target product not found in current products list, waiting...');
     }
@@ -479,6 +558,42 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     
     console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
   }, [allProducts, currentPage, initialPageSize, pageSize]);
+
+  // Restore scroll position when returning from product page (if no target product)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pathname !== '/') return;
+    
+    // Check if we're returning from a product page but don't have a target product
+    const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+    const savedScrollY = sessionStorage.getItem('restoreScrollY');
+    const savedPage = sessionStorage.getItem('restorePage');
+    
+    // Only restore if we have saved state and products are loaded
+    if (returnFromProduct === '1' && savedScrollY && !targetProductId && products.length > 0) {
+      const scrollY = parseInt(savedScrollY, 10);
+      if (Number.isFinite(scrollY) && scrollY > 0) {
+        // Restore scroll position after products are rendered
+        const restoreScroll = () => {
+          requestAnimationFrame(() => {
+            try { 
+              window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); 
+            } catch {}
+          });
+          // Clear restoration flags
+          try {
+            sessionStorage.removeItem('returnFromProduct');
+            sessionStorage.removeItem('restoreProductId');
+            sessionStorage.removeItem('restorePage');
+            sessionStorage.removeItem('restoreScrollY');
+          } catch {}
+        };
+        
+        // Wait a bit for layout to settle
+        setTimeout(restoreScroll, 300);
+      }
+    }
+  }, [products.length, targetProductId]);
 
   // Scroll to products section when page changes (for all pagination clicks)
   useEffect(() => {
@@ -735,7 +850,11 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     if (window.location.pathname === '/') {
       saveScrollPosition();
       try {
-        sessionStorage.setItem('restoreScrollY', String(window.scrollY));
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+        // Save scroll position for restoration
+        sessionStorage.setItem('restoreScrollY', String(scrollY));
+        sessionStorage.setItem('restoreHomeScroll', String(scrollY));
+        sessionStorage.setItem(`scroll:/`, String(scrollY));
         // Save current page number for restoration
         sessionStorage.setItem('restorePage', String(currentPage));
         // Save product ID for precise restoration
