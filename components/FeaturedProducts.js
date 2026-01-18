@@ -117,18 +117,18 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
   // Fetch all products for pagination
   const fetchAllProducts = useCallback(async () => {
-    setLoading(true);
-    try {
+      setLoading(true);
+      try {
       console.log('🔍 Fetching all products for pagination...');
       
       // Fetch all products without limit - get everything
       const q = query(collection(db, "products"));
-      const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(q);
 
       let fetchedProducts = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+          id: doc.id,
+          ...doc.data(),
+        }));
 
       // Sort products: displayOrder first (if set by admin), then createdAt
       fetchedProducts.sort((a, b) => {
@@ -152,11 +152,11 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       });
 
       // Filter by similarity if search criteria exist
-      if (keyword || name || manufacturer || (tags && tags.length)) {
-        const lowerKeyword = keyword?.trim().toLowerCase();
-        const lowerName = name?.trim().toLowerCase();
-        const lowerManufacturer = manufacturer?.trim().toLowerCase();
-        const tagSet = new Set((tags || []).map((tag) => tag.toLowerCase()));
+        if (keyword || name || manufacturer || (tags && tags.length)) {
+          const lowerKeyword = keyword?.trim().toLowerCase();
+          const lowerName = name?.trim().toLowerCase();
+          const lowerManufacturer = manufacturer?.trim().toLowerCase();
+          const tagSet = new Set((tags || []).map((tag) => tag.toLowerCase()));
 
         fetchedProducts = fetchedProducts.filter((product) => {
           const nameMatch = lowerKeyword && product.name?.toLowerCase().includes(lowerKeyword);
@@ -170,11 +170,11 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
       setAllProducts(fetchedProducts);
       console.log(`📦 Fetched ${fetchedProducts.length} products for pagination`);
-    } catch (err) {
-      console.error("Error fetching products:", err);
+      } catch (err) {
+        console.error("Error fetching products:", err);
       setAllProducts([]);
-    }
-    setLoading(false);
+      }
+      setLoading(false);
   }, [keyword, tags, manufacturer, name]);
 
   // Detect target product from URL hash on mount (for precise restoration)

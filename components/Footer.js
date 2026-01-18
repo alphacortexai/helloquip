@@ -113,7 +113,7 @@ const Footer = () => {
             </div>
             
             <div className="text-sm text-gray-400">
-              <p>© 2025 Heloquip. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Heloquip. All rights reserved.</p>
             </div>
           </div>
         </div>
