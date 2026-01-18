@@ -432,27 +432,41 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
   }, [allProducts, currentPage, initialPageSize, pageSize]);
 
-  // Scroll to products section when page changes (for mobile pagination)
+  // Scroll to products section when page changes (for all pagination clicks)
   useEffect(() => {
-    if (currentPage > 1 && products.length > 0) {
+    if (currentPage >= 1 && products.length > 0) {
       // Small delay to ensure products are rendered
       const scrollTimer = setTimeout(() => {
+        // Check if mobile directly (fallback if state hasn't updated)
+        const isMobileDevice = window.innerWidth < 768;
+        
         // Try to find the products grid first (more specific)
-        const productsGrid = document.getElementById(isMobile ? 'products-grid-mobile' : 'products-grid');
-        const productsSection = productsGrid || document.querySelector('[data-featured-products]');
+        const mobileGrid = document.getElementById('products-grid-mobile');
+        const desktopGrid = document.getElementById('products-grid');
+        const productsGrid = isMobileDevice ? mobileGrid : desktopGrid;
+        const productsSection = productsGrid || mobileGrid || desktopGrid || document.querySelector('[data-featured-products]');
         
         if (productsSection) {
-          const rect = productsSection.getBoundingClientRect();
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          const targetPosition = rect.top + scrollTop;
-          
-          // Scroll to products section with offset for mobile
-          window.scrollTo({
-            top: Math.max(0, targetPosition - (isMobile ? 20 : 40)),
-            behavior: 'smooth'
-          });
+          // Use scrollIntoView for better mobile support, with fallback to scrollTo
+          try {
+            productsSection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
+            });
+          } catch (e) {
+            // Fallback for older browsers
+            const rect = productsSection.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY;
+            const targetPosition = rect.top + scrollTop;
+            
+            window.scrollTo({
+              top: Math.max(0, targetPosition - (isMobileDevice ? 20 : 40)),
+              behavior: 'smooth'
+            });
+          }
         }
-      }, 200); // Slightly longer delay to ensure DOM is updated
+      }, 250); // Slightly longer delay for mobile to ensure DOM is fully updated
       
       return () => clearTimeout(scrollTimer);
     }
