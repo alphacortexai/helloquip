@@ -435,6 +435,14 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Scroll to products section when page changes (for all pagination clicks)
   useEffect(() => {
     if (currentPage >= 1 && products.length > 0) {
+      // Clear scroll restoration flags to prevent interference
+      if (typeof window !== 'undefined') {
+        try {
+          // Set a flag to prevent scroll restoration
+          sessionStorage.setItem('paginationScrollInProgress', 'true');
+        } catch (e) {}
+      }
+      
       // Delay to ensure products are rendered
       const scrollTimer = setTimeout(() => {
         // Check if mobile directly
@@ -457,21 +465,27 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
               const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
               const targetPosition = rect.top + scrollTop;
               
-              // Scroll immediately on mobile
+              // Scroll immediately on mobile - use multiple attempts for reliability
               window.scrollTo({
                 top: Math.max(0, targetPosition - 10),
                 behavior: 'auto'
               });
               
-              // Backup scrollIntoView
+              // Force scroll again after a brief delay
               setTimeout(() => {
+                window.scrollTo({
+                  top: Math.max(0, targetPosition - 10),
+                  behavior: 'auto'
+                });
+                
+                // Backup scrollIntoView
                 if (scrollTarget.scrollIntoView) {
                   scrollTarget.scrollIntoView({ 
                     behavior: 'auto',
                     block: 'start'
                   });
                 }
-              }, 100);
+              }, 150);
             });
           }
         } else {
@@ -487,6 +501,13 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
             });
           }
         }
+        
+        // Clear the flag after scrolling
+        setTimeout(() => {
+          try {
+            sessionStorage.removeItem('paginationScrollInProgress');
+          } catch (e) {}
+        }, 1000);
       }, isMobile ? 400 : 200); // Longer delay for mobile to ensure DOM is fully updated
       
       return () => clearTimeout(scrollTimer);
@@ -533,6 +554,17 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+      
+      // Clear any saved scroll positions to prevent restoration interference
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.removeItem('restoreHomeScroll');
+          sessionStorage.removeItem(`scroll:/`);
+          sessionStorage.removeItem('mainPageScrollPosition');
+        } catch (e) {
+          console.warn('Could not clear scroll positions:', e);
+        }
+      }
       
       // On mobile, scroll immediately before changing page
       if (isMobileDevice) {

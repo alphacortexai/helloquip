@@ -311,6 +311,20 @@ export default function ClientLayoutWrapper({ children }) {
     if (typeof window === "undefined") return;
     if (pathname !== "/") return;
 
+    // Check if pagination scroll is in progress - if so, skip restoration
+    let paginationInProgress = false;
+    try {
+      paginationInProgress = sessionStorage.getItem('paginationScrollInProgress') === 'true';
+    } catch {}
+    
+    if (paginationInProgress) {
+      // Clear the flag and skip restoration
+      try {
+        sessionStorage.removeItem('paginationScrollInProgress');
+      } catch {}
+      return;
+    }
+
     let raw = null;
     try {
       raw = sessionStorage.getItem("restoreHomeScroll");
@@ -324,6 +338,13 @@ export default function ClientLayoutWrapper({ children }) {
     } catch {}
 
     const restore = () => {
+      // Double-check pagination flag before restoring
+      try {
+        if (sessionStorage.getItem('paginationScrollInProgress') === 'true') {
+          return; // Skip restoration if pagination is in progress
+        }
+      } catch {}
+      
       try {
         window.scrollTo(0, targetY);
       } catch {}
