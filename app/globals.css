@@ -119,6 +119,55 @@ main {
   transition: opacity 200ms, transform 200ms;
 }
 
+/* Animated gradient border for search input – blue + light purple, slow and smooth */
+@keyframes moveGradient {
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.search-input-border-glow {
+  --border-width: 1px;
+  position: relative;
+  padding: var(--border-width);
+  border-radius: 9999px;
+  flex: 1;
+}
+
+.search-input-border-glow::after {
+  position: absolute;
+  content: "";
+  top: calc(-1 * var(--border-width));
+  left: calc(-1 * var(--border-width));
+  z-index: 0;
+  width: calc(100% + var(--border-width) * 2);
+  height: calc(100% + var(--border-width) * 2);
+  background: linear-gradient(
+    60deg,
+    #0865ff 0%,
+    #0865ff 20%,
+    #a78bfa 20%,
+    #a78bfa 40%,
+    #60a5fa 40%,
+    #60a5fa 60%,
+    #255cdc 60%,
+    #255cdc 80%,
+    #0865ff 80%,
+    #0865ff 100%
+  );
+  background-size: 300% 300%;
+  background-position: 0 50%;
+  border-radius: 9999px;
+  animation: moveGradient 10s ease-in-out infinite alternate;
+}
+
+.search-input-border-glow > .search-input-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: 9999px;
+  background: white;
+}
+
 /* Custom scrollbar for desktop categories section */
 @media (min-width: 768px) {
   .categories-scroll::-webkit-scrollbar {

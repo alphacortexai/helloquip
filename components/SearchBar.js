@@ -272,11 +272,12 @@ export default function SearchBar() {
         <div className="fixed inset-0 z-[9999]" style={{ background: 'transparent' }}></div>
       )}
       <form onSubmit={handleSubmit} className="relative flex items-center gap-2" role="search">
-        <div className="relative flex-1">
+        <div className="search-input-border-glow">
+        <div className="search-input-inner relative">
         <input
           type="text"
           placeholder={getCurrentPlaceholder()}
-            className="w-full pl-6 pr-12 md:pr-4 py-2 border-2 border-[#0865ff] rounded-full focus:outline-none focus:ring-2 focus:ring-[#0865ff] focus:border-[#0865ff] text-base transition-all duration-300"
+            className="w-full pl-6 pr-12 md:pr-4 py-2 rounded-full focus:outline-none text-base transition-all duration-300 bg-transparent"
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
@@ -295,6 +296,7 @@ export default function SearchBar() {
           >
           <Search className="w-4 h-4" />
           </button>
+        </div>
         </div>
         {/* Desktop: Visible search button */}
         <button 
