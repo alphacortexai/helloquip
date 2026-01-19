@@ -36,10 +36,14 @@ export default function DisplaySettings() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await setDoc(doc(db, "settings", "display"), {
-        featuredCardResolution,
-        updatedAt: new Date(),
-      });
+      await setDoc(
+        doc(db, "settings", "display"),
+        {
+          featuredCardResolution,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
       alert("Display settings saved successfully!");
     } catch (error) {
       console.error("Error saving display settings:", error);

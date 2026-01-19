@@ -30,6 +30,7 @@ import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
 import AdminUserChat from "./components/AdminUserChat";
 import DisplaySettings from "./components/DisplaySettings";
+import CarouselSettings from "./components/CarouselSettings";
 import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
@@ -259,6 +260,15 @@ const tabs = [
     bgColor: "bg-gray-50",
     borderColor: "border-gray-100"
   },
+  { 
+    id: "carouselSettings", 
+    icon: <CogIcon className="w-5 h-5" />, 
+    label: "Carousel Settings",
+    description: "Choose trending or custom images",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-100"
+  },
   {
     id: "notificationTracker",
     icon: <BellIcon className="w-5 h-5" />,
@@ -463,6 +473,8 @@ function AdminDashboard({ currentAdminUid }) {
         );
       case "displaySettings":
         return <DisplaySettings />;
+      case "carouselSettings":
+        return <CarouselSettings />;
       case "notificationTracker":
         return <NotificationTracker />;
       case "latestProducts":

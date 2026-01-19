@@ -484,7 +484,7 @@ export default function Home() {
             {/* Top Row - Categories, Trending Products, and Featured Deal */}
             <div className="grid grid-cols-[280px_1fr_300px] gap-3 mb-4">
               {/* Categories */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[444px] flex flex-col overflow-hidden">
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[364px] flex flex-col overflow-hidden">
                 <h2 className="text-xl font-bold text-gray-800 mb-3 flex-shrink-0">Categories</h2>
                 <div className="flex-1 overflow-y-auto pr-2 categories-scroll">
                 <Categories 
@@ -495,14 +495,14 @@ export default function Home() {
               </section>
 
               {/* Trending Products */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[444px] flex flex-col overflow-hidden">
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-0 h-[364px] flex flex-col overflow-hidden">
                 <div className="h-full w-full min-h-0 flex flex-col">
                 <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
                 </div>
               </section>
 
               {/* Featured Deal */}
-              <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
+              <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[364px]">
                 <div className="h-full flex flex-col justify-center items-center text-center">
                   <div>
                     <h3 className="text-2xl font-bold mb-4">Special Offer</h3>

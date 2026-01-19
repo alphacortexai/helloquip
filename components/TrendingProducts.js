@@ -1,7 +1,8 @@
 "use client";
 
 import Head from "next/head";
-import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -14,6 +15,7 @@ import {
 import { db } from "@/lib/firebase";
 import ProductCard from "@/components/ProductCard";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
+import { useDisplaySettings } from "@/lib/useDisplaySettings";
 
 
 const getPreferredImageUrl = (imageUrl) => {
@@ -46,10 +48,18 @@ export default function TrendingProducts({ onLoadComplete }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const { carouselMode, carouselImages, loading: settingsLoading } = useDisplaySettings();
   const router = useRouter();
   const trackRef = useRef(null);
   
   useEffect(() => {
+    if (settingsLoading) return;
+    if (carouselMode === "images") {
+      setLoading(false);
+      if (onLoadComplete) onLoadComplete();
+      return;
+    }
+
     const fetchTrendingProducts = async () => {
       try {
         setLoading(true);
@@ -141,26 +151,41 @@ export default function TrendingProducts({ onLoadComplete }) {
     };
 
     fetchTrendingProducts();
-  }, [onLoadComplete]);
+  }, [carouselMode, onLoadComplete, settingsLoading]);
+
+  const imageSlides = useMemo(() => {
+    return (carouselImages || []).map((image, index) => ({
+      id: image.storagePath || image.url || `carousel-${index}`,
+      url: image.url,
+      alt: image.alt || `Carousel image ${index + 1}`,
+    }));
+  }, [carouselImages]);
+
+  const totalSlides = carouselMode === "images" ? imageSlides.length : products.length;
+
+  useEffect(() => {
+    if (totalSlides === 0) return;
+    setCurrentSlide(0);
+  }, [totalSlides]);
 
   // Auto-slide logic
   useEffect(() => {
-    if (products.length === 0) return;
+    if (totalSlides === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % products.length);
+      setCurrentSlide((prev) => (prev + 1) % totalSlides);
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [products.length]);
+  }, [totalSlides]);
 
   // Auto-scroll mobile carousel
   useEffect(() => {
-    if (products.length === 0 || !trackRef.current) return;
+    if (totalSlides === 0 || !trackRef.current) return;
 
     const scrollToSlide = () => {
       if (trackRef.current) {
-        const slideWidth = trackRef.current.scrollWidth / products.length;
+        const slideWidth = trackRef.current.scrollWidth / totalSlides;
         trackRef.current.scrollTo({
           left: currentSlide * slideWidth,
           behavior: 'auto'
@@ -170,7 +195,7 @@ export default function TrendingProducts({ onLoadComplete }) {
 
     // Scroll immediately when currentSlide changes
     scrollToSlide();
-  }, [currentSlide, products.length]);
+  }, [currentSlide, totalSlides]);
 
 
 
@@ -180,7 +205,7 @@ export default function TrendingProducts({ onLoadComplete }) {
     router.push(`/product/${productId}`);
   };
 
-  if (loading) {
+  if (loading || settingsLoading) {
     return (
       <div className="h-48 flex items-center justify-center">
         <div className="animate-pulse w-full">
@@ -197,7 +222,15 @@ export default function TrendingProducts({ onLoadComplete }) {
     );
   }
 
-  if (products.length === 0) {
+  if (carouselMode === "images" && imageSlides.length === 0) {
+    return (
+      <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+        No carousel images available
+      </div>
+    );
+  }
+
+  if (carouselMode !== "images" && products.length === 0) {
     return (
       <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
         No trending products available
@@ -210,7 +243,15 @@ export default function TrendingProducts({ onLoadComplete }) {
       <Head>
         <title>Trending Products - HalloQuip</title>
         {/* Preload first trending product image for better LCP */}
-        {products.length > 0 && products[0]?.image && (
+        {carouselMode === "images" && imageSlides.length > 0 && (
+          <link
+            rel="preload"
+            as="image"
+            href={`/_next/image?url=${encodeURIComponent(imageSlides[0].url)}&w=680&q=75`}
+            fetchPriority="high"
+          />
+        )}
+        {carouselMode !== "images" && products.length > 0 && products[0]?.image && (
           <link
             rel="preload"
             as="image"
@@ -220,11 +261,34 @@ export default function TrendingProducts({ onLoadComplete }) {
         )}
       </Head>
 
-
-      {/* Desktop Slide Carousel */}
-      <div className="hidden md:block h-full w-full min-h-0 flex items-center justify-center relative">
+      {/* Desktop Slide Carousel - no padding in images mode so image fills edge to edge; p-4 for trending products */}
+      <div className={`hidden md:block h-full w-full min-h-0 flex items-center justify-center relative ${carouselMode !== "images" ? "p-4" : ""}`}>
         <div className="w-full h-full min-h-0 relative">
-          {products.map((product, index) => (
+          {carouselMode === "images" &&
+            imageSlides.map((image, index) => (
+              <div
+                key={image.id}
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                  index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+                }`}
+              >
+                {/* 712×384 aspect to match your image size – no cropping on desktop or mobile */}
+                <div className="w-full max-h-full aspect-[712/384] relative rounded-2xl overflow-hidden bg-gray-100">
+                  {image.url && (
+                    <Image
+                      src={image.url}
+                      alt={image.alt}
+                      fill
+                      sizes="(min-width: 1024px) 680px, (min-width: 768px) 520px, 100vw"
+                      className="object-cover"
+                      priority={index === 0}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          {carouselMode !== "images" &&
+            products.map((product, index) => (
             <div
               key={product.id}
               className={`absolute inset-0 transition-opacity duration-300 ${
@@ -252,21 +316,40 @@ export default function TrendingProducts({ onLoadComplete }) {
           ref={trackRef}
           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
         >
-          {products.map((product, index) => (
-            <div
-              key={product.id}
-              className="flex-shrink-0 w-full snap-center"
-            >
-              <ProductCard
-                product={product}
-                variant="mobilecarousel"
-                badge="Trending"
-                hideSKU={true}
-                isFirst={index === 0} // First trending product gets priority
-                onClick={() => handleProductClick(product.id)}
-              />
-            </div>
-          ))}
+          {carouselMode === "images" &&
+            imageSlides.map((image, index) => (
+              <div key={image.id} className="flex-shrink-0 w-full snap-center">
+                {/* 712×384 aspect to match your image size – no cropping */}
+                <div className="w-full aspect-[712/384] relative rounded-xl overflow-hidden bg-gray-100">
+                  {image.url && (
+                    <Image
+                      src={image.url}
+                      alt={image.alt}
+                      fill
+                      sizes="100vw"
+                      className="object-cover"
+                      priority={index === 0}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          {carouselMode !== "images" &&
+            products.map((product, index) => (
+              <div
+                key={product.id}
+                className="flex-shrink-0 w-full snap-center"
+              >
+                <ProductCard
+                  product={product}
+                  variant="mobilecarousel"
+                  badge="Trending"
+                  hideSKU={true}
+                  isFirst={index === 0} // First trending product gets priority
+                  onClick={() => handleProductClick(product.id)}
+                />
+              </div>
+            ))}
         </div>
       </div>
     </>
