@@ -349,6 +349,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const prevScrollRestorationRef = useRef(null);
   const productsTopRef = useRef(null);
   const targetPageRef = useRef(1);
+  const pendingReturnRef = useRef(null);
+  const [returnToken, setReturnToken] = useState(0);
+  const criteriaRef = useRef(null);
 
   useEffect(() => {
     currentPageRef.current = currentPage;
@@ -372,6 +375,32 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
     // Fallback: absolute scroll
     window.scrollTo(0, offset);
+  };
+
+  const readPageFromUrl = () => {
+    if (typeof window === 'undefined') return 1;
+    const pageParam = new URL(window.location.href).searchParams.get('page');
+    const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
+    return !isNaN(pageNum) && pageNum >= 1 ? pageNum : 1;
+  };
+
+  const consumeReturnState = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem('featuredProducts_return');
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return null;
+      // Expire after 10 minutes
+      if (data.ts && Date.now() - data.ts > 10 * 60 * 1000) {
+        sessionStorage.removeItem('featuredProducts_return');
+        return null;
+      }
+      // Do not remove yet; remove after successful restore
+      return data;
+    } catch {
+      return null;
+    }
   };
 
   const startScrollPin = () => {
@@ -438,16 +467,28 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     if (pathname !== '/') return;
 
     const handlePopState = () => {
-      const pageParam = new URL(window.location.href).searchParams.get('page');
-      const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
-      const nextPage = !isNaN(pageNum) && pageNum >= 1 ? pageNum : 1;
+      const nextPage = readPageFromUrl();
+      const returnState = consumeReturnState();
+
+      if (returnState) {
+        // Returning from product → restore exact scroll position (do NOT scroll to top)
+        setIsPageChanging(true);
+        pendingReturnRef.current = returnState;
+        targetPageRef.current = typeof returnState.page === 'number' ? returnState.page : nextPage;
+        setReturnToken((t) => t + 1);
+      }
 
       if (nextPage !== currentPageRef.current) {
-        // Treat as a real page change (show overlay + scroll to top after render)
-        setIsPageChanging(true);
-        pendingScrollTopRef.current = true;
+        // Only do the "scroll-to-top" behavior when not restoring an exact return position
+        if (!returnState) {
+          setIsPageChanging(true);
+          pendingScrollTopRef.current = true;
+          startScrollPin();
+        }
         prevPageRef.current = currentPageRef.current;
         setCurrentPage(nextPage);
+      } else if (!returnState) {
+        // Same page popstate (e.g. hash changes) - nothing to do
       }
     };
 
@@ -467,9 +508,20 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     };
     
     const currentCriteriaString = JSON.stringify(searchCriteria);
-    
-    console.log('Search criteria changed, fetching all products...');
-    setCurrentPage(1); // Reset to first page
+    const prevCriteria = criteriaRef.current;
+    criteriaRef.current = currentCriteriaString;
+
+    // Only reset to page 1 when criteria CHANGES after initial mount.
+    // On initial mount / back navigation we let the URL (?page=) win.
+    if (prevCriteria !== null && prevCriteria !== currentCriteriaString) {
+      setCurrentPage(1);
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('page');
+        window.history.pushState(window.history.state, "", url.pathname + url.search + url.hash);
+      }
+    }
+
     fetchAllProducts();
   }, [keyword, name, manufacturer, tags, fetchAllProducts]);
 
@@ -578,6 +630,35 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     }
   }, [displayProducts.length, currentPage, isMobile]);
 
+  // Restore exact scroll position when returning from a product
+  useLayoutEffect(() => {
+    if (!pendingReturnRef.current) return;
+    if (displayProducts.length === 0) return;
+    if (typeof window === 'undefined') return;
+
+    const data = pendingReturnRef.current;
+    const scrollY = typeof data.scrollY === 'number' ? data.scrollY : null;
+    const desiredPage = typeof data.page === 'number' ? data.page : readPageFromUrl();
+
+    // Ensure correct page first
+    if (desiredPage !== currentPage) {
+      // Let pagination flow handle render; we'll try again on next token change
+      return;
+    }
+
+    // Restore scroll precisely
+    if (scrollY !== null && !Number.isNaN(scrollY)) {
+      window.scrollTo(0, scrollY);
+    }
+
+    // Cleanup
+    try {
+      sessionStorage.removeItem('featuredProducts_return');
+    } catch {}
+    pendingReturnRef.current = null;
+    setIsPageChanging(false);
+  }, [returnToken, displayProducts.length, currentPage]);
+
   // Function to track product views for recent section
   const trackProductView = async (userId, productId) => {
     try {
@@ -661,8 +742,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       
       // Save page state to sessionStorage for restoration
       try {
-        sessionStorage.setItem('featuredProducts_page', currentPage.toString());
-        sessionStorage.setItem('featuredProducts_scrollY', window.scrollY.toString());
+        const scrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+        sessionStorage.setItem('featuredProducts_return', JSON.stringify({
+          page: currentPage,
+          scrollY,
+          ts: Date.now()
+        }));
       } catch (e) {
         console.warn('Could not save page state:', e);
       }
@@ -681,12 +766,17 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       console.log('❌ No user ID available, skipping view tracking');
     }
     
-    // Navigate to product detail page with page state in URL for back navigation
+    // Ensure the current URL has the correct page param BEFORE navigating (so Back returns to it)
+    if (typeof window !== 'undefined' && pathname === '/') {
+      const url = new URL(window.location.href);
+      if (currentPage === 1) url.searchParams.delete('page');
+      else url.searchParams.set('page', String(currentPage));
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    }
+
+    // Navigate to product detail page
     setIsNavigating(true);
-    const productUrl = currentPage > 1 
-      ? `/product/${id}?fromPage=${currentPage}`
-      : `/product/${id}`;
-    router.push(productUrl);
+    router.push(`/product/${id}`);
   };
 
   // Show skeleton while loading or when no products are loaded yet
