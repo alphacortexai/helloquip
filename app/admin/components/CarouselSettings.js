@@ -108,6 +108,14 @@ export default function CarouselSettings() {
     }
   };
 
+  const handleUpdateImageLink = (index, value) => {
+    const updated = carouselImages.map((img, i) =>
+      i === index ? { ...img, link: value || undefined } : img
+    );
+    setCarouselImages(updated);
+    updateSettings({ carouselImages: updated });
+  };
+
   const handleRemoveImage = async (index) => {
     const target = carouselImages[index];
     if (!target) return;
@@ -245,6 +253,21 @@ export default function CarouselSettings() {
                     ) : (
                       <span className="text-xs text-gray-400">No image</span>
                     )}
+                  </div>
+                  <div className="mt-2">
+                    <label className="text-xs text-gray-500 block mb-1">Link when clicked (optional)</label>
+                    <input
+                      type="text"
+                      placeholder="/product/123 or https://..."
+                      value={image.link || ""}
+                      onChange={(e) =>
+                        setCarouselImages((prev) =>
+                          prev.map((img, i) => (i === index ? { ...img, link: e.target.value } : img))
+                        )
+                      }
+                      onBlur={(e) => handleUpdateImageLink(index, e.target.value.trim())}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs text-gray-600 truncate">

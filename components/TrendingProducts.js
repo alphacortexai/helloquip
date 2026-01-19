@@ -158,6 +158,7 @@ export default function TrendingProducts({ onLoadComplete }) {
       id: image.storagePath || image.url || `carousel-${index}`,
       url: image.url,
       alt: image.alt || `Carousel image ${index + 1}`,
+      link: image.link || "",
     }));
   }, [carouselImages]);
 
@@ -273,7 +274,7 @@ export default function TrendingProducts({ onLoadComplete }) {
                 }`}
               >
                 {/* 712×384 aspect to match your image size – no cropping on desktop or mobile */}
-                <div className="w-full max-h-full aspect-[712/384] relative rounded-2xl overflow-hidden bg-gray-100">
+                <div className={`w-full max-h-full aspect-[712/384] relative rounded-2xl overflow-hidden bg-gray-100 ${image.link ? "cursor-pointer" : ""}`}>
                   {image.url && (
                     <Image
                       src={image.url}
@@ -282,6 +283,24 @@ export default function TrendingProducts({ onLoadComplete }) {
                       sizes="(min-width: 1024px) 680px, (min-width: 768px) 520px, 100vw"
                       className="object-cover"
                       priority={index === 0}
+                    />
+                  )}
+                  {image.link && (
+                    <a
+                      href={image.link}
+                      target={image.link.startsWith("http") ? "_blank" : undefined}
+                      rel={image.link.startsWith("http") ? "noopener noreferrer" : undefined}
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      aria-label={image.alt}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (image.link.startsWith("http")) {
+                          window.open(image.link, "_blank");
+                        } else {
+                          router.push(image.link);
+                        }
+                      }}
                     />
                   )}
                 </div>
@@ -320,7 +339,7 @@ export default function TrendingProducts({ onLoadComplete }) {
             imageSlides.map((image, index) => (
               <div key={image.id} className="flex-shrink-0 w-full snap-center">
                 {/* 712×384 aspect to match your image size – no cropping */}
-                <div className="w-full aspect-[712/384] relative rounded-xl overflow-hidden bg-gray-100">
+                <div className={`w-full aspect-[712/384] relative rounded-xl overflow-hidden bg-gray-100 ${image.link ? "cursor-pointer" : ""}`}>
                   {image.url && (
                     <Image
                       src={image.url}
@@ -329,6 +348,24 @@ export default function TrendingProducts({ onLoadComplete }) {
                       sizes="100vw"
                       className="object-cover"
                       priority={index === 0}
+                    />
+                  )}
+                  {image.link && (
+                    <a
+                      href={image.link}
+                      target={image.link.startsWith("http") ? "_blank" : undefined}
+                      rel={image.link.startsWith("http") ? "noopener noreferrer" : undefined}
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      aria-label={image.alt}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (image.link.startsWith("http")) {
+                          window.open(image.link, "_blank");
+                        } else {
+                          router.push(image.link);
+                        }
+                      }}
                     />
                   )}
                 </div>
