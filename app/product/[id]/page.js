@@ -224,9 +224,15 @@ export default function ProductDetail() {
           {/* Product Info */}
           <div className="flex-1 ml-1 mr-1">
             <div className="w-full flex flex-col gap-2">
-              {/* Price & Name */}
-              <div className="bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 flex flex-col gap-2">
-                <div className="bg-orange-50 border border-orange-200 rounded-full p-4 mb-2 space-y-2">
+              {/* Product Name, Details & Price */}
+              <div className="bg-white p-4 rounded-md border border-gray-100">
+                <p className="text-xl font-semibold text-gray-800 uppercase truncate mb-2">
+                  {product.name || 'Unnamed Product'}
+                </p>
+                <p className="text-[14px] text-gray-500 mb-1">SKU : {product.sku}</p>
+                <p className="text-[11px] text-gray-500 break-words mb-4">CODE : {product.productCode}</p>
+                
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-[15px] font-bold text-gray-900">
                       {formatPrice(product.discount > 0
@@ -249,11 +255,6 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 </div>
-                <p className="text-sm font-semibold text-gray-800 uppercase truncate">
-                  {product.name || 'Unnamed Product'}
-                </p>
-                <p className="text-[14px] text-gray-500">SKU : {product.sku}</p>
-                <p className="text-[11px] text-gray-500 break-words">CODE : {product.productCode}</p>
               </div>
 
               {/* Description */}
@@ -352,3 +353,5 @@ export default function ProductDetail() {
     </>
   );
 }
+
+
