@@ -796,7 +796,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     return (
       <div>
         <div className="bg-blue-50 text-blue-800 text-sm font-medium px-4 py-2 rounded-md text-center mb-4">
-          {selectedCategory || "Products"}
+          {selectedCategory === "All Products" ? "Medical Supplies & Equipment" : (selectedCategory || "Products")}
         </div>
         <p className="text-center py-4">No similar products found.</p>
       </div>
@@ -849,7 +849,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
       <div className="max-w-7xl mx-auto px-0">
         <div className="hidden md:block text-white text-sm font-semibold text-center uppercase mb-2">
-          {selectedCategory || "Similar Products"}
+          {selectedCategory === "All Products" ? "Medical Supplies & Equipment" : (selectedCategory || "Similar Products")}
           {(keyword || name || manufacturer || (tags?.length > 0)) && (
             <span className="block text-xs text-gray-200">
               Filtered by:{" "}

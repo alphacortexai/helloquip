@@ -14,8 +14,14 @@ const defaultSettings = {
 function toTitleCase(str) {
   if (!str || typeof str !== 'string') return str;
   return str
+    .trim()
     .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) =>
+      word
+        .split('-')
+        .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part))
+        .join('-')
+    )
     .join(' ');
 }
 
@@ -39,9 +45,8 @@ export function ProductSettingsProvider({ children }) {
       settingsRef,
       (doc) => {
         if (doc.exists()) {
-          setSettings(doc.data());
+          setSettings({ ...defaultSettings, ...doc.data() });
         } else {
-          // If document doesn't exist, use default settings
           setSettings(defaultSettings);
         }
         setLoading(false);
@@ -86,7 +91,6 @@ export function formatProductName(name, settings) {
     case 'lowercase':
       return name.toLowerCase();
     case 'normal':
-      return name;
     case 'titlecase':
     default:
       return toTitleCase(name);

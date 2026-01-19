@@ -48,7 +48,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   // Centralized image props for Next.js Image component
   const imageProps = {
     src: imageUrl || '/fallback.jpg',
-    alt: product.name || 'Product',
+    alt: formatProductName(product.name, settings) || 'Product',
     priority: isFirst, // Use priority instead of loading="eager" for Next.js Image
     fetchPriority: 'high', // High fetch priority for all product images
     onLoad: () => setImageLoaded(true),
