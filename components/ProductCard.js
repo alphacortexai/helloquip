@@ -6,7 +6,6 @@ import { useProductSettings, formatProductName, shouldShowMOQ, shouldShowSKU } f
 
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution, hideSKU = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const fallbackImageUrl = "/surgical-icon.png";
   const { settings } = useProductSettings();
 
   // Helper hey bro function to get the appropriate image URL based on variant and size
@@ -31,7 +30,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     }
     
     // Fallback to old format or other image fields
-    return product.imageUrl || product.image || product.mainImage || product.extraImages?.[0] || fallbackImageUrl;
+    return product.imageUrl || product.image || product.mainImage || product.extraImages?.[0] || "/fallback.jpg";
   };
 
   const imageUrl = getImageUrl(product, variant);
@@ -48,13 +47,13 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   // Centralized image props for Next.js Image component
   const imageProps = {
-    src: imageUrl || fallbackImageUrl,
+    src: imageUrl || '/fallback.jpg',
     alt: product.name || 'Product',
     priority: isFirst, // Use priority instead of loading="eager" for Next.js Image
     fetchPriority: 'high', // High fetch priority for all product images
     onLoad: () => setImageLoaded(true),
     onError: () => setImageLoaded(true), // Avoid skeleton staying forever
-    unoptimized: imageUrl?.startsWith('data:') || imageUrl?.includes('.svg') || false, // Don't optimize data URLs or SVGs
+    unoptimized: imageUrl?.startsWith('data:') || false, // Don't optimize data URLs or SVGs
   };
 
   const renderDefault = () => (

@@ -35,7 +35,7 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     id: "all",
     name: "All Products",
     slug: "all-products",
-    imageUrl: "/surgical-icon.png",
+    imageUrl: "https://cdn-icons-png.flaticon.com/128/7466/7466065.png",
   };
 
   useEffect(() => {
@@ -101,7 +101,23 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     setImageLoadingStates(prev => ({ ...prev, [catId]: true }));
   };
 
-  const getImageSrc = () => "/surgical-icon.png";
+  const getImageSrc = (cat) => {
+    if (cat.id === "all") return cat.imageUrl;
+
+    if (typeof cat.imageUrl === "string") {
+      return cleanFirebaseUrl(cat.imageUrl);
+    }
+
+    if (typeof cat.imageUrl === "object" && cat.imageUrl["90x90"]) {
+      return cleanFirebaseUrl(cat.imageUrl["90x90"]);
+    }
+
+    if (typeof cat.imageUrl === "object" && cat.imageUrl.original) {
+      return cleanFirebaseUrl(cat.imageUrl.original);
+    }
+
+    return "";
+  };
 
   // Sidebar version (no title, vertical list)
   if (isSidebar) {
