@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
@@ -73,6 +73,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [allProducts, setAllProducts] = useState([]); // All fetched products
   const [products, setProducts] = useState([]); // Currently displayed products (paginated)
+  const [displayProducts, setDisplayProducts] = useState([]); // Products actually rendered
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Keep for latestProducts logic
@@ -83,6 +84,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const prevPageRef = useRef(1);
   const router = useRouter();
   const pathname = usePathname();
   const initialPageSize = 48; // Both desktop and mobile: Show first 48 products
@@ -285,6 +287,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   useEffect(() => {
     if (allProducts.length === 0) {
       setProducts([]);
+      setDisplayProducts([]);
       return;
     }
 
@@ -306,6 +309,43 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     
     console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
   }, [allProducts, currentPage, initialPageSize, pageSize]);
+
+  // Update displayed products - sync immediately to prevent layout issues
+  useEffect(() => {
+    // Always keep displayProducts in sync with products
+    // The scroll happens in handlePageChange before this updates
+    if (JSON.stringify(products) !== JSON.stringify(displayProducts)) {
+      setDisplayProducts(products);
+    }
+  }, [products]);
+
+  // Fine-tune scroll position after products have rendered (optional refinement)
+  useEffect(() => {
+    // Only do a small adjustment if needed after products render
+    if (prevPageRef.current !== currentPage && displayProducts.length > 0) {
+      // Small delay to ensure products are rendered, then fine-tune scroll if needed
+      const timer = setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          const productsSection = document.querySelector('[data-featured-products]');
+          if (productsSection) {
+            const rect = productsSection.getBoundingClientRect();
+            // Only adjust if we're way off (more than 100px)
+            if (rect.top < -100 || rect.top > 100) {
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+              const targetY = rect.top + scrollTop - 20;
+              window.scrollTo({
+                top: Math.max(0, targetY),
+                behavior: 'smooth'
+              });
+            }
+          }
+        }
+      }, 100);
+      
+      prevPageRef.current = currentPage;
+      return () => clearTimeout(timer);
+    }
+  }, [currentPage, displayProducts.length]);
 
 
 
@@ -348,6 +388,24 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Handle page change
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
+      // Scroll to products section IMMEDIATELY before changing page
+      // This prevents footer from appearing during the transition
+      if (typeof window !== 'undefined') {
+        const productsSection = document.querySelector('[data-featured-products]');
+        if (productsSection) {
+          const rect = productsSection.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+          const targetY = rect.top + scrollTop - 20; // 20px offset from top
+          
+          // Use instant scroll (not smooth) to get there immediately
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: 'auto' // Instant scroll
+          });
+        }
+      }
+      
+      prevPageRef.current = currentPage;
       setCurrentPage(newPage);
     }
   };
@@ -494,7 +552,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
         {/* Desktop/Tablet: original grid */}
         <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
-          {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
+          {displayProducts.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
             <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
               <ProductCard
                 variant="compact"
@@ -519,9 +577,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
           {(() => {
             const firstCount = 4;
             const secondCount = 8;
-            const first = products.slice(0, firstCount);
-            const second = products.slice(firstCount, secondCount);
-            const rest = products.slice(secondCount);
+            const first = displayProducts.slice(0, firstCount);
+            const second = displayProducts.slice(firstCount, secondCount);
+            const rest = displayProducts.slice(secondCount);
             return (
               <>
                 {/* Two rows right after Trending */}
