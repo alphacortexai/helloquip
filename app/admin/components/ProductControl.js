@@ -16,7 +16,7 @@ export default function ProductControl() {
   const [settings, setSettings] = useState({
     showMOQ: true,
     showSKU: true,
-    productNameCase: 'normal' // 'normal', 'uppercase', 'lowercase'
+    productNameCase: 'titlecase' // 'titlecase', 'uppercase', 'lowercase', 'normal'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -194,7 +194,8 @@ export default function ProductControl() {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="space-y-3">
                 {[
-                  { value: 'normal', label: 'Normal Case', description: 'Product Name As Stored' },
+                  { value: 'titlecase', label: 'Title Case', description: 'Product Name Like This' },
+                  { value: 'normal', label: 'As Stored', description: 'Product name exactly as saved' },
                   { value: 'uppercase', label: 'UPPERCASE', description: 'ALL PRODUCT NAMES IN CAPS' },
                   { value: 'lowercase', label: 'lowercase', description: 'all product names in lowercase' }
                 ].map((option) => (
@@ -236,7 +237,8 @@ export default function ProductControl() {
                       settings.productNameCase === 'uppercase' ? 'uppercase' : 
                       settings.productNameCase === 'lowercase' ? 'lowercase' : ''
                     }`}>
-                      Sample Product Name
+                      {settings.productNameCase === 'uppercase' ? 'SAMPLE PRODUCT NAME' : 
+                       settings.productNameCase === 'lowercase' ? 'sample product name' : 'Sample Product Name'}
                     </h3>
                     <p className="text-sm text-gray-900 font-semibold">UGX 150,000</p>
                     {settings.showMOQ && (

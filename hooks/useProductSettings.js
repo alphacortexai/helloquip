@@ -8,8 +8,16 @@ import { doc, onSnapshot } from "firebase/firestore";
 const defaultSettings = {
   showMOQ: true,
   showSKU: true,
-  productNameCase: 'normal' // 'normal', 'uppercase', 'lowercase'
+  productNameCase: 'titlecase' // 'titlecase', 'uppercase', 'lowercase', 'normal'
 };
+
+function toTitleCase(str) {
+  if (!str || typeof str !== 'string') return str;
+  return str
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 // Create context
 const ProductSettingsContext = createContext({
@@ -70,14 +78,18 @@ export function useProductSettings() {
 // Utility function to format product name based on settings
 export function formatProductName(name, settings) {
   if (!name) return 'Unnamed Product';
-  
-  switch (settings.productNameCase) {
+  const caseType = settings?.productNameCase || 'titlecase';
+
+  switch (caseType) {
     case 'uppercase':
       return name.toUpperCase();
     case 'lowercase':
       return name.toLowerCase();
-    default:
+    case 'normal':
       return name;
+    case 'titlecase':
+    default:
+      return toTitleCase(name);
   }
 }
 

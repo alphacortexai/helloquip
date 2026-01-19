@@ -6,11 +6,13 @@ import { CustomerExperienceService } from '@/lib/customerExperienceService';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
 
 export default function ProductComparisonPage() {
   const [user, setUser] = useState(null);
   const [comparisonList, setComparisonList] = useState({ products: [] });
   const [loading, setLoading] = useState(true);
+  const { settings } = useProductSettings();
 
   useEffect(() => {
     const auth = getAuth();
@@ -135,7 +137,7 @@ export default function ProductComparisonPage() {
                           alt={product.name}
                           className="h-32 w-32 object-cover rounded-lg mx-auto mb-2"
                         />
-                        <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
+                        <h3 className="text-sm font-medium text-gray-900">{formatProductName(product.name, settings)}</h3>
                       </div>
                     </th>
                   ))}

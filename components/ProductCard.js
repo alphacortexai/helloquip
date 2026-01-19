@@ -190,7 +190,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
           {/* Product Title */}
           {product.name && (
             <p className="text-xl text-gray-600 line-clamp-3 mb-4">
-              {product.name}
+              {formatProductName(product.name, settings)}
             </p>
           )}
 
@@ -240,7 +240,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
           {/* Product Title for Mobile */}
           {product.name && (
             <p className="text-base text-gray-600 line-clamp-2 mt-1">
-              {product.name}
+              {formatProductName(product.name, settings)}
             </p>
           )}
         </div>
