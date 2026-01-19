@@ -358,10 +358,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }, [currentPage]);
 
   const getTopOffset = () => {
-    // Mobile header is taller in this app
-    const navbarHeight = isMobile ? 96 : 72;
-    const offset = 20;
-    return navbarHeight + offset;
+    // Navbar spacing is already handled by the fixed header spacer in layout.
+    // Keep this offset minimal so pagination anchors land at the true top.
+    return 0;
   };
 
   const scrollToProductsTop = () => {

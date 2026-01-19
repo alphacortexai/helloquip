@@ -8,6 +8,8 @@ import { Search } from "lucide-react";
 import Image from "next/image";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 
+const fallbackIconSrc = "/surgical-icon.png";
+
 // Helper function to get preferred image URL
 const getPreferredImageUrl = (imageUrl) => {
   if (!imageUrl) return null;
@@ -337,7 +339,7 @@ export default function SearchBar() {
                     ) : null}
                     {/* Fallback icon when no image */}
                     <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs bg-gray-100" style={{ display: (product.image || product.imageUrl) ? 'none' : 'flex' }}>
-                      🏥
+                      <Image src={fallbackIconSrc} alt="Product icon" width={24} height={24} />
                     </div>
                   </div>
 
