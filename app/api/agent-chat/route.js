@@ -7,6 +7,7 @@ import path from "path";
 const systemPrompt =
   "You are HelloQuip's customer service assistant. Be concise, friendly, and helpful. " +
   "Answer questions about products, quotes, orders, shipping, returns, and account issues. " +
+  "When 'Products in database' is provided in the context, use that list to answer product and catalog questions. Do not say you do not have product data when it is provided—always use the list. " +
   "Use database lookup results when provided and never invent order or product details. " +
   "If a user asks about an order, request the order number and email used at checkout. " +
   "If you are unsure or need human help, ask a clarifying question and offer to connect them. " +
@@ -108,7 +109,7 @@ function extractProductCode(text = "") {
 }
 
 function wantsCatalogList(text = "") {
-  return /available products|what products|show products|list products|catalog|inventory/i.test(text);
+  return /available products|what products|show products|list products|catalog|inventory|what do you have|what do you sell|what's available|do you have|looking for|items you|offer|sell/i.test(text);
 }
 
 function formatCurrency(value) {
@@ -204,48 +205,50 @@ export async function POST(req) {
     let orderEmailMismatch = false;
     let quoteLookupFailed = false;
 
-    if (wantsOrder || wantsQuote || wantsProduct || wantsCatalog) {
-      const { db, error } = getAdminDb();
-      if (!db) {
+    const { db, error } = getAdminDb();
+
+    if (!db) {
+      contextNotes.push(
+        `Database lookups are unavailable (${error || "Firebase Admin not configured"}).`
+      );
+      if (
+        (wantsProduct && (sku || productCode)) ||
+        (wantsOrder && (orderId || email)) ||
+        (wantsQuote && email) ||
+        wantsCatalog
+      ) {
+        return Response.json({
+          reply:
+            "I can't access the live database right now to verify that. Please try again in a moment or contact support.",
+        });
+      }
+    } else {
+      // --- RAG: Always fetch products from Firestore so the LLM has real data (do not guess) ---
+      let productSnap = await db
+        .collection("products")
+        .where("status", "==", "active")
+        .limit(50)
+        .get();
+      if (productSnap.empty) {
+        productSnap = await db.collection("products").limit(50).get();
+      }
+      const productList = productSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const productSummaries = productList.map(summarizeProductShort);
+      if (productSummaries.length > 0) {
         contextNotes.push(
-          `Database lookups are unavailable (${error || "Firebase Admin not configured"}).`
+          `Products in database (use for product/catalog questions, do not guess): ${JSON.stringify(productSummaries)}`
         );
-        if (
-          (wantsProduct && (sku || productCode)) ||
-          (wantsOrder && (orderId || email)) ||
-          (wantsQuote && email) ||
-          wantsCatalog
-        ) {
-          return Response.json({
-            reply:
-              "I can't access the live database right now to verify that. Please try again in a moment or contact support.",
-          });
-        }
       } else {
-        if (wantsCatalog) {
-          const snapshot = await db
-            .collection("products")
-            .where("status", "==", "active")
-            .limit(8)
-            .get();
+        contextNotes.push("Products in database: none.");
+      }
+      if (wantsCatalog && productSummaries.length === 0) {
+        return Response.json({
+          reply:
+            "I couldn't find any active products right now. Please try again later.",
+        });
+      }
 
-          const products = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-
-          if (products.length > 0) {
-            const list = products.map(summarizeProductShort);
-            contextNotes.push(`Catalog sample: ${JSON.stringify(list)}`);
-          } else {
-            return Response.json({
-              reply:
-                "I couldn't find any active products right now. Please try again later.",
-            });
-          }
-        }
-
-        if (wantsOrder) {
+      if (wantsOrder) {
           if (orderId && email) {
             const orderSnap = await db.collection("orders").doc(orderId).get();
             if (orderSnap.exists) {
@@ -344,7 +347,6 @@ export async function POST(req) {
           }
         }
       }
-    }
 
     if (orderEmailMismatch) {
       return Response.json({
