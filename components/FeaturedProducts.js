@@ -29,7 +29,6 @@ import ProductCard from "./ProductCard";
 import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import SkeletonLoader from "./SkeletonLoader";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
-import { useScrollPosition } from "@/lib/useScrollPosition";
 import Pagination from "./Pagination";
 
 
@@ -70,7 +69,6 @@ const getPreferredImageUrl = (imageUrl, customResolution = null) => {
 export default function FeaturedProducts({ selectedCategory, keyword, tags, manufacturer, name, onLoadComplete, onScrollProgressChange }) {
   const { settings } = useProductSettings();
   const { featuredCardResolution, loading: settingsLoading } = useDisplaySettings();
-  const { saveScrollPosition } = useScrollPosition();
   const { data: session } = useSession();
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [allProducts, setAllProducts] = useState([]); // All fetched products
@@ -83,7 +81,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hasScrolledAllProducts, setHasScrolledAllProducts] = useState(false);
   const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
-  const [targetProductId, setTargetProductId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
@@ -178,317 +175,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       setLoading(false);
   }, [keyword, tags, manufacturer, name]);
 
-  // Detect target product from URL hash on mount (for precise restoration)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const checkAndRestore = () => {
-      try {
-        // First, check if we're returning from a product page
-        const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-        const savedProductId = sessionStorage.getItem('restoreProductId');
-        const savedPage = sessionStorage.getItem('restorePage');
-        
-        if (returnFromProduct === '1' && savedProductId) {
-          // Restore pagination state immediately
-          if (savedPage) {
-            const pageNum = parseInt(savedPage, 10);
-            if (pageNum >= 1 && pageNum !== currentPage) {
-              setCurrentPage(pageNum);
-            }
-          }
-          // Set target product for scrolling
-          setTargetProductId(savedProductId);
-          // Don't clear the flags yet - wait for scroll restoration to complete
-          // The flags will be cleared after successful scroll restoration
-          return;
-        }
-        
-        // Fallback to URL hash detection
-        const hash = window.location.hash;
-        if (hash && hash.startsWith('#p-') && hash.length > 3) {
-          const id = hash.slice(3);
-          if (id) setTargetProductId(id);
-        }
-      } catch {}
-    };
-    
-    // Check immediately
-    checkAndRestore();
-    
-    // Also check after a short delay (for mobile browsers that might delay hash updates)
-    const timeout = setTimeout(checkAndRestore, 100);
-    
-    return () => clearTimeout(timeout);
-  }, [currentPage]);
-
-  // Also detect hash on back/forward cache restores and hash changes (mobile browsers often use bfcache)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handler = () => {
-      try {
-        // Check for saved restoration state first (for back navigation from product page)
-        const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-        const savedProductId = sessionStorage.getItem('restoreProductId');
-        const savedPage = sessionStorage.getItem('restorePage');
-        
-        if (returnFromProduct === '1' && savedProductId) {
-          // Restore pagination state immediately
-          if (savedPage) {
-            const pageNum = parseInt(savedPage, 10);
-            if (pageNum >= 1 && pageNum !== currentPage) {
-              setCurrentPage(pageNum);
-            }
-          }
-          // Set target product for scrolling
-          setTargetProductId(savedProductId);
-          // Don't clear the flags yet - wait for scroll restoration to complete
-          return;
-        }
-        
-        // Fallback to URL hash detection
-        const hash = window.location.hash;
-        if (hash && hash.startsWith('#p-') && hash.length > 3) {
-          const id = hash.slice(3);
-          if (id) setTargetProductId(id);
-        }
-      } catch {}
-    };
-    
-    // Listen for custom navigation event (from SKU navigation)
-    const handleNavigateToProduct = (event) => {
-      try {
-        const { productId, page } = event.detail;
-        if (productId && page) {
-          console.log('🎯 NavigateToProduct event received:', { productId, page, currentPage });
-          // Set page first (this will trigger products to load)
-          if (page !== currentPage) {
-            console.log(`📄 Changing page from ${currentPage} to ${page}`);
-            setCurrentPage(page);
-          }
-          // Then set target product (will trigger scroll once products load)
-          console.log(`🎯 Setting target product ID: ${productId}`);
-          setTargetProductId(productId);
-        } else {
-          console.warn('⚠️ NavigateToProduct event missing data:', event.detail);
-        }
-      } catch (err) {
-        console.error('❌ Error handling navigateToProduct event:', err);
-      }
-    };
-    
-    // Also check sessionStorage periodically on mobile (in case event is missed)
-    const checkSessionStorage = () => {
-      try {
-        const isMobileCheck = typeof window !== 'undefined' && window.innerWidth < 768;
-        if (!isMobileCheck) return;
-        
-        const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-        const savedProductId = sessionStorage.getItem('restoreProductId');
-        const savedPage = sessionStorage.getItem('restorePage');
-        
-        if (returnFromProduct === '1' && savedProductId && savedPage && !targetProductId) {
-          console.log('📱 Mobile: Found saved navigation state, restoring...', { savedProductId, savedPage });
-          const pageNum = parseInt(savedPage, 10);
-          if (pageNum >= 1 && pageNum !== currentPage) {
-            setCurrentPage(pageNum);
-          }
-          setTargetProductId(savedProductId);
-        }
-      } catch {}
-    };
-    
-    // Check sessionStorage every 500ms for 3 seconds (mobile fallback)
-    const isMobileCheck = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (isMobileCheck) {
-      const interval = setInterval(checkSessionStorage, 500);
-      setTimeout(() => clearInterval(interval), 3000);
-    }
-    
-    window.addEventListener('pageshow', handler);
-    window.addEventListener('hashchange', handler);
-    window.addEventListener('navigateToProduct', handleNavigateToProduct);
-    
-    return () => {
-      window.removeEventListener('pageshow', handler);
-      window.removeEventListener('hashchange', handler);
-      window.removeEventListener('navigateToProduct', handleNavigateToProduct);
-    };
-  }, [currentPage]);
-
-  // If there's a target product hash, ensure it's loaded and scroll to it
-  useEffect(() => {
-    if (!targetProductId) return;
-
-    const exists = products.some((p) => p.id === targetProductId);
-
-    if (exists) {
-      // Check if we have a saved scroll position to restore
-      const savedScrollY = sessionStorage.getItem('restoreScrollY');
-      const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-      
-      // Scroll to the target element with extended retries (mobile images/layout settle slower)
-      const anchorId = `p-${targetProductId}`;
-      const attempts = [0, 120, 240, 400, 650, 900, 1300, 1800, 2500, 3300, 4200, 5200, 6500, 8000];
-      let cancelled = false;
-      let scrollRestored = false;
-
-      const scrollWithOffset = () => {
-        const el = document.getElementById(anchorId);
-        if (!el) {
-          // If element not found but we have saved scroll position, restore that instead
-          if (!scrollRestored && savedScrollY && returnFromProduct === '1') {
-            const scrollY = parseInt(savedScrollY, 10);
-            if (Number.isFinite(scrollY) && scrollY > 0) {
-              requestAnimationFrame(() => {
-                try { window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); } catch {}
-              });
-              scrollRestored = true;
-              // Clear restoration flags after scroll
-              setTimeout(() => {
-                try {
-                  sessionStorage.removeItem('returnFromProduct');
-                  sessionStorage.removeItem('restoreProductId');
-                  sessionStorage.removeItem('restorePage');
-                  sessionStorage.removeItem('restoreScrollY');
-                } catch {}
-              }, 100);
-            }
-          }
-          return false;
-        }
-        try {
-          const header = document.querySelector('header');
-          const headerHeight = header ? header.offsetHeight : 0;
-          const rect = el.getBoundingClientRect();
-          const currentY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-          const targetY = rect.top + currentY - Math.max(headerHeight, 80);
-          const scrollingElement = document.scrollingElement || document.documentElement || document.body;
-
-          requestAnimationFrame(() => {
-            try { window.scrollTo({ top: targetY, left: 0, behavior: 'auto' }); } catch {}
-            try { scrollingElement.scrollTop = targetY; } catch {}
-            try { document.documentElement.scrollTop = targetY; } catch {}
-            try { document.body.scrollTop = targetY; } catch {}
-          });
-
-          setTimeout(() => {
-            const near = Math.abs((window.pageYOffset || document.documentElement.scrollTop || 0) - targetY) < 2;
-            if (!near) {
-              try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
-            }
-            // Clear restoration flags after successful scroll
-            if (returnFromProduct === '1' && !scrollRestored) {
-              scrollRestored = true;
-              setTimeout(() => {
-                try {
-                  sessionStorage.removeItem('returnFromProduct');
-                  sessionStorage.removeItem('restoreProductId');
-                  sessionStorage.removeItem('restorePage');
-                  sessionStorage.removeItem('restoreScrollY');
-                } catch {}
-              }, 100);
-            }
-          }, 60);
-        } catch {
-          try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
-        }
-        return true;
-      };
-
-      // If images are still loading, wait for them to finish before attempting scroll
-      const container = document.querySelector('[data-featured-products]');
-      let pendingImageHandlers = [];
-      if (container) {
-        const imgs = Array.from(container.querySelectorAll('img'));
-        const notReady = imgs.filter(img => !img.complete);
-        if (notReady.length > 0) {
-          notReady.forEach(img => {
-            const handler = () => { scrollWithOffset(); };
-            img.addEventListener('load', handler, { once: true });
-            pendingImageHandlers.push({ img, handler });
-          });
-        }
-      }
-
-      const timers = attempts.map((ms) => setTimeout(() => {
-        if (cancelled) return;
-        const ok = scrollWithOffset();
-        if (ok) cancelled = true; // gate further retries once successful
-      }, ms));
-      
-      // If we still haven't scrolled after all attempts, restore saved scroll position
-      const finalTimer = setTimeout(() => {
-        if (!scrollRestored && savedScrollY && returnFromProduct === '1') {
-          const scrollY = parseInt(savedScrollY, 10);
-          if (Number.isFinite(scrollY) && scrollY > 0) {
-            requestAnimationFrame(() => {
-              try { window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); } catch {}
-            });
-            scrollRestored = true;
-            // Clear restoration flags
-            try {
-              sessionStorage.removeItem('returnFromProduct');
-              sessionStorage.removeItem('restoreProductId');
-              sessionStorage.removeItem('restorePage');
-              sessionStorage.removeItem('restoreScrollY');
-            } catch {}
-          }
-        }
-        setTargetProductId(null);
-      }, Math.max(...attempts) + 600);
-      
-      return () => {
-        cancelled = true;
-        timers.forEach(clearTimeout);
-        clearTimeout(finalTimer);
-        pendingImageHandlers.forEach(({ img, handler }) => img.removeEventListener('load', handler));
-      };
-    }
-
-    // Find which page contains the target product (only if we haven't already set the page from sessionStorage)
-    const productIndex = allProducts.findIndex(p => p.id === targetProductId);
-    if (productIndex !== -1) {
-      // Calculate which page this product is on (same logic for both desktop and mobile)
-      let targetPage = 1;
-      if (productIndex < initialPageSize) {
-        targetPage = 1;
-      } else {
-        const remainingIndex = productIndex - initialPageSize;
-        targetPage = 2 + Math.floor(remainingIndex / pageSize);
-      }
-      
-      // Only change page if it's different (avoid unnecessary re-renders)
-      if (targetPage !== currentPage) {
-        setCurrentPage(targetPage);
-      }
-    } else if (allProducts.length > 0) {
-      // Products are loaded but product not found - restore saved scroll position as fallback
-      const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-      const savedScrollY = sessionStorage.getItem('restoreScrollY');
-      
-      if (returnFromProduct === '1' && savedScrollY) {
-        const scrollY = parseInt(savedScrollY, 10);
-        if (Number.isFinite(scrollY) && scrollY > 0) {
-          // Restore scroll position after a delay to ensure page is rendered
-          setTimeout(() => {
-            requestAnimationFrame(() => {
-              try { window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); } catch {}
-            });
-            // Clear restoration flags
-            try {
-              sessionStorage.removeItem('returnFromProduct');
-              sessionStorage.removeItem('restoreProductId');
-              sessionStorage.removeItem('restorePage');
-              sessionStorage.removeItem('restoreScrollY');
-            } catch {}
-          }, 500);
-        }
-      }
-      // Don't clear targetProductId yet, wait for products to load fully
-      console.warn('Target product not found in current products list, waiting...');
-    }
-  }, [targetProductId, allProducts, currentPage, initialPageSize, pageSize]);
 
   // Fetch latest uploads (last 2 months up to current hour)
   useEffect(() => {
@@ -621,123 +307,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
   }, [allProducts, currentPage, initialPageSize, pageSize]);
 
-  // Restore scroll position when returning from product page (if no target product)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (pathname !== '/') return;
-    
-    // Check if we're returning from a product page but don't have a target product
-    const returnFromProduct = sessionStorage.getItem('returnFromProduct');
-    const savedScrollY = sessionStorage.getItem('restoreScrollY');
-    const savedPage = sessionStorage.getItem('restorePage');
-    
-    // Only restore if we have saved state and products are loaded
-    if (returnFromProduct === '1' && savedScrollY && !targetProductId && products.length > 0) {
-      const scrollY = parseInt(savedScrollY, 10);
-      if (Number.isFinite(scrollY) && scrollY > 0) {
-        // Restore scroll position after products are rendered
-        const restoreScroll = () => {
-          requestAnimationFrame(() => {
-            try { 
-              window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }); 
-            } catch {}
-          });
-          // Clear restoration flags
-          try {
-            sessionStorage.removeItem('returnFromProduct');
-            sessionStorage.removeItem('restoreProductId');
-            sessionStorage.removeItem('restorePage');
-            sessionStorage.removeItem('restoreScrollY');
-          } catch {}
-        };
-        
-        // Wait a bit for layout to settle
-        setTimeout(restoreScroll, 300);
-      }
-    }
-  }, [products.length, targetProductId]);
 
-  // Scroll to products section when page changes (for all pagination clicks)
-  useEffect(() => {
-    if (currentPage >= 1 && products.length > 0) {
-      // Clear scroll restoration flags to prevent interference
-      if (typeof window !== 'undefined') {
-        try {
-          // Set a flag to prevent scroll restoration
-          sessionStorage.setItem('paginationScrollInProgress', 'true');
-        } catch (e) {}
-      }
-      
-      // Delay to ensure products are rendered
-      const scrollTimer = setTimeout(() => {
-        // Check if mobile directly
-        const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
-        
-        if (isMobileDevice) {
-          // Mobile: Try multiple targets
-          const scrollAnchor = document.getElementById('mobile-products-scroll-anchor');
-          const firstProduct = document.querySelector('#products-grid-mobile [id^="p-"]');
-          const mobileGrid = document.getElementById('products-grid-mobile');
-          const productsSection = document.querySelector('[data-featured-products]');
-          
-          // Priority: scroll anchor > first product > mobile grid > section
-          const scrollTarget = scrollAnchor || firstProduct || mobileGrid || productsSection;
-          
-          if (scrollTarget) {
-            // Use requestAnimationFrame for better mobile reliability
-            requestAnimationFrame(() => {
-              const rect = scrollTarget.getBoundingClientRect();
-              const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-              const targetPosition = rect.top + scrollTop;
-              
-              // Scroll immediately on mobile - use multiple attempts for reliability
-              window.scrollTo({
-                top: Math.max(0, targetPosition - 10),
-                behavior: 'auto'
-              });
-              
-              // Force scroll again after a brief delay
-              setTimeout(() => {
-                window.scrollTo({
-                  top: Math.max(0, targetPosition - 10),
-                  behavior: 'auto'
-                });
-                
-                // Backup scrollIntoView
-                if (scrollTarget.scrollIntoView) {
-                  scrollTarget.scrollIntoView({ 
-                    behavior: 'auto',
-                    block: 'start'
-                  });
-                }
-              }, 150);
-            });
-          }
-        } else {
-          // Desktop: Use smooth scroll
-          const desktopGrid = document.getElementById('products-grid');
-          const productsSection = desktopGrid || document.querySelector('[data-featured-products]');
-          
-          if (productsSection) {
-            productsSection.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start',
-              inline: 'nearest'
-            });
-          }
-        }
-        
-        // Clear the flag after scrolling
-        setTimeout(() => {
-          try {
-            sessionStorage.removeItem('paginationScrollInProgress');
-          } catch (e) {}
-        }, 1000);
-      }, isMobile ? 400 : 200); // Longer delay for mobile to ensure DOM is fully updated
-      
-      return () => clearTimeout(scrollTimer);
-    }
-  }, [currentPage, products.length, isMobile]);
 
   // Fetch all products when search criteria changes
   useEffect(() => {
@@ -778,56 +348,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Handle page change
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
-      
-      // Clear any saved scroll positions to prevent restoration interference
-      if (typeof window !== 'undefined') {
-        try {
-          sessionStorage.removeItem('restoreHomeScroll');
-          sessionStorage.removeItem(`scroll:/`);
-          sessionStorage.removeItem('mainPageScrollPosition');
-        } catch (e) {
-          console.warn('Could not clear scroll positions:', e);
-        }
-      }
-      
-      // On mobile, scroll immediately before changing page
-      if (isMobileDevice) {
-        // Try multiple scroll targets for mobile
-        const scrollAnchor = document.getElementById('mobile-products-scroll-anchor');
-        const mobileGrid = document.getElementById('products-grid-mobile');
-        const firstProduct = document.querySelector('#products-grid-mobile [id^="p-"]');
-        const productsSection = document.querySelector('[data-featured-products]');
-        
-        // Priority: scroll anchor > first product > mobile grid > section
-        const scrollTarget = scrollAnchor || firstProduct || mobileGrid || productsSection;
-        
-        if (scrollTarget) {
-          // Use requestAnimationFrame for better mobile scroll reliability
-          requestAnimationFrame(() => {
-            const rect = scrollTarget.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-            const targetPosition = rect.top + scrollTop;
-            
-            // Scroll immediately to products section
-            window.scrollTo({
-              top: Math.max(0, targetPosition - 10),
-              behavior: 'auto' // Immediate scroll
-            });
-            
-            // Double-check with scrollIntoView as backup
-            setTimeout(() => {
-              if (scrollTarget.scrollIntoView) {
-                scrollTarget.scrollIntoView({ 
-                  behavior: 'auto',
-                  block: 'start'
-                });
-              }
-            }, 50);
-          });
-        }
-      }
-      
       setCurrentPage(newPage);
     }
   };
@@ -908,22 +428,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
 
   const handleProductClick = async (id) => {
-    // Save scroll position and pagination state before navigation (only on main page)
-    if (window.location.pathname === '/') {
-      saveScrollPosition();
-      try {
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
-        // Save scroll position for restoration
-        sessionStorage.setItem('restoreScrollY', String(scrollY));
-        sessionStorage.setItem('restoreHomeScroll', String(scrollY));
-        sessionStorage.setItem(`scroll:/`, String(scrollY));
-        // Save current page number for restoration
-        sessionStorage.setItem('restorePage', String(currentPage));
-        // Save product ID for precise restoration
-        sessionStorage.setItem('restoreProductId', id);
-      } catch {}
-    }
-    
     // Track product view for recent section
     const userId = getUserId();
     if (userId && userId !== 'guest') {
@@ -939,20 +443,6 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     
     // Navigate to product detail page
     setIsNavigating(true);
-    try {
-      // Persist an anchor hash on the main page entry so back navigation can restore position precisely
-      if (typeof window !== 'undefined' && window.location.pathname === '/') {
-        const { pathname, search } = window.location;
-        const anchor = `#p-${id}`;
-        if (typeof history !== 'undefined' && history.replaceState) {
-          history.replaceState(null, '', `${pathname}${search}${anchor}`);
-        } else {
-          window.location.hash = anchor;
-        }
-        try { sessionStorage.setItem('returnFromProduct', '1'); } catch {}
-        try { sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY)); } catch {}
-      }
-    } catch {}
     router.push(`/product/${id}`);
   };
 
@@ -1003,9 +493,9 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         {/* Desktop/Tablet: original grid */}
-        <div id="products-grid" className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
+        <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-0.5 p-0 m-0">
           {products.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-            <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
+            <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
               <ProductCard
                 variant="compact"
                 isFirst={index < 6} // First 6 products get priority loading
@@ -1025,9 +515,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         </div>
 
         {/* Mobile: two rows after Trending, Recently Viewed, two rows, Latest, then remaining */}
-        <div id="products-grid-mobile" className="sm:hidden relative">
-          {/* Scroll anchor for mobile pagination */}
-          <div id="mobile-products-scroll-anchor" style={{ position: 'absolute', top: '-20px', left: 0, width: '1px', height: '1px', visibility: 'hidden', pointerEvents: 'none' }} />
+        <div className="sm:hidden relative">
           {(() => {
             const firstCount = 4;
             const secondCount = 8;
@@ -1039,7 +527,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {/* Two rows right after Trending */}
                 <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                   {first.map(({ id, name, description, price, discount, imageUrl, sku }, index) => (
-                    <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
+                    <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
                       <ProductCard
                         variant="compact"
                         isFirst={index < 4} // First 4 products get priority loading on mobile
@@ -1071,7 +559,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
                 {second.length > 0 && (
                   <div className="grid grid-cols-2 gap-0.5 p-0 m-0">
                     {second.map(({ id, name, description, price, discount, imageUrl, sku }) => (
-                      <div id={`p-${id}`} key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
+                      <div key={id} onClick={() => handleProductClick(id)} className="cursor-pointer group scroll-mt-28">
                         <ProductCard
                           variant="compact"
                           isFirst={false}

@@ -175,19 +175,6 @@ export default function TrendingProducts({ onLoadComplete }) {
 
 
   const handleProductClick = (productId) => {
-    // Save current scroll position and set anchor hash for precise restoration on Home
-    try {
-      const { pathname, search } = window.location;
-      const key = `scroll:${pathname}`;
-      sessionStorage.setItem(key, String(window.scrollY));
-      sessionStorage.setItem('returnFromProduct', '1');
-      const anchor = `#p-${productId}`;
-      if (typeof history !== 'undefined' && history.replaceState) {
-        history.replaceState(null, '', `${pathname}${search}${anchor}`);
-      } else {
-        window.location.hash = anchor;
-      }
-    } catch {}
 
     setIsNavigating(true);
     router.push(`/product/${productId}`);

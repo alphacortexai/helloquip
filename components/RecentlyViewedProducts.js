@@ -116,19 +116,6 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
             key={item.id}
             href={`/product/${item.productId}`}
             className="group block snap-start shrink-0 w-32"
-            onClick={(e) => {
-              try {
-                const { pathname, search } = window.location;
-                sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY));
-                sessionStorage.setItem('returnFromProduct', '1');
-                const anchor = `#p-${item.productId}`;
-                if (typeof history !== 'undefined' && history.replaceState) {
-                  history.replaceState(null, '', `${pathname}${search}${anchor}`);
-                } else {
-                  window.location.hash = anchor;
-                }
-              } catch {}
-            }}
           >
             <div className="relative">
               <img

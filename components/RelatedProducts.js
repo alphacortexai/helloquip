@@ -156,7 +156,8 @@ export default function RelatedProducts({
   const [isShowingFallback, setIsShowingFallback] = useState(false);
   const scrollContainerRef = useRef(null);
   const router = useRouter();
-  const maxProducts = 20; // Limit to 20 products total
+  const maxProducts = 20; // Maximum products to show
+  const minProducts = 10; // Minimum products to always show
 
   const fetchRelatedProducts = useCallback(
     async () => {
@@ -171,8 +172,8 @@ export default function RelatedProducts({
           keyword: keyword || ''
         };
         
-        // Get all products to filter and score
-        const q = query(collection(db, "products"), orderBy("name"), limit(maxProducts * 3));
+        // Get all products to filter and score - fetch more to ensure we have enough
+        const q = query(collection(db, "products"), orderBy("name"), limit(100));
         const querySnapshot = await getDocs(q);
 
         let allProducts = querySnapshot.docs.map((doc) => ({
@@ -199,14 +200,27 @@ export default function RelatedProducts({
         const fallbackProducts = scoredProducts.filter(product => product.relevanceScore < 60);
 
         let finalProducts;
-        if (relatedProducts.length >= 1) {
-          // We have at least 1 related product - show related products
+        if (relatedProducts.length >= minProducts) {
+          // We have enough related products - show only related products
           finalProducts = relatedProducts.slice(0, maxProducts);
           setIsShowingFallback(false);
+        } else if (relatedProducts.length >= 1) {
+          // We have some related products but not enough - combine with fallback to reach minimum
+          const neededFromFallback = minProducts - relatedProducts.length;
+          finalProducts = [
+            ...relatedProducts,
+            ...fallbackProducts.slice(0, neededFromFallback)
+          ].slice(0, maxProducts);
+          setIsShowingFallback(false);
         } else {
-          // No related products found, use fallback
-          finalProducts = fallbackProducts.slice(0, maxProducts);
+          // No related products found, use fallback but ensure minimum
+          finalProducts = fallbackProducts.slice(0, Math.max(minProducts, maxProducts));
           setIsShowingFallback(true);
+        }
+        
+        // Final safety check: ensure we always have at least minProducts
+        if (finalProducts.length < minProducts && scoredProducts.length >= minProducts) {
+          finalProducts = scoredProducts.slice(0, Math.max(minProducts, maxProducts));
         }
 
         setProducts(finalProducts);
@@ -229,12 +243,15 @@ export default function RelatedProducts({
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       // Scroll by one card width + gap
-      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 3) + 2px
+      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 4) + 2px, Large: calc((100vw - 8rem) / 6) + 2px
       const isMobile = window.innerWidth < 768;
+      const isLarge = window.innerWidth >= 1024;
       const viewportWidth = window.innerWidth;
       const cardWidth = isMobile 
         ? (viewportWidth - 64) / 2  // 4rem = 64px
-        : (viewportWidth - 128) / 3; // 8rem = 128px
+        : isLarge
+        ? (viewportWidth - 128) / 6  // 8rem = 128px, 6 columns on large screens
+        : (viewportWidth - 128) / 4; // 8rem = 128px, 4 columns on medium screens
       const gap = 2; // gap-0.5 = 2px
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
@@ -244,12 +261,15 @@ export default function RelatedProducts({
   const scrollRight = () => {
     if (scrollContainerRef.current) {
       // Scroll by one card width + gap
-      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 3) + 2px
+      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 4) + 2px, Large: calc((100vw - 8rem) / 6) + 2px
       const isMobile = window.innerWidth < 768;
+      const isLarge = window.innerWidth >= 1024;
       const viewportWidth = window.innerWidth;
       const cardWidth = isMobile 
         ? (viewportWidth - 64) / 2  // 4rem = 64px
-        : (viewportWidth - 128) / 3; // 8rem = 128px
+        : isLarge
+        ? (viewportWidth - 128) / 6  // 8rem = 128px, 6 columns on large screens
+        : (viewportWidth - 128) / 4; // 8rem = 128px, 4 columns on medium screens
       const gap = 2; // gap-0.5 = 2px
       const scrollAmount = cardWidth + gap;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
@@ -257,12 +277,6 @@ export default function RelatedProducts({
   };
 
   const handleProductClick = (id) => {
-    // Save current scroll position for this path before navigating
-    try {
-      const key = `scroll:${window.location.pathname}`;
-      sessionStorage.setItem(key, String(window.scrollY));
-    } catch {}
-
     setIsNavigating(true);
     router.push(`/product/${id}`);
   };
@@ -315,7 +329,7 @@ export default function RelatedProducts({
                 <div
                   key={id}
                   onClick={() => handleProductClick(id)}
-                  className="cursor-pointer group flex-shrink-0 snap-start w-[calc((100vw-4rem)/2)] min-w-[calc((100vw-4rem)/2)] max-w-[calc((100vw-4rem)/2)] md:w-[calc((100vw-8rem)/3)] md:min-w-[calc((100vw-8rem)/3)] md:max-w-[calc((100vw-8rem)/3)]"
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[calc((100vw-4rem)/2)] min-w-[calc((100vw-4rem)/2)] max-w-[calc((100vw-4rem)/2)] md:w-[calc((100vw-8rem)/4)] md:min-w-[calc((100vw-8rem)/4)] md:max-w-[calc((100vw-8rem)/4)] lg:w-[calc((100vw-8rem)/6)] lg:min-w-[calc((100vw-8rem)/6)] lg:max-w-[calc((100vw-8rem)/6)]"
                 >
                   <ProductCard
                     variant={cardVariant}
