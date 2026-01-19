@@ -19,10 +19,10 @@ const Footer = () => {
             <div className="mb-4">
               <CachedLogo
                 variant="footer"
-                className="h-16 w-auto"
+                className="h-12 w-auto"
               />
             </div>
-            <p className="text-gray-300 mb-6 leading-relaxed">
+            <p className="text-xs text-gray-300 mb-6 leading-relaxed">
             Exceptional, Premium and Budget healthcare commodities at your fingertips
             We are committed to supporting healthcare across Africa by improving access
             to healthcare commodities as well transformming procurement process making it faster,
@@ -56,11 +56,10 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2">
+            <h4 className="text-sm font-semibold mb-4">Quick Links</h4>
+            <ul className="space-y-2 text-xs">
               <li><a href="/" className="text-gray-300 hover:text-blue-400 transition-colors">Home</a></li>
               <li><a href="/categories" className="text-gray-300 hover:text-blue-400 transition-colors">Categories</a></li>
-              <li><a href="/search" className="text-gray-300 hover:text-blue-400 transition-colors">Search Products</a></li>
               <li><a href="/order" className="text-gray-300 hover:text-blue-400 transition-colors">My Orders</a></li>
               <li><a href="/account" className="text-gray-300 hover:text-blue-400 transition-colors">My Account</a></li>
               <li><a href="/feedback" className="text-gray-300 hover:text-blue-400 transition-colors">Share Feedback</a></li>
@@ -69,30 +68,29 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Company</h4>
-            <ul className="space-y-2">
+            <h4 className="text-sm font-semibold mb-4">Company</h4>
+            <ul className="space-y-2 text-xs">
               <li><a href="/about" className="text-gray-300 hover:text-blue-400 transition-colors">About Us</a></li>
               <li><a href="/contact" className="text-gray-300 hover:text-blue-400 transition-colors">Contact Us</a></li>
               <li><a href="/privacy" className="text-gray-300 hover:text-blue-400 transition-colors">Privacy Policy</a></li>
               <li><a href="/terms" className="text-gray-300 hover:text-blue-400 transition-colors">Terms of Service</a></li>
-              <li><a href="/shipping" className="text-gray-300 hover:text-blue-400 transition-colors">Shipping Info</a></li>
             </ul>
           </div>
 
           {/* Contact & Newsletter */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Contact Info</h4>
-            <div className="space-y-3">
+            <h4 className="text-sm font-semibold mb-4">Contact Info</h4>
+            <div className="space-y-3 text-xs">
               <div className="flex items-center space-x-3">
-                <PhoneIcon className="h-5 w-5 text-blue-400" />
+                <PhoneIcon className="h-4 w-4 text-blue-400" />
                 <span className="text-gray-300">+256 774 660 089</span>
               </div>
               <div className="flex items-center space-x-3">
-                <EnvelopeIcon className="h-5 w-5 text-blue-400" />
+                <EnvelopeIcon className="h-4 w-4 text-blue-400" />
                 <span className="text-gray-300">hello@heloquip.com</span>
               </div>
               <div className="flex items-center space-x-3">
-                <MapPinIcon className="h-5 w-5 text-blue-400" />
+                <MapPinIcon className="h-4 w-4 text-blue-400" />
                 <span className="text-gray-300">Kampala, Uganda</span>
               </div>
             </div>
@@ -103,16 +101,16 @@ const Footer = () => {
         <div className="mt-8 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <h5 className="text-sm font-semibold mb-2">We Accept</h5>
+              <h5 className="text-[10px] font-semibold mb-2">We Accept</h5>
               <div className="flex space-x-2">
-                <div className="w-12 h-8 bg-gray-700 rounded flex items-center justify-center text-xs">VISA</div>
-                <div className="w-12 h-8 bg-gray-700 rounded flex items-center justify-center text-xs">MC</div>
-                <div className="w-12 h-8 bg-gray-700 rounded flex items-center justify-center text-xs">MPESA</div>
-                <div className="w-12 h-8 bg-gray-700 rounded flex items-center justify-center text-xs">AIRTEL</div>
+                <div className="w-11 h-7 bg-gray-700 rounded flex items-center justify-center text-[10px]">VISA</div>
+                <div className="w-11 h-7 bg-gray-700 rounded flex items-center justify-center text-[10px]">MC</div>
+                <div className="w-11 h-7 bg-gray-700 rounded flex items-center justify-center text-[10px]">MPESA</div>
+                <div className="w-11 h-7 bg-gray-700 rounded flex items-center justify-center text-[10px]">AIRTEL</div>
               </div>
             </div>
             
-            <div className="text-sm text-gray-400">
+            <div className="text-[10px] text-gray-400">
               <p>© {new Date().getFullYear()} Heloquip. All rights reserved.</p>
             </div>
           </div>

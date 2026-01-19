@@ -31,6 +31,7 @@ import UserMessenger from "./components/UserMessenger";
 import AdminUserChat from "./components/AdminUserChat";
 import DisplaySettings from "./components/DisplaySettings";
 import CarouselSettings from "./components/CarouselSettings";
+import LegalSettings from "./components/LegalSettings";
 import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
@@ -57,6 +58,7 @@ import {
   BellIcon,
   StarIcon,
   ArrowsUpDownIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 
 const tabs = [
@@ -314,6 +316,15 @@ const tabs = [
     bgColor: "bg-violet-50",
     borderColor: "border-violet-100"
   },
+  {
+    id: "legal",
+    icon: <DocumentTextIcon className="w-5 h-5" />,
+    label: "Privacy & Terms",
+    description: "Edit privacy policy and terms of service",
+    color: "text-slate-600",
+    bgColor: "bg-slate-50",
+    borderColor: "border-slate-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -485,6 +496,9 @@ function AdminDashboard({ currentAdminUid }) {
         return <ProductSuggestions />;
       case "reorderProducts":
         return <ProductReorder />;
+      case "legal":
+      case "privacyPolicy":
+        return <LegalSettings />;
       default:
         return null;
     }

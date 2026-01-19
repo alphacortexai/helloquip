@@ -2,13 +2,11 @@
 
 import { useMemo, useRef, useEffect, useState } from 'react';
 import {
-  BadgeCheck,
   Bot,
   CircleDot,
   CornerDownLeft,
   Loader2,
   Send,
-  Sparkles,
   User,
 } from 'lucide-react';
 
@@ -84,34 +82,7 @@ export default function AgentChat() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col lg:flex-row gap-4">
-      <aside className="lg:w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2 text-slate-900 font-semibold">
-          <Sparkles className="h-5 w-5 text-[#2e4493]" />
-          Support Assistant
-        </div>
-        <p className="mt-2 text-sm text-slate-600">
-          Fast, accurate answers powered by Gemini + LangChain.
-        </p>
-        <div className="mt-4 space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-slate-700">
-            <BadgeCheck className="h-4 w-4 text-emerald-500" />
-            Order & shipping help
-          </div>
-          <div className="flex items-center gap-2 text-slate-700">
-            <BadgeCheck className="h-4 w-4 text-emerald-500" />
-            Quotes & product info
-          </div>
-          <div className="flex items-center gap-2 text-slate-700">
-            <BadgeCheck className="h-4 w-4 text-emerald-500" />
-            Returns & account support
-          </div>
-        </div>
-        <div className="mt-6 rounded-xl border border-dashed border-slate-200 p-3 text-xs text-slate-500">
-          Tip: Share your order number and email for faster help.
-        </div>
-      </aside>
-
+    <div className="flex h-full w-full flex-col">
       <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-3">
@@ -120,7 +91,7 @@ export default function AgentChat() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900">
-                HelloQuip Support
+                Support
               </p>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <CircleDot className="h-3 w-3 text-emerald-500" />
