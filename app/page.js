@@ -8,6 +8,7 @@ import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import CachedLogo from "@/components/CachedLogo";
 
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
+import LatestProducts from "@/components/LatestProducts";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -515,6 +516,9 @@ export default function Home() {
               </section>
             </div>
 
+            {/* Latest - horizontally scrollable row just before products */}
+            <LatestProducts />
+
             {/* Featured Products */}
             <section className="mb-4">
               <FeaturedProducts 
@@ -525,6 +529,11 @@ export default function Home() {
                   setHasScrolledAllProducts(hasScrolledAll);
                 }}
               />
+            </section>
+
+            {/* Recently Viewed - after products, before Testimonials */}
+            <section className="mb-4">
+              <RecentlyViewedProducts limit={16} showTitle={true} />
             </section>
 
             {/* Bottom Row - Product Recommendations and Testimonials */}

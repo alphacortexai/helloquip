@@ -16,6 +16,7 @@ import { db } from "@/lib/firebase";
 import ProductCard from "@/components/ProductCard";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
+import HorizontalScrollWithArrows from "@/components/HorizontalScrollWithArrows";
 
 
 const getPreferredImageUrl = (imageUrl) => {
@@ -331,9 +332,11 @@ export default function TrendingProducts({ onLoadComplete }) {
 
       {/* Mobile Slide Carousel */}
       <div className="block md:hidden">
-        <div
-          ref={trackRef}
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        <HorizontalScrollWithArrows
+          forwardedRef={trackRef}
+          scrollByFullWidth
+          scrollClassName="snap-x snap-mandatory"
+          itemCount={totalSlides}
         >
           {carouselMode === "images" &&
             imageSlides.map((image, index) => (
@@ -387,7 +390,7 @@ export default function TrendingProducts({ onLoadComplete }) {
                 />
               </div>
             ))}
-        </div>
+        </HorizontalScrollWithArrows>
       </div>
     </>
   );
