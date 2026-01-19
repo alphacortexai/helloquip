@@ -276,7 +276,7 @@ export default function SearchBar() {
         <input
           type="text"
           placeholder={getCurrentPlaceholder()}
-            className="w-full pl-6 pr-12 md:pr-4 py-2 border-2 border-[#1877F2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-[#1877F2] text-base transition-all duration-300"
+            className="w-full pl-6 pr-12 md:pr-4 py-2 border-2 border-[#0865ff] rounded-full focus:outline-none focus:ring-2 focus:ring-[#0865ff] focus:border-[#0865ff] text-base transition-all duration-300"
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
@@ -299,7 +299,7 @@ export default function SearchBar() {
         {/* Desktop: Visible search button */}
         <button 
           type="submit" 
-          className="hidden md:flex items-center gap-2 px-6 py-2 bg-[#1877F2] text-white rounded-full hover:bg-[#166FE5] transition-colors font-medium text-base whitespace-nowrap" 
+          className="hidden md:flex items-center gap-2 px-6 py-2 bg-[#0865ff] text-white rounded-full hover:bg-[#075ae6] transition-colors font-medium text-base whitespace-nowrap" 
           aria-label="Search"
         >
           <Search className="w-5 h-5" />
@@ -372,7 +372,7 @@ export default function SearchBar() {
           <li className="px-3 py-2 border-t border-gray-200 bg-gray-50 search-suggestion-item">
             <button
               onClick={handleSubmit}
-              className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-1"
+              className="w-full text-center text-sm text-[#0865ff] hover:text-[#075ae6] font-medium py-1"
             >
               View all results for "{searchTerm}"
             </button>
@@ -384,7 +384,7 @@ export default function SearchBar() {
       {isFocused && searchTerm && isLoading && (
         <div className="absolute z-50 bg-white w-full border border-gray-200 rounded-lg mt-1 shadow-lg p-4">
           <div className="flex items-center justify-center text-gray-500">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0865ff] mr-2"></div>
             Loading suggestions...
           </div>
         </div>

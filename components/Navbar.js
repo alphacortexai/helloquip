@@ -353,7 +353,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => router.push("/register")}
-                  className="bg-[#2e4493] text-white hover:bg-[#131a2f] transition-colors px-4 py-2 text-sm rounded-lg font-medium"
+                  className="bg-[#0865ff] text-white hover:bg-[#075ae6] transition-colors px-4 py-2 text-sm rounded-lg font-medium"
                 >
                   Sign In
                 </button>

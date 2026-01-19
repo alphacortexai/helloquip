@@ -30,7 +30,7 @@ export default function LoadingScreen({ onComplete }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-[#2e4493] flex items-center justify-center z-[200]">
+    <div className="fixed inset-0 bg-[#255cdc] flex items-center justify-center z-[200]">
       <div className="text-center">
         {/* Logo Area */}
         <div className="mb-8">

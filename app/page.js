@@ -416,7 +416,7 @@ export default function Home() {
   // Don't render anything until client-side
   if (!isClient) {
     return (
-      <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
+      <div className="min-h-screen bg-[#255cdc] flex items-center justify-center">
         <CachedLogo
           variant="loading"
           width={64}
@@ -477,7 +477,7 @@ export default function Home() {
 
       {/* Main Layout - Only render when loading screen is hidden */}
       {!showLoadingScreen && (
-        <div className="min-h-screen bg-[#2e4493]" data-page="home">
+        <div className="min-h-screen bg-[#255cdc]" data-page="home">
         {/* Desktop Layout */}
         <div className="hidden md:block">
           <div className="max-w-7xl mx-auto px-1 pt-2 pb-3">

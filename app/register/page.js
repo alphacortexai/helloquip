@@ -6,7 +6,7 @@ import RegisterClient from "./RegisterClient";
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#2e4493] px-4 text-white">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0865ff] px-4 text-white">
       <div className="w-full max-w-md flex flex-col items-center text-center">
         <h1 className="text-4xl font-extrabold mb-2">HeloQuip</h1>
         <p className="text-white/90 text-lg mb-8">

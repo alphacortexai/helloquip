@@ -82,12 +82,12 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4" data-page="admin-login">
-      <div className="w-full max-w-md md:bg-white md:p-6 md:rounded-lg md:shadow-md">
+    <div className="min-h-screen flex items-center justify-center bg-[#0865ff] px-4" data-page="admin-login">
+      <div className="w-full max-w-md bg-white p-4 md:p-6 rounded-lg shadow-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-[#0865ff]/20 rounded-full flex items-center justify-center">
             <svg
-              className="w-6 h-6 text-blue-600"
+              className="w-6 h-6 text-[#0865ff]"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -106,7 +106,7 @@ export default function AdminLogin() {
           <input
             type="email"
             placeholder="Email"
-            className="w-full p-3 border rounded focus:outline-none focus:ring focus:border-blue-300"
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#0865ff] focus:border-[#0865ff]"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -114,14 +114,14 @@ export default function AdminLogin() {
           <input
             type="password"
             placeholder="Password"
-            className="w-full p-3 border rounded focus:outline-none focus:ring focus:border-blue-300"
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#0865ff] focus:border-[#0865ff]"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-semibold"
+            className="w-full bg-[#0865ff] hover:bg-[#075ae6] text-white py-3 rounded font-semibold"
           >
             Continue
           </button>

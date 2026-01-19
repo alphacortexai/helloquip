@@ -95,7 +95,7 @@ export default function FeedbackPage() {
             <div className="space-y-3">
               <button
                 onClick={() => router.push("/login")}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                className="w-full bg-[#0865ff] text-white py-3 px-6 rounded-xl font-semibold hover:bg-[#075ae6] transition-colors"
               >
                 Login
               </button>
