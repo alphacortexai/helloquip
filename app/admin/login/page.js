@@ -1,64 +1,13 @@
-// "use client";
-
-// import { useState } from "react";
-// import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-// import { useRouter } from "next/navigation";
-// import { app } from "@/lib/firebase"; // your initialized firebase app
-
-// export default function AdminLogin() {
-//   const auth = getAuth(app);
-//   const router = useRouter();
-
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [error, setError] = useState("");
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setError("");
-//     try {
-//       await signInWithEmailAndPassword(auth, email, password);
-//       router.push("/admin"); // redirect to dashboard after login
-//     } catch (err) {
-//       setError("Invalid email or password");
-//     }
-//   };
-
-//   return (
-//     <div className="max-w-md mx-auto mt-20 p-4 border rounded shadow">
-//       <h1 className="text-xl font-bold mb-4">Admin Login</h1>
-//       {error && <p className="text-red-500 mb-2">{error}</p>}
-//       <form onSubmit={handleSubmit}>
-//         <input
-//           type="email"
-//           placeholder="Email"
-//           className="w-full mb-2 p-2 border rounded"
-//           value={email}
-//           onChange={(e) => setEmail(e.target.value)}
-//           required
-//         />
-//         <input
-//           type="password"
-//           placeholder="Password"
-//           className="w-full mb-4 p-2 border rounded"
-//           value={password}
-//           onChange={(e) => setPassword(e.target.value)}
-//           required
-//         />
-//         <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">
-//           Login
-//         </button>
-//       </form>
-//     </div>
-//   );
-// }
-
-
-
 "use client";
 
 import { useState } from "react";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import Image from "next/image";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { app } from "@/lib/firebase";
 
@@ -81,59 +30,156 @@ export default function AdminLogin() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setError("");
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push("/admin");
+    } catch (err) {
+      setError(err.message || "Google sign-in failed");
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0865ff] px-4" data-page="admin-login">
-      <div className="w-full max-w-md bg-white p-4 md:p-6 rounded-lg shadow-md">
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 bg-[#0865ff]/20 rounded-full flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-[#0865ff]"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 12c2.67 0 8 1.34 8 4v2H4v-2c0-2.66 5.33-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z" />
-            </svg>
+    <div
+      className="min-h-screen bg-[#255cdc] flex items-center justify-center px-4 py-6"
+      data-page="admin-login"
+    >
+      <div className="w-full max-w-6xl flex">
+        {/* Desktop: Left - images, title, subtitle (hidden on mobile) */}
+        <div className="hidden md:flex md:w-1/2 flex-col justify-center pr-10">
+          <h1 className="text-3xl font-bold text-white mb-1">HeloQuip</h1>
+          <p className="text-white/90 text-lg mb-6">Medical Equipment & Supplies</p>
+          <div className="flex flex-col gap-3">
+            <div className="relative w-full aspect-[16/10] max-h-44 rounded-2xl overflow-hidden shadow-lg">
+              <Image
+                src="/imaging.png"
+                alt="Imaging"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 0, 50vw"
+                priority
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
+                <Image
+                  src="/icu.png"
+                  alt="ICU"
+                  fill
+                  className="object-cover"
+                  sizes="25vw"
+                />
+              </div>
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
+                <Image
+                  src="/imgone.png"
+                  alt="Medical"
+                  fill
+                  className="object-cover"
+                  sizes="25vw"
+                />
+              </div>
+            </div>
           </div>
-          <h1 className="text-lg font-semibold mt-2">HeloQuip Admin</h1>
-          <p className="text-sm text-gray-500 text-center">
-            Enter your email and password to log in
-          </p>
         </div>
 
-        {error && <p className="text-red-500 mb-4 text-sm text-center">{error}</p>}
+        {/* Right (desktop) / Full width (mobile): Login form */}
+        <div className="w-full md:w-1/2 flex items-center justify-center md:justify-end">
+          <div className="w-full max-w-md bg-white p-6 md:p-8 rounded-2xl shadow-2xl border border-gray-100/80">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-14 h-14 bg-[#255cdc]/10 rounded-2xl flex items-center justify-center ring-2 ring-[#255cdc]/20">
+                <svg
+                  className="w-7 h-7 text-[#255cdc]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-4">HeloQuip Admin</h2>
+              <p className="text-sm text-gray-500 text-center mt-1.5 max-w-[260px]">
+                Enter your email and password, or continue with Google
+              </p>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#0865ff] focus:border-[#0865ff]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#0865ff] focus:border-[#0865ff]"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="w-full bg-[#0865ff] hover:bg-[#075ae6] text-white py-3 rounded font-semibold"
-          >
-            Continue
-          </button>
-        </form>
+            {error && (
+              <p className="text-red-600 mb-4 text-sm text-center bg-red-50 py-2.5 px-4 rounded-xl border border-red-100">
+                {error}
+              </p>
+            )}
 
-        <p className="text-xs text-center text-gray-400 mt-6">
-          For further support, please contact our customer service team.
-        </p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="email"
+                placeholder="Email address"
+                className="w-full p-3.5 text-[15px] border border-gray-200 rounded-xl placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#255cdc]/40 focus:border-[#255cdc] transition bg-gray-50/50 focus:bg-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full p-3.5 text-[15px] border border-gray-200 rounded-xl placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#255cdc]/40 focus:border-[#255cdc] transition bg-gray-50/50 focus:bg-white"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="submit"
+                className="w-full bg-[#255cdc] hover:bg-[#1e4bc4] text-white py-3.5 rounded-xl font-semibold text-[15px] transition shadow-md hover:shadow-lg"
+              >
+                Continue
+              </button>
+            </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6 font-semibold">
-          HELOQUIP
-        </p>
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-400 font-medium">or</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 text-gray-700 py-3.5 rounded-xl font-semibold text-[15px] transition shadow-sm"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Continue with Google
+            </button>
+
+            <p className="text-xs text-center text-gray-400 mt-6 leading-relaxed">
+              For further support, please contact our customer service team.
+            </p>
+
+            <p className="text-center text-sm text-gray-500 mt-3 font-semibold tracking-wide">
+              HELOQUIP
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
