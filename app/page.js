@@ -545,7 +545,7 @@ export default function Home() {
           <div className="px-1 py-1">
 
             {/* Mobile Categories */}
-            <div className="bg-white rounded-xl py-3 mb-1 mt-2">
+            <div className="bg-white rounded-xl py-3 mb-1 mt-[18px]">
               <Categories 
                 onCategorySelect={setSelectedCategory} 
                 onLoadComplete={() => setCategoriesLoaded(true)}
