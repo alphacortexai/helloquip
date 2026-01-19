@@ -260,18 +260,50 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       try {
         const { productId, page } = event.detail;
         if (productId && page) {
-          console.log('🎯 NavigateToProduct event received:', { productId, page });
-          // Set page first
+          console.log('🎯 NavigateToProduct event received:', { productId, page, currentPage });
+          // Set page first (this will trigger products to load)
           if (page !== currentPage) {
+            console.log(`📄 Changing page from ${currentPage} to ${page}`);
             setCurrentPage(page);
           }
           // Then set target product (will trigger scroll once products load)
+          console.log(`🎯 Setting target product ID: ${productId}`);
           setTargetProductId(productId);
+        } else {
+          console.warn('⚠️ NavigateToProduct event missing data:', event.detail);
         }
       } catch (err) {
-        console.error('Error handling navigateToProduct event:', err);
+        console.error('❌ Error handling navigateToProduct event:', err);
       }
     };
+    
+    // Also check sessionStorage periodically on mobile (in case event is missed)
+    const checkSessionStorage = () => {
+      try {
+        const isMobileCheck = typeof window !== 'undefined' && window.innerWidth < 768;
+        if (!isMobileCheck) return;
+        
+        const returnFromProduct = sessionStorage.getItem('returnFromProduct');
+        const savedProductId = sessionStorage.getItem('restoreProductId');
+        const savedPage = sessionStorage.getItem('restorePage');
+        
+        if (returnFromProduct === '1' && savedProductId && savedPage && !targetProductId) {
+          console.log('📱 Mobile: Found saved navigation state, restoring...', { savedProductId, savedPage });
+          const pageNum = parseInt(savedPage, 10);
+          if (pageNum >= 1 && pageNum !== currentPage) {
+            setCurrentPage(pageNum);
+          }
+          setTargetProductId(savedProductId);
+        }
+      } catch {}
+    };
+    
+    // Check sessionStorage every 500ms for 3 seconds (mobile fallback)
+    const isMobileCheck = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isMobileCheck) {
+      const interval = setInterval(checkSessionStorage, 500);
+      setTimeout(() => clearInterval(interval), 3000);
+    }
     
     window.addEventListener('pageshow', handler);
     window.addEventListener('hashchange', handler);

@@ -222,41 +222,51 @@ export default function Navbar() {
         sessionStorage.setItem('restoreProductId', productId);
         sessionStorage.setItem('restorePage', String(targetPage));
         
+        const isMobile = window.innerWidth < 768;
+        console.log('🔍 SKU Navigation:', { productId, targetPage, pathname, isMobile });
+        
         // Navigate to home page if not already there
         if (pathname !== '/') {
+          console.log('📍 Not on home page, navigating...');
           router.push(`/#p-${productId}`);
         } else {
-          // Already on home page - update hash and trigger navigation
-          // On mobile, we need to be more aggressive with the navigation
-          const isMobile = window.innerWidth < 768;
+          // Already on home page
+          console.log('📍 Already on home page, triggering navigation...');
           
-          // Set hash first
-          window.location.hash = `#p-${productId}`;
-          
-          // Trigger custom event with multiple attempts for mobile reliability
-          const triggerNavigation = () => {
-            window.dispatchEvent(new CustomEvent('navigateToProduct', { 
-              detail: { productId, page: targetPage } 
-            }));
-          };
-          
-          // Immediate trigger
-          triggerNavigation();
-          
-          // Additional triggers for mobile (more delays)
+          // On mobile, force a navigation to ensure state is reset
           if (isMobile) {
-            setTimeout(triggerNavigation, 200);
-            setTimeout(triggerNavigation, 500);
-            setTimeout(triggerNavigation, 1000);
-          } else {
-            setTimeout(triggerNavigation, 100);
-          }
-          
-          // Also trigger hashchange manually for mobile browsers
-          if (isMobile) {
+            // Force navigation by pushing to the same route with hash
+            router.push(`/#p-${productId}`);
+            // Also set hash
+            window.location.hash = `#p-${productId}`;
+            
+            // Trigger event after navigation
             setTimeout(() => {
-              window.dispatchEvent(new Event('hashchange'));
+              console.log('📱 Mobile: Dispatching navigateToProduct event');
+              window.dispatchEvent(new CustomEvent('navigateToProduct', { 
+                detail: { productId, page: targetPage } 
+              }));
             }, 300);
+            
+            // Multiple retries for mobile
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('navigateToProduct', { 
+                detail: { productId, page: targetPage } 
+              }));
+            }, 600);
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('navigateToProduct', { 
+                detail: { productId, page: targetPage } 
+              }));
+            }, 1000);
+          } else {
+            // Desktop: update hash and trigger navigation
+            window.location.hash = `#p-${productId}`;
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('navigateToProduct', { 
+                detail: { productId, page: targetPage } 
+              }));
+            }, 100);
           }
         }
       } catch (err) {
