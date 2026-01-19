@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp, increment } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -21,6 +21,7 @@ export default function ProductDetail() {
   const router = useRouter();
   const { id } = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { formatPrice, currency } = useCurrency();
 
   const [product, setProduct] = useState(null);
@@ -35,6 +36,19 @@ export default function ProductDetail() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // Handle back navigation - preserve page state
+  useEffect(() => {
+    // Save the fromPage parameter if it exists for proper back navigation
+    const fromPage = searchParams.get('fromPage');
+    if (fromPage && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('featuredProducts_page', fromPage);
+      } catch (e) {
+        console.warn('Could not save fromPage:', e);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!id) return;

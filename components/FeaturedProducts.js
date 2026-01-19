@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
@@ -30,6 +30,7 @@ import RecentlyViewedProducts from "./RecentlyViewedProducts";
 import SkeletonLoader from "./SkeletonLoader";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import Pagination from "./Pagination";
+import { getScrollManager } from "@/lib/scrollPositionManager";
 
 
 // Helper to decode URL and pick preferred size
@@ -84,15 +85,44 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const [recentlyViewedLoaded, setRecentlyViewedLoaded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [isPageChanging, setIsPageChanging] = useState(false);
   const prevPageRef = useRef(1);
   const router = useRouter();
   const pathname = usePathname();
+  const scrollManagerRef = useRef(null);
   const initialPageSize = 48; // Both desktop and mobile: Show first 48 products
   const pageSize = 30; // Both desktop and mobile: 30 products per page after initial 48
 
   // Products are now sorted consistently by creation date (oldest first)
   // No more randomization to ensure users can track their progress
 
+
+  // Initialize scroll manager
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      scrollManagerRef.current = getScrollManager();
+    }
+  }, []);
+
+  // Restore page from URL params on mount (only if not already restored)
+  const hasInitializedRef = useRef(false);
+  useEffect(() => {
+    if (pathname === '/' && !hasInitializedRef.current) {
+      const pageParam = typeof window !== 'undefined'
+        ? new URL(window.location.href).searchParams.get('page')
+        : null;
+      if (pageParam) {
+        const pageNum = parseInt(pageParam, 10);
+        if (!isNaN(pageNum) && pageNum >= 1) {
+          setCurrentPage(pageNum);
+          prevPageRef.current = pageNum;
+          hasInitializedRef.current = true;
+        }
+      } else {
+        hasInitializedRef.current = true;
+      }
+    }
+  }, [pathname]);
 
   // Detect mobile/desktop
   useEffect(() => {
@@ -310,42 +340,120 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
     console.log(`📄 Page ${currentPage}: Showing products ${startIndex + 1}-${Math.min(endIndex, allProducts.length)} of ${allProducts.length}`);
   }, [allProducts, currentPage, initialPageSize, pageSize]);
 
+  // Track if we need to scroll after products update
+  const shouldScrollAfterUpdateRef = useRef(false);
+  const pageChangeTimeoutRef = useRef(null);
+  const pendingScrollTopRef = useRef(false);
+  const currentPageRef = useRef(1);
+  const scrollPinIntervalRef = useRef(null);
+  const prevScrollRestorationRef = useRef(null);
+  const productsTopRef = useRef(null);
+  const targetPageRef = useRef(1);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  const getTopOffset = () => {
+    // Mobile header is taller in this app
+    const navbarHeight = isMobile ? 96 : 72;
+    const offset = 20;
+    return navbarHeight + offset;
+  };
+
+  const scrollToProductsTop = () => {
+    if (typeof window === 'undefined') return;
+    const offset = getTopOffset();
+    const el = productsTopRef.current;
+    if (el && typeof el.scrollIntoView === 'function') {
+      // scrollMarginTop is applied on the element below
+      el.scrollIntoView({ block: 'start', behavior: 'auto' });
+      return;
+    }
+    // Fallback: absolute scroll
+    window.scrollTo(0, offset);
+  };
+
+  const startScrollPin = () => {
+    if (typeof window === 'undefined') return;
+    const top = getTopOffset();
+
+    // Stop any previous pin
+    if (scrollPinIntervalRef.current) {
+      clearInterval(scrollPinIntervalRef.current);
+      scrollPinIntervalRef.current = null;
+    }
+
+    // Disable browser scroll restoration while paginating (helps on mobile)
+    try {
+      prevScrollRestorationRef.current = window.history.scrollRestoration;
+      window.history.scrollRestoration = 'manual';
+    } catch {}
+
+    // Pin scroll near top for a short window to beat scroll anchoring
+    const startedAt = Date.now();
+    scrollPinIntervalRef.current = setInterval(() => {
+      if (Date.now() - startedAt > 450) {
+        stopScrollPin();
+        return;
+      }
+      // Prefer element-based scroll (more stable on mobile)
+      scrollToProductsTop();
+    }, 50);
+
+    // Immediate attempt
+    window.scrollTo(0, top);
+    scrollToProductsTop();
+  };
+
+  const stopScrollPin = () => {
+    if (typeof window === 'undefined') return;
+    if (scrollPinIntervalRef.current) {
+      clearInterval(scrollPinIntervalRef.current);
+      scrollPinIntervalRef.current = null;
+    }
+    try {
+      if (prevScrollRestorationRef.current) {
+        window.history.scrollRestoration = prevScrollRestorationRef.current;
+      }
+    } catch {}
+    prevScrollRestorationRef.current = null;
+  };
+  
   // Update displayed products - sync immediately to prevent layout issues
   useEffect(() => {
     // Always keep displayProducts in sync with products
-    // The scroll happens in handlePageChange before this updates
-    if (JSON.stringify(products) !== JSON.stringify(displayProducts)) {
+    if (products !== displayProducts) {
       setDisplayProducts(products);
+      // Mark that we should scroll after this update if page changed
+      if (prevPageRef.current !== currentPage) {
+        shouldScrollAfterUpdateRef.current = true;
+      }
     }
-  }, [products]);
+  }, [products, currentPage]);
 
-  // Fine-tune scroll position after products have rendered (optional refinement)
+  // Keep currentPage in sync with back/forward navigation (mobile-first)
   useEffect(() => {
-    // Only do a small adjustment if needed after products render
-    if (prevPageRef.current !== currentPage && displayProducts.length > 0) {
-      // Small delay to ensure products are rendered, then fine-tune scroll if needed
-      const timer = setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          const productsSection = document.querySelector('[data-featured-products]');
-          if (productsSection) {
-            const rect = productsSection.getBoundingClientRect();
-            // Only adjust if we're way off (more than 100px)
-            if (rect.top < -100 || rect.top > 100) {
-              const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-              const targetY = rect.top + scrollTop - 20;
-              window.scrollTo({
-                top: Math.max(0, targetY),
-                behavior: 'smooth'
-              });
-            }
-          }
-        }
-      }, 100);
-      
-      prevPageRef.current = currentPage;
-      return () => clearTimeout(timer);
-    }
-  }, [currentPage, displayProducts.length]);
+    if (typeof window === 'undefined') return;
+    if (pathname !== '/') return;
+
+    const handlePopState = () => {
+      const pageParam = new URL(window.location.href).searchParams.get('page');
+      const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
+      const nextPage = !isNaN(pageNum) && pageNum >= 1 ? pageNum : 1;
+
+      if (nextPage !== currentPageRef.current) {
+        // Treat as a real page change (show overlay + scroll to top after render)
+        setIsPageChanging(true);
+        pendingScrollTopRef.current = true;
+        prevPageRef.current = currentPageRef.current;
+        setCurrentPage(nextPage);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [pathname]);
 
 
 
@@ -388,27 +496,87 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   // Handle page change
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      // Scroll to products section IMMEDIATELY before changing page
-      // This prevents footer from appearing during the transition
-      if (typeof window !== 'undefined') {
-        const productsSection = document.querySelector('[data-featured-products]');
-        if (productsSection) {
-          const rect = productsSection.getBoundingClientRect();
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-          const targetY = rect.top + scrollTop - 20; // 20px offset from top
-          
-          // Use instant scroll (not smooth) to get there immediately
-          window.scrollTo({
-            top: Math.max(0, targetY),
-            behavior: 'auto' // Instant scroll
-          });
+      // Show loading overlay immediately
+      setIsPageChanging(true);
+      pendingScrollTopRef.current = true;
+      targetPageRef.current = newPage;
+
+      // Prevent focus/scroll anchoring from keeping the pagination button in view (mobile Safari/Chrome)
+      try {
+        if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
         }
+      } catch {}
+
+      // Start pinning scroll to top immediately (mobile-first)
+      startScrollPin();
+      
+      // Clear any existing timeout
+      if (pageChangeTimeoutRef.current) {
+        clearTimeout(pageChangeTimeoutRef.current);
       }
       
+      // Fallback timeout to ensure loading doesn't get stuck (max 2 seconds)
+      pageChangeTimeoutRef.current = setTimeout(() => {
+        console.log('⏰ Fallback timeout: hiding loading overlay');
+        setIsPageChanging(false);
+        pageChangeTimeoutRef.current = null;
+      }, 2000);
+      
+      // Save current scroll position before changing page
+      if (scrollManagerRef.current && pathname === '/') {
+        scrollManagerRef.current.savePosition('main');
+      }
+
+      // Update URL WITHOUT triggering Next.js navigation (critical for mobile scroll stability)
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        if (newPage === 1) url.searchParams.delete('page');
+        else url.searchParams.set('page', newPage.toString());
+        window.history.pushState(window.history.state, "", url.pathname + url.search + url.hash);
+      }
+
       prevPageRef.current = currentPage;
-      setCurrentPage(newPage);
+      // Delay the page state change to the next frame so the scroll pin applies first
+      requestAnimationFrame(() => setCurrentPage(newPage));
+      // Don't scroll here - wait for products to update first
     }
   };
+
+  // Scroll to top AFTER products have been updated and rendered
+  useLayoutEffect(() => {
+    // Only scroll if we marked that we should scroll AND products have been updated
+    if ((shouldScrollAfterUpdateRef.current || pendingScrollTopRef.current) && displayProducts.length > 0) {
+      const scrollToTop = () => {
+        if (typeof window !== 'undefined') {
+          scrollToProductsTop();
+        }
+      };
+
+      const hideOverlay = () => {
+        setIsPageChanging(false);
+        // Clear fallback timeout if it exists
+        if (pageChangeTimeoutRef.current) {
+          clearTimeout(pageChangeTimeoutRef.current);
+          pageChangeTimeoutRef.current = null;
+        }
+      };
+
+      // Scroll now (layout effect) and then do 1-2 small backups
+      scrollToTop();
+      setTimeout(scrollToTop, 0);
+      setTimeout(scrollToTop, 50);
+      setTimeout(() => {
+        hideOverlay();
+        stopScrollPin();
+      }, 120);
+      
+      // Reset the flag and update prevPageRef
+      shouldScrollAfterUpdateRef.current = false;
+      pendingScrollTopRef.current = false;
+      prevPageRef.current = currentPage;
+    }
+  }, [displayProducts.length, currentPage, isMobile]);
 
   // Function to track product views for recent section
   const trackProductView = async (userId, productId) => {
@@ -486,6 +654,20 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
 
 
   const handleProductClick = async (id) => {
+    // Save current page state and scroll position before navigating
+    if (scrollManagerRef.current && pathname === '/') {
+      // Save scroll position
+      scrollManagerRef.current.savePosition('main');
+      
+      // Save page state to sessionStorage for restoration
+      try {
+        sessionStorage.setItem('featuredProducts_page', currentPage.toString());
+        sessionStorage.setItem('featuredProducts_scrollY', window.scrollY.toString());
+      } catch (e) {
+        console.warn('Could not save page state:', e);
+      }
+    }
+
     // Track product view for recent section
     const userId = getUserId();
     if (userId && userId !== 'guest') {
@@ -499,9 +681,12 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       console.log('❌ No user ID available, skipping view tracking');
     }
     
-    // Navigate to product detail page
+    // Navigate to product detail page with page state in URL for back navigation
     setIsNavigating(true);
-    router.push(`/product/${id}`);
+    const productUrl = currentPage > 1 
+      ? `/product/${id}?fromPage=${currentPage}`
+      : `/product/${id}`;
+    router.push(productUrl);
   };
 
   // Show skeleton while loading or when no products are loaded yet
@@ -530,10 +715,46 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   }
 
   return (
-    <section className="bg-gray/70 pt-0 md:pt-3 pb-0 relative" data-featured-products>
+    <section
+      className="bg-gray/70 pt-0 md:pt-3 pb-0 relative"
+      data-featured-products
+      style={{ overflowAnchor: 'none' }}
+    >
+      {/* Anchor for reliable scroll-to-top of the products section (mobile-first) */}
+      <div
+        ref={productsTopRef}
+        aria-hidden="true"
+        style={{ height: 1, scrollMarginTop: getTopOffset(), overflowAnchor: 'none' }}
+      />
       {isNavigating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-r-blue-500 border-b-blue-500 border-l-blue-500" />
+        </div>
+      )}
+      
+      {isPageChanging && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/90 backdrop-blur-md touch-none pointer-events-auto" 
+          style={{ 
+            WebkitBackdropFilter: 'blur(8px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
+          }}
+          role="status"
+          aria-live="polite"
+          aria-label={`Loading page ${targetPageRef.current || currentPage}`}
+        >
+          <div className="flex flex-col items-center gap-3 px-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-600 border-r-blue-600 border-b-transparent border-l-transparent" />
+            <p className="text-gray-700 font-medium text-sm md:text-base">Loading page {targetPageRef.current || currentPage}...</p>
+          </div>
         </div>
       )}
 

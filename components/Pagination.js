@@ -5,6 +5,13 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 export default function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
 
+  // Prevent focus/scroll-anchoring on mobile by avoiding button focus on pointer down
+  const preventFocus = (e) => {
+    try {
+      e.preventDefault();
+    } catch {}
+  };
+
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -51,6 +58,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
     <div className="flex items-center justify-center gap-2 py-6">
       {/* Previous Button */}
       <button
+        type="button"
+        onPointerDown={preventFocus}
+        onMouseDown={preventFocus}
+        onTouchStart={preventFocus}
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -77,6 +88,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
           return (
             <button
               key={page}
+              type="button"
+              onPointerDown={preventFocus}
+              onMouseDown={preventFocus}
+              onTouchStart={preventFocus}
               onClick={() => onPageChange(page)}
               className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 currentPage === page
@@ -92,6 +107,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
 
       {/* Next Button */}
       <button
+        type="button"
+        onPointerDown={preventFocus}
+        onMouseDown={preventFocus}
+        onTouchStart={preventFocus}
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
