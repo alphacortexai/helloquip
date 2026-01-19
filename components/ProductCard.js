@@ -176,8 +176,8 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       </div>
 
       {/* Content: name (uppercase), description, price - centered vertically */}
-      <div className="flex flex-col justify-center p-8 w-full">
-        <div>
+      <div className="flex flex-1 flex-col justify-center items-center p-8 pl-10 w-full min-h-0">
+        <div className="w-full">
           {product.name && (
             <h3 className="text-2xl font-normal text-gray-800 line-clamp-2 mb-2 uppercase">
               {product.name}
@@ -215,7 +215,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       </div>
 
       {/* Content: name (uppercase), description, price - centered vertically */}
-      <div className="flex flex-col justify-center w-full min-h-[11rem] pr-3 py-4">
+      <div className="flex flex-1 flex-col justify-center min-h-[11rem] pl-3 pr-3 py-4">
         <div>
           {product.name && (
             <h3 className="text-lg font-normal text-gray-800 line-clamp-2 uppercase">
