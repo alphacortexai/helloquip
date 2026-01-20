@@ -49,7 +49,7 @@ export default function OrderDetailPage() {
       <button onClick={() => router.back()} className="text-sm text-blue-600 hover:underline mb-4">← Back</button>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold">Order #{order.id.slice(0,6).toUpperCase()}</h1>
+          <h1 className="text-lg font-semibold">Order #{order.id.toUpperCase()}</h1>
           <span className={`text-xs font-semibold px-2 py-1 rounded-full ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
             {order.status || 'pending'}
           </span>

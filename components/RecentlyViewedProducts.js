@@ -7,6 +7,7 @@ import { getProductImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
+import HorizontalScrollWithArrows from '@/components/HorizontalScrollWithArrows';
 
 export default function RecentlyViewedProducts({ limit = 6, showTitle = true, title = "Recently Viewed", onLoadComplete }) {
   const [user, setUser] = useState(null);
@@ -110,25 +111,12 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
         </div>
       )}
       
-      <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2">
+      <HorizontalScrollWithArrows scrollClassName="gap-4 no-scrollbar snap-x snap-mandatory pb-2" itemCount={recentlyViewed.length}>
         {recentlyViewed.map((item) => (
           <Link
             key={item.id}
             href={`/product/${item.productId}`}
             className="group block snap-start shrink-0 w-32"
-            onClick={(e) => {
-              try {
-                const { pathname, search } = window.location;
-                sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY));
-                sessionStorage.setItem('returnFromProduct', '1');
-                const anchor = `#p-${item.productId}`;
-                if (typeof history !== 'undefined' && history.replaceState) {
-                  history.replaceState(null, '', `${pathname}${search}${anchor}`);
-                } else {
-                  window.location.hash = anchor;
-                }
-              } catch {}
-            }}
           >
             <div className="relative">
               <img
@@ -136,7 +124,7 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
                 alt={item.product?.name || item.productName}
                 className="w-full h-32 object-cover rounded-lg group-hover:opacity-90 transition-opacity"
               />
-              <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
+              <div className="absolute top-1.5 right-1.5 bg-yellow-500 text-white text-[10px] px-1.5 py-0.5 rounded">
                 {formatDate(item.viewedAt)}
               </div>
             </div>
@@ -150,7 +138,7 @@ export default function RecentlyViewedProducts({ limit = 6, showTitle = true, ti
             </div>
           </Link>
         ))}
-      </div>
+      </HorizontalScrollWithArrows>
     </div>
   );
 }

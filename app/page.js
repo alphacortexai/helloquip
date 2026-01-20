@@ -8,6 +8,7 @@ import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import CachedLogo from "@/components/CachedLogo";
 
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
+import LatestProducts from "@/components/LatestProducts";
 import dynamic from "next/dynamic";
 import { useDisplaySettings } from "@/lib/useDisplaySettings";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -416,7 +417,7 @@ export default function Home() {
   // Don't render anything until client-side
   if (!isClient) {
     return (
-      <div className="min-h-screen bg-[#2e4493] flex items-center justify-center">
+      <div className="min-h-screen bg-[#255cdc] flex items-center justify-center">
         <CachedLogo
           variant="loading"
           width={64}
@@ -477,28 +478,32 @@ export default function Home() {
 
       {/* Main Layout - Only render when loading screen is hidden */}
       {!showLoadingScreen && (
-        <div className="min-h-screen bg-[#2e4493]" data-page="home">
+        <div className="min-h-screen bg-[#255cdc]" data-page="home">
         {/* Desktop Layout */}
         <div className="hidden md:block">
-          <div className="max-w-7xl mx-auto px-1 py-3">
+          <div className="max-w-7xl mx-auto px-1 pt-2 pb-3">
             {/* Top Row - Categories, Trending Products, and Featured Deal */}
             <div className="grid grid-cols-[280px_1fr_300px] gap-3 mb-4">
               {/* Categories */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 mt-2">
-                <h2 className="text-xl font-bold text-gray-800 mb-3">Categories</h2>
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-4 h-[364px] flex flex-col overflow-hidden">
+                <h2 className="text-xl font-bold text-gray-800 mb-3 flex-shrink-0">Categories</h2>
+                <div className="flex-1 overflow-y-auto pr-2 categories-scroll">
                 <Categories 
                   onCategorySelect={setSelectedCategory} 
                   onLoadComplete={() => setCategoriesLoaded(true)}
                 />
+                </div>
               </section>
 
               {/* Trending Products */}
-              <section className="bg-gray-50 rounded-2xl shadow-sm p-4">
+              <section className="bg-gray-50 rounded-2xl shadow-sm p-0 h-[364px] flex flex-col overflow-hidden">
+                <div className="h-full w-full min-h-0 flex flex-col">
                 <TrendingProducts onLoadComplete={() => setTrendingProductsLoaded(true)} />
+                </div>
               </section>
 
               {/* Featured Deal */}
-              <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[444px]">
+              <section className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white h-[364px]">
                 <div className="h-full flex flex-col justify-center items-center text-center">
                   <div>
                     <h3 className="text-2xl font-bold mb-4">Special Offer</h3>
@@ -511,6 +516,9 @@ export default function Home() {
               </section>
             </div>
 
+            {/* Latest - horizontally scrollable row just before products */}
+            <LatestProducts />
+
             {/* Featured Products */}
             <section className="mb-4">
               <FeaturedProducts 
@@ -521,6 +529,11 @@ export default function Home() {
                   setHasScrolledAllProducts(hasScrolledAll);
                 }}
               />
+            </section>
+
+            {/* Recently Viewed - after products, before Testimonials */}
+            <section className="mb-4">
+              <RecentlyViewedProducts limit={16} showTitle={true} />
             </section>
 
             {/* Bottom Row - Product Recommendations and Testimonials */}
@@ -541,7 +554,7 @@ export default function Home() {
           <div className="px-1 py-1">
 
             {/* Mobile Categories */}
-            <div className="bg-white rounded-xl py-3 mb-1 mt-2">
+            <div className="bg-white rounded-xl py-3 mb-1 mt-[15px]">
               <Categories 
                 onCategorySelect={setSelectedCategory} 
                 onLoadComplete={() => setCategoriesLoaded(true)}

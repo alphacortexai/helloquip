@@ -275,7 +275,7 @@ export default function OrderClient() {
           const userDoc = await getDoc(userRef);
           const fcmToken = userDoc.exists() ? userDoc.data().fcmToken : null;
           const title = "Order Submitted";
-          const body = `Your order ${orderRef.id.slice(0,6).toUpperCase()} has been submitted. We'll update you shortly.`;
+          const body = `Your order ${orderRef.id.toUpperCase()} has been submitted. We'll update you shortly.`;
 
           if (fcmToken) {
             try {
@@ -319,11 +319,11 @@ export default function OrderClient() {
             const auth2 = getAuth();
             const currentUser2 = auth2.currentUser;
             const customerName = address.fullName || currentUser2?.displayName || currentUser2?.email || "Customer";
-            const shortId = orderRef.id.slice(0,6).toUpperCase();
+            const orderIdDisplay = orderRef.id.toUpperCase();
             const itemsSummary = cartItems.map((it) => `${it.name} x ${it.quantity||1}`).slice(0,3);
             const extra = cartItems.length > 3 ? ` and ${cartItems.length-3} more` : "";
             const adminTitle = `New order submitted by ${customerName}`;
-            const adminText = `${customerName} submitted order ${shortId} (${itemsSummary.join(", ")}${extra}) totaling UGX ${calculateTotal(cartItems).toLocaleString()}.`;
+            const adminText = `${customerName} submitted order ${orderIdDisplay} (${itemsSummary.join(", ")}${extra}) totaling UGX ${calculateTotal(cartItems).toLocaleString()}.`;
             await addDoc(collection(db, "adminNotifications"), {
               type: "order_submitted",
               orderId: orderRef.id,
@@ -400,7 +400,7 @@ export default function OrderClient() {
                 {orders.map((o) => (
                   <li key={o.id} className="py-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Order #{o.id.slice(0,6).toUpperCase()}</p>
+                      <p className="text-sm font-medium text-gray-900">Order #{o.id.toUpperCase()}</p>
                       <p className="text-xs text-gray-600">{new Date(o.createdAt).toLocaleString()}</p>
                       {o.paymentMethod && (
                         <p className="text-xs text-gray-600 mt-0.5">Payment: {o.paymentMethod.toUpperCase()} ({o.paymentStatus || 'pending'})</p>
@@ -557,7 +557,7 @@ export default function OrderClient() {
                         checked={safeAddress.customerType === 'individual'}
                         onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
                       />
-                      <span>Individual</span>
+                      <span className="font-bold text-black">Individual</span>
                     </label>
                     <label className="inline-flex items-center gap-2">
                       <input
@@ -567,7 +567,7 @@ export default function OrderClient() {
                         checked={safeAddress.customerType === 'company'}
                         onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
                       />
-                      <span>Company / Institution</span>
+                      <span className="font-bold text-black">Company / Institution</span>
                     </label>
                   </div>
                 </div>

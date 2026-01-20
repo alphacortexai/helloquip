@@ -138,6 +138,14 @@ if (!admin.apps.length) {
     }
 
     if (serviceAccount) {
+      // Fix "Invalid PEM formatted message": env vars often store private_key with
+      // literal \n (backslash+n). PEM requires real newlines.
+      if (serviceAccount.private_key && typeof serviceAccount.private_key === "string") {
+        serviceAccount = {
+          ...serviceAccount,
+          private_key: serviceAccount.private_key.replace(/\\n/g, "\n"),
+        };
+      }
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });

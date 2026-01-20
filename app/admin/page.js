@@ -30,11 +30,14 @@ import AdminNotifications from "./components/AdminNotifications";
 import UserMessenger from "./components/UserMessenger";
 import AdminUserChat from "./components/AdminUserChat";
 import DisplaySettings from "./components/DisplaySettings";
+import CarouselSettings from "./components/CarouselSettings";
+import LegalSettings from "./components/LegalSettings";
 import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
 import ProductControl from "./components/ProductControl";
 import ProductSuggestions from "./components/ProductSuggestions";
+import ProductReorder from "./components/ProductReorder";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -54,6 +57,8 @@ import {
   CogIcon,
   BellIcon,
   StarIcon,
+  ArrowsUpDownIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 
 const tabs = [
@@ -257,6 +262,15 @@ const tabs = [
     bgColor: "bg-gray-50",
     borderColor: "border-gray-100"
   },
+  { 
+    id: "carouselSettings", 
+    icon: <CogIcon className="w-5 h-5" />, 
+    label: "Carousel Settings",
+    description: "Choose trending or custom images",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-100"
+  },
   {
     id: "notificationTracker",
     icon: <BellIcon className="w-5 h-5" />,
@@ -292,6 +306,24 @@ const tabs = [
     color: "text-yellow-600",
     bgColor: "bg-yellow-50",
     borderColor: "border-yellow-100"
+  },
+  {
+    id: "reorderProducts",
+    icon: <ArrowsUpDownIcon className="w-5 h-5" />,
+    label: "Reorder Products",
+    description: "Shuffle and set product display order",
+    color: "text-violet-600",
+    bgColor: "bg-violet-50",
+    borderColor: "border-violet-100"
+  },
+  {
+    id: "legal",
+    icon: <DocumentTextIcon className="w-5 h-5" />,
+    label: "Privacy & Terms",
+    description: "Edit privacy policy and terms of service",
+    color: "text-slate-600",
+    bgColor: "bg-slate-50",
+    borderColor: "border-slate-100"
   },
 ];
 
@@ -452,6 +484,8 @@ function AdminDashboard({ currentAdminUid }) {
         );
       case "displaySettings":
         return <DisplaySettings />;
+      case "carouselSettings":
+        return <CarouselSettings />;
       case "notificationTracker":
         return <NotificationTracker />;
       case "latestProducts":
@@ -460,6 +494,11 @@ function AdminDashboard({ currentAdminUid }) {
         return <ProductControl />;
       case "productSuggestions":
         return <ProductSuggestions />;
+      case "reorderProducts":
+        return <ProductReorder />;
+      case "legal":
+      case "privacyPolicy":
+        return <LegalSettings />;
       default:
         return null;
     }

@@ -374,7 +374,7 @@ const AccountDetailsPage = () => {
             {userOrders.slice(0,5).map((o) => (
               <li key={o.id} className="p-3 flex items-center justify-between"> 
                 <div className="text-sm">
-                  <p className="font-medium text-gray-900">Order #{o.id.slice(0,6).toUpperCase()}</p>
+                  <p className="font-medium text-gray-900">Order #{o.id.toUpperCase()}</p>
                   <p className="text-gray-600">{new Date(o.createdAt).toLocaleString()}</p>
                 </div>
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${o.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : o.status === 'shipped' ? 'bg-blue-100 text-blue-700' : o.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>

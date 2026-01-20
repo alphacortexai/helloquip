@@ -1,152 +1,277 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { SendHorizonal } from 'lucide-react';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import {
+  ArrowRight,
+  CircleDot,
+  CornerDownLeft,
+  Loader2,
+  User,
+  X,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+const DEFAULT_GREETING =
+  "Hi! I'm the HelloQuip support assistant. Ask me about orders, quotes, shipping, or products.";
+
+const QUICK_STARTS = [
+  'Where is my order?',
+  'How do I request a quote?',
+  'What is your return policy?',
+  'Do you ship to my location?',
+];
+
+const STORAGE_KEY_UUID = 'helloquip_agent_chat_uuid';
+const STORAGE_KEY_MESSAGES = 'helloquip_agent_chat_messages';
+
+function getOrCreateUuid() {
+  if (typeof window === 'undefined') return null;
+  let u = localStorage.getItem(STORAGE_KEY_UUID);
+  if (!u) {
+    try {
+      u = crypto.randomUUID();
+    } catch {
+      u = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+    localStorage.setItem(STORAGE_KEY_UUID, u);
+  }
+  return u;
+}
 
 export default function AgentChat() {
   const [messages, setMessages] = useState([
-    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'assistant', content: DEFAULT_GREETING },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
+  const [error, setError] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(true); // assume anonymous until auth resolves
+  const hasLoadedRef = useRef(false);
   const bottomRef = useRef(null);
+  const router = useRouter();
 
+  const canSend = input.trim().length > 0 && !loading;
+  const lastMessages = useMemo(() => messages.slice(-10), [messages]);
+
+  // Resolve auth: only persist for anonymous (not logged in)
   useEffect(() => {
-    // This only runs on the client
-    async function initSession() {
-      let existing = localStorage.getItem("chat_session_id");
-      if (!existing) {
-        const res = await fetch("http://127.0.0.1:8000/apps/multi_tool_agent/users/user/sessions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        const sessionData = await res.json();
-        existing = sessionData.id;
-        localStorage.setItem("chat_session_id", existing);
-      }
-      setSessionId(existing);
-    }
-
-    initSession();
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setIsAnonymous(!user);
+    });
+    return () => unsub();
   }, []);
 
-  // Scroll chat to bottom on new messages
+  // Load persisted history once when anonymous
+  useEffect(() => {
+    if (!isAnonymous || hasLoadedRef.current || typeof window === 'undefined') return;
+    hasLoadedRef.current = true;
+    getOrCreateUuid();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_MESSAGES);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+    } catch (_) {}
+  }, [isAnonymous]);
+
+  // Persist messages when anonymous
+  useEffect(() => {
+    if (!isAnonymous || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+    } catch (_) {}
+  }, [isAnonymous, messages]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, loading]);
 
-  async function sendMessage() {
-    if (!input.trim()) return;
+  async function sendMessage(overrideMessage) {
+    const outgoing = (overrideMessage ?? input).trim();
+    if (!outgoing) return;
 
-    const userMessage = input;
-    const newMessages = [...messages, { role: 'user', content: userMessage }];
+    const newMessages = [...messages, { role: 'user', content: outgoing }];
     setMessages(newMessages);
     setInput('');
+    setError('');
     setLoading(true);
 
     try {
-      // Prepare request body with session_id if exists
-      const body = { 
-        message: userMessage
-      };
-      if (sessionId) body.session_id = sessionId;
-
       const res = await fetch('/api/agent-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          message: outgoing,
+          messages: lastMessages,
+        }),
       });
 
       const data = await res.json();
+      const reply =
+        typeof data.reply === 'string' && data.reply.trim().length > 0
+          ? data.reply
+          : 'Sorry, I did not get a response. Please try again.';
 
-      // Save/Update sessionId from response
-      if (data.session_id) setSessionId(data.session_id);
-
-      setMessages([
-        ...newMessages,
-        {
-          role: 'assistant',
-          content: data.response.message || 'No reply from agent.',
-        },
-      ]);
+      setMessages([...newMessages, { role: 'assistant', content: reply }]);
     } catch (err) {
+      setError('Connection error. Please try again.');
       setMessages([
         ...newMessages,
-        { role: 'assistant', content: 'Error getting response.' },
+        { role: 'assistant', content: 'Sorry, I hit a connection error.' },
       ]);
     } finally {
       setLoading(false);
     }
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       sendMessage();
     }
-  };
+  }
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-2 md:px-4 py-6 space-y-4">
-        {messages
-          .filter((m) => m.role !== 'system')
-          .map((msg, i) => (
+    <div className="flex h-full w-full flex-col">
+      <section className="flex flex-1 flex-col overflow-hidden rounded-none md:rounded-2xl border-0 md:border md:border-slate-200 bg-white shadow-none md:shadow-sm">
+        <div className="fixed top-0 left-0 right-0 z-20 flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 py-4 md:static md:z-10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e4493]/10">
+              <User className="h-5 w-5 text-[#2e4493]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                HeloQuip Support
+              </p>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <CircleDot className="h-3 w-3 text-emerald-500" />
+                Online now
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setMessages([{ role: 'assistant', content: DEFAULT_GREETING }])
+              }
+              className="text-xs font-medium text-slate-500 hover:text-[#2e4493] transition"
+            >
+              Clear Chat
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+              aria-label="Close and return to main"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pt-20 pb-6 md:pt-6 space-y-4 bg-gradient-to-b from-white to-slate-50">
+          {messages.map((msg, index) => (
             <div
-              key={i}
+              key={`${msg.role}-${index}`}
               className={`flex ${
                 msg.role === 'user' ? 'justify-end' : 'justify-start'
               }`}
             >
-              <div
-                className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm shadow ${
-                  msg.role === 'user'
-                    ? 'bg-blue-500 text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                }`}
-              >
-                {msg.content}
-              </div>
+              {msg.role === 'user' ? (
+                <div className="max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow bg-[#2e4493] text-white rounded-br-md">
+                  <div className="flex items-center gap-2 text-[11px] text-white/80 mb-1">
+                    <User className="h-3 w-3" />
+                    You
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                </div>
+              ) : (
+                <div className="w-full max-w-[85%]">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1">
+                    <User className="h-3 w-3 text-[#2e4493]" />
+                    HeloQuip Support
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm text-slate-800">{msg.content}</div>
+                </div>
+              )}
             </div>
           ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-200 text-gray-900 text-sm px-4 py-3 rounded-2xl rounded-bl-none max-w-[75%] shadow">
-              Typing...
+          {loading && (
+            <div className="flex justify-start w-full max-w-[85%] items-center gap-2 text-sm text-slate-600">
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#2e4493]" />
+              Waiting for reply....
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {messages.length === 1 && (
+          <div className="border-t border-slate-100 px-5 py-4 bg-white">
+            <p className="text-xs font-semibold text-slate-500 mb-2">
+              Quick starts
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_STARTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-[#2e4493] hover:text-[#2e4493] transition"
+                  onClick={() => sendMessage(prompt)}
+                >
+                  {prompt}
+                </button>
+              ))}
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
-      </div>
 
-      {/* Input box */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          sendMessage();
-        }}
-        className="sticky bottom-0 border-t border-gray-200 bg-white px-4 py-3 flex items-center gap-2"
-      >
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={loading}
-          rows={1}
-          placeholder="Type your message..."
-          className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition"
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            sendMessage();
+          }}
+          className="border-t border-slate-100 bg-white px-5 py-4"
         >
-          <SendHorizonal size={18} />
-        </button>
-      </form>
+          <div className="relative">
+            <textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              placeholder="Message HeloQuip"
+              className="w-full resize-none rounded-full border border-slate-200 pl-4 pr-14 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2e4493]/30"
+              disabled={loading}
+            />
+            <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end p-2 pointer-events-none [&>*]:pointer-events-auto">
+              <button
+                type="submit"
+                disabled={!canSend}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2e4493] text-white transition hover:bg-[#1d2b66] disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+            <CornerDownLeft className="h-3 w-3" />
+            Press Enter to send, Shift+Enter for a new line
+          </div>
+          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        </form>
+      </section>
     </div>
   );
 }

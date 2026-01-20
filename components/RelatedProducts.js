@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -148,19 +148,19 @@ export default function RelatedProducts({
   manufacturer, 
   name, 
   excludeId,
-  cardVariant = "landscapemain" 
+  cardVariant = "compact" 
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
   const [isShowingFallback, setIsShowingFallback] = useState(false);
+  const scrollContainerRef = useRef(null);
   const router = useRouter();
-  const batchSize = 20;
+  const maxProducts = 20; // Maximum products to show
+  const minProducts = 10; // Minimum products to always show
 
   const fetchRelatedProducts = useCallback(
-    async (startAfterDoc = null, reset = false) => {
+    async () => {
       setLoading(true);
       try {
         // Build search criteria
@@ -172,14 +172,8 @@ export default function RelatedProducts({
           keyword: keyword || ''
         };
         
-        // Get a larger batch to filter and score
-        const constraints = [orderBy("name")];
-        if (startAfterDoc) {
-          constraints.push(startAfter(startAfterDoc));
-        }
-        constraints.push(limit(batchSize * 3)); // Get more to filter
-
-        const q = query(collection(db, "products"), ...constraints);
+        // Get all products to filter and score - fetch more to ensure we have enough
+        const q = query(collection(db, "products"), orderBy("name"), limit(100));
         const querySnapshot = await getDocs(q);
 
         let allProducts = querySnapshot.docs.map((doc) => ({
@@ -206,72 +200,83 @@ export default function RelatedProducts({
         const fallbackProducts = scoredProducts.filter(product => product.relevanceScore < 60);
 
         let finalProducts;
-        if (relatedProducts.length >= 1) {
-          // We have at least 1 related product - show related products
-          finalProducts = relatedProducts.slice(0, batchSize);
+        if (relatedProducts.length >= minProducts) {
+          // We have enough related products - show only related products
+          finalProducts = relatedProducts.slice(0, maxProducts);
+          setIsShowingFallback(false);
+        } else if (relatedProducts.length >= 1) {
+          // We have some related products but not enough - combine with fallback to reach minimum
+          const neededFromFallback = minProducts - relatedProducts.length;
+          finalProducts = [
+            ...relatedProducts,
+            ...fallbackProducts.slice(0, neededFromFallback)
+          ].slice(0, maxProducts);
           setIsShowingFallback(false);
         } else {
-          // No related products found, use fallback
-          finalProducts = fallbackProducts.slice(0, batchSize);
+          // No related products found, use fallback but ensure minimum
+          finalProducts = fallbackProducts.slice(0, Math.max(minProducts, maxProducts));
           setIsShowingFallback(true);
         }
-
-        if (reset) {
-          setProducts(finalProducts);
-        } else {
-          setProducts((prev) => {
-            const existingIds = new Set(prev.map((p) => p.id));
-            const newUnique = finalProducts.filter((p) => !existingIds.has(p.id));
-            return [...prev, ...newUnique];
-          });
+        
+        // Final safety check: ensure we always have at least minProducts
+        if (finalProducts.length < minProducts && scoredProducts.length >= minProducts) {
+          finalProducts = scoredProducts.slice(0, Math.max(minProducts, maxProducts));
         }
 
-        const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-        setLastVisible(lastVisibleDoc);
-        const hasMoreProducts = querySnapshot.docs.length === batchSize * 3;
-        setHasMore(hasMoreProducts);
+        setProducts(finalProducts);
       } catch (err) {
         console.error("Error fetching related products:", err);
       }
       setLoading(false);
     },
-    [selectedCategory, keyword, tags, manufacturer, excludeId, name]
+    [selectedCategory, keyword, tags, manufacturer, excludeId, name, maxProducts]
   );
 
   // Load products when component mounts or props change
   useEffect(() => {
     setProducts([]);
-    setLastVisible(null);
-    setHasMore(true);
     setIsShowingFallback(false);
-    fetchRelatedProducts(null, true);
+    fetchRelatedProducts();
   }, [selectedCategory, keyword, manufacturer, tags, name, fetchRelatedProducts]);
 
-  // Simple infinite scroll for related products
-  useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const scrollY = window.scrollY;
-      const documentHeight = document.body.offsetHeight;
-      const threshold = 600;
-      const shouldLoadMore = windowHeight + scrollY >= documentHeight - threshold;
-      
-      if (shouldLoadMore && !loading && hasMore) {
-        fetchRelatedProducts(lastVisible, false);
-      }
-    };
+  // Arrow navigation functions
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      // Scroll by one card width + gap
+      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 4) + 2px, Large: calc((100vw - 8rem) / 6) + 2px
+      const isMobile = window.innerWidth < 768;
+      const isLarge = window.innerWidth >= 1024;
+      const viewportWidth = window.innerWidth;
+      const cardWidth = isMobile 
+        ? (viewportWidth - 64) / 2  // 4rem = 64px
+        : isLarge
+        ? (viewportWidth - 128) / 6  // 8rem = 128px, 6 columns on large screens
+        : (viewportWidth - 128) / 4; // 8rem = 128px, 4 columns on medium screens
+      const gap = 2; // gap-0.5 = 2px
+      const scrollAmount = cardWidth + gap;
+      scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [fetchRelatedProducts, loading, hasMore, lastVisible]);
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      // Scroll by one card width + gap
+      // Mobile: calc((100vw - 4rem) / 2) + 2px, Desktop: calc((100vw - 8rem) / 4) + 2px, Large: calc((100vw - 8rem) / 6) + 2px
+      const isMobile = window.innerWidth < 768;
+      const isLarge = window.innerWidth >= 1024;
+      const viewportWidth = window.innerWidth;
+      const cardWidth = isMobile 
+        ? (viewportWidth - 64) / 2  // 4rem = 64px
+        : isLarge
+        ? (viewportWidth - 128) / 6  // 8rem = 128px, 6 columns on large screens
+        : (viewportWidth - 128) / 4; // 8rem = 128px, 4 columns on medium screens
+      const gap = 2; // gap-0.5 = 2px
+      const scrollAmount = cardWidth + gap;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const handleProductClick = (id) => {
-    // Save current scroll position for this path before navigating
-    try {
-      const key = `scroll:${window.location.pathname}`;
-      sessionStorage.setItem(key, String(window.scrollY));
-    } catch {}
-
     setIsNavigating(true);
     router.push(`/product/${id}`);
   };
@@ -308,34 +313,73 @@ export default function RelatedProducts({
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
-          {products.map(({ id, name, description, price, discount, imageUrl, sku, relevanceScore }, index) => (
-            <div
-              key={id}
-              onClick={() => handleProductClick(id)}
-              className="cursor-pointer group"
-            >
-              <ProductCard
-                variant={cardVariant}
-                isFirst={index === 0}
-                product={{
-                  id,
-                  name,
-                  description,
-                  sku,
-                  price,
-                  discount,
-                  image: getPreferredImageUrl(imageUrl),
-                }}
-              />
+        {/* Horizontal scrolling container with arrow navigation */}
+        <div className="relative">
+          {/* Scrollable Container */}
+          <div 
+            ref={scrollContainerRef}
+            className="overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth px-2"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollBehavior: 'smooth'
+            }}
+          >
+            <div className="flex gap-0.5" style={{ width: 'max-content' }}>
+              {products.map(({ id, name, description, price, discount, imageUrl, sku, relevanceScore }, index) => (
+                <div
+                  key={id}
+                  onClick={() => handleProductClick(id)}
+                  className="cursor-pointer group flex-shrink-0 snap-start w-[calc((100vw-4rem)/2)] min-w-[calc((100vw-4rem)/2)] max-w-[calc((100vw-4rem)/2)] md:w-[calc((100vw-8rem)/4)] md:min-w-[calc((100vw-8rem)/4)] md:max-w-[calc((100vw-8rem)/4)] lg:w-[calc((100vw-8rem)/6)] lg:min-w-[calc((100vw-8rem)/6)] lg:max-w-[calc((100vw-8rem)/6)]"
+                >
+                  <ProductCard
+                    variant={cardVariant}
+                    isFirst={index === 0}
+                    product={{
+                      id,
+                      name,
+                      description,
+                      sku,
+                      price,
+                      discount,
+                      image: getPreferredImageUrl(imageUrl),
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Left Arrow Button - Floating on top */}
+          {products.length > 0 && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Scroll left"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Right Arrow Button - Floating on top */}
+          {products.length > 0 && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 bg-white/95 hover:bg-white shadow-lg rounded-full p-2 md:p-3 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Scroll right"
+            >
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {loading && hasMore && (
+        {loading && (
           <div className="text-center py-6">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500 mx-auto"></div>
-            <p className="text-gray-600 text-sm mt-2">Loading more products...</p>
+            <p className="text-gray-600 text-sm mt-2">Loading products...</p>
           </div>
         )}
       </div>

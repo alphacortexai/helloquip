@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp, increment } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -13,12 +13,16 @@ import RelatedProducts from "@/components/RelatedProducts";
 import ContactButtons from "@/components/ContactButtons";
 import WishlistButton from "@/components/WishlistButton";
 import ProductComparisonButton from "@/components/ProductComparisonButton";
+import CurrencyDropdown from "@/components/CurrencyDropdown";
 import { CustomerExperienceService } from "@/lib/customerExperienceService";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function ProductDetail() {
   const router = useRouter();
   const { id } = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { formatPrice, currency } = useCurrency();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +37,19 @@ export default function ProductDetail() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  // Handle back navigation - preserve page state
+  useEffect(() => {
+    // Save the fromPage parameter if it exists for proper back navigation
+    const fromPage = searchParams.get('fromPage');
+    if (fromPage && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('featuredProducts_page', fromPage);
+      } catch (e) {
+        console.warn('Could not save fromPage:', e);
+      }
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (!id) return;
 
@@ -44,12 +61,24 @@ export default function ProductDetail() {
         if (docSnap.exists()) {
           const data = { id: docSnap.id, ...docSnap.data() };
 
-          // ✅ Defensive fallback image logic
+          // ✅ Defensive fallback image logic - only use fallback for main image if missing
           data.imageUrl = data.imageUrl || fallbackImage;
+          // Don't add fallback to extraImageUrls - only include actual extra images
           data.extraImageUrls =
             Array.isArray(data.extraImageUrls) && data.extraImageUrls.length > 0
-              ? data.extraImageUrls
-              : [fallbackImage];
+              ? data.extraImageUrls.filter(img => {
+                  if (!img) return false;
+                  if (typeof img === 'string') {
+                    return img.trim().length > 0;
+                  }
+                  // For object URLs, check if they have valid values
+                  if (typeof img === 'object') {
+                    const values = Object.values(img);
+                    return values.some(val => val && typeof val === 'string' && val.trim().length > 0);
+                  }
+                  return true;
+                })
+              : [];
 
           setProduct(data);
           setActiveImage(data.imageUrl);
@@ -164,7 +193,34 @@ export default function ProductDetail() {
         }))
       : [];
 
-  const allImages = [product.imageUrl, ...(product.extraImageUrls || [])].filter(Boolean);
+  // Filter out empty, null, undefined, or invalid image URLs
+  const allImages = [
+    product.imageUrl,
+    ...(product.extraImageUrls || [])
+  ].filter(img => {
+    if (!img) return false;
+    
+    // Filter out empty strings, whitespace-only strings
+    if (typeof img === 'string') {
+      const trimmed = img.trim();
+      // Keep the image if it's not empty and not just whitespace
+      return trimmed.length > 0;
+    }
+    
+    // For object URLs (multiple sizes), check if they have valid values
+    if (typeof img === 'object') {
+      const values = Object.values(img);
+      return values.some(val => {
+        if (!val) return false;
+        if (typeof val === 'string') {
+          return val.trim().length > 0;
+        }
+        return true;
+      });
+    }
+    
+    return true;
+  });
 
   return (
     <>
@@ -182,20 +238,26 @@ export default function ProductDetail() {
           {/* Product Info */}
           <div className="flex-1 ml-1 mr-1">
             <div className="w-full flex flex-col gap-2">
-              {/* Price & Name */}
-              <div className="bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 flex flex-col gap-2">
-                <div className="bg-orange-50 border border-orange-200 rounded-full p-4 mb-2 space-y-2">
+              {/* Product Name, Details & Price */}
+              <div className="bg-white p-4 rounded-md border border-gray-100">
+                <p className="text-xl font-semibold text-gray-800 uppercase truncate mb-2">
+                  {product.name || 'Unnamed Product'}
+                </p>
+                <p className="text-[14px] text-gray-500 mb-1">SKU : {product.sku}</p>
+                <p className="text-[11px] text-gray-500 break-words mb-4">CODE : {product.productCode}</p>
+                
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-[15px] font-bold text-gray-900">
-                      UGX {(product.discount > 0
+                      {formatPrice(product.discount > 0
                         ? product.price * (1 - product.discount / 100)
                         : product.price
-                      ).toLocaleString()}
+                      )}
                     </span>
                     <div className="flex items-center gap-2">
                       {product.discount > 0 && (
                         <span className="line-through text-gray-500 text-[15px]">
-                          UGX {product.price.toLocaleString()}
+                          {formatPrice(product.price)}
                         </span>
                       )}
                       {product.discount > 0 && (
@@ -203,14 +265,10 @@ export default function ProductDetail() {
                           {`${product.discount}%`}
                         </span>
                       )}
+                      <CurrencyDropdown />
                     </div>
                   </div>
                 </div>
-                <p className="text-sm font-semibold text-gray-800 uppercase truncate">
-                  {product.name || 'Unnamed Product'}
-                </p>
-                <p className="text-[14px] text-gray-500">SKU : {product.sku}</p>
-                <p className="text-[11px] text-gray-500 break-words">CODE : {product.productCode}</p>
               </div>
 
               {/* Description */}
@@ -303,9 +361,11 @@ export default function ProductDetail() {
           manufacturer={product?.manufacturer}
           tags={product?.tags}
           excludeId={product.id}
-          cardVariant="landscapemain"
+          cardVariant="compact"
         />
       </div>
     </>
   );
 }
+
+

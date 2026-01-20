@@ -123,20 +123,22 @@ import { db } from "@/lib/firebase";
 
 // Import Heroicons React components
 import {
+  ChatBubbleLeftRightIcon,
   HomeIcon,
   Squares2X2Icon,
   ChatBubbleLeftEllipsisIcon,
   ShoppingCartIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const hideNavbarOn = ["/register", "/login", "/messenger", "/admin"];
-  const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin", "/admin/chat"];
-  const hideMobileNavOn = ["/admin", "/login", "/register", "/messenger"];
+  const hideNavbarOn = ["/register", "/login", "/messenger", "/admin", "/agent-chat"];
+  const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin", "/admin/chat", "/agent-chat"];
+  const hideMobileNavOn = ["/admin", "/login", "/register", "/messenger", "/agent-chat"];
 
   const showNavbar = !hideNavbarOn.includes(pathname) && !pathname.startsWith('/admin');
   const showFooter = !hideFooterOn.includes(pathname) && !pathname.startsWith('/admin');
@@ -146,8 +148,6 @@ export default function ClientLayoutWrapper({ children }) {
   const [orderCount, setOrderCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const previousPathRef = useRef(pathname);
-  const homeScrollSaveTimer = useRef(null);
-  const homeScrollInterval = useRef(null);
   const clickSaveHandler = useRef(null);
 
   const showMobileNav = user && !hideMobileNavOn.includes(pathname) && !pathname.startsWith('/admin');
@@ -206,147 +206,7 @@ export default function ClientLayoutWrapper({ children }) {
     return () => unsubscribe();
   }, [user]);
 
-  // --- Scroll position save/restore across navigations ---
-  // Prefer manual scroll restoration to avoid browser default conflicts
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('scrollRestoration' in window.history)) return;
-    const prev = window.history.scrollRestoration;
-    window.history.scrollRestoration = 'manual';
-    return () => {
-      try { window.history.scrollRestoration = prev; } catch {}
-    };
-  }, []);
-  // Save current scroll position for the current pathname
-  useEffect(() => {
-    const saveScrollPosition = () => {
-      try {
-        sessionStorage.setItem(`scroll:${pathname}`, String(window.scrollY));
-      } catch {}
-    };
 
-    // Save on unload and when this component unmounts or pathname changes
-    window.addEventListener('beforeunload', saveScrollPosition);
-    return () => {
-      saveScrollPosition();
-      window.removeEventListener('beforeunload', saveScrollPosition);
-    };
-  }, [pathname]);
-
-  // Continuously save home scroll (throttled) so we have it before navigation
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (pathname !== "/") return;
-
-    const saveScroll = () => {
-      if (homeScrollSaveTimer.current) return;
-      homeScrollSaveTimer.current = requestAnimationFrame(() => {
-        homeScrollSaveTimer.current = null;
-        try {
-          sessionStorage.setItem("restoreHomeScroll", String(window.scrollY));
-        } catch {}
-      });
-    };
-
-    // Periodic safety save for mobile/PWA where scroll events may throttle
-    homeScrollInterval.current = setInterval(saveScroll, 800);
-
-    window.addEventListener("scroll", saveScroll, { passive: true });
-    window.addEventListener("beforeunload", saveScroll);
-    const onVisibility = () => {
-      if (document.hidden) saveScroll();
-    };
-    window.addEventListener("visibilitychange", onVisibility);
-
-    // Initial save in case user taps quickly before scrolling
-    saveScroll();
-
-    // Save just before navigation when clicking/tapping product links
-    const handleIntent = (event) => {
-      try {
-        const target = event.target;
-        if (!target) return;
-        const anchor = target.closest
-          ? target.closest('a[href^="/product/"], button[data-product-id], div[data-product-id]')
-          : null;
-        if (!anchor) return;
-        // Only save if we are currently on home
-        if (window.location.pathname !== "/") return;
-        saveScroll();
-      } catch {}
-    };
-    clickSaveHandler.current = handleIntent;
-    window.addEventListener("click", handleIntent, true);
-    window.addEventListener("touchstart", handleIntent, true);
-
-    return () => {
-      if (homeScrollSaveTimer.current) cancelAnimationFrame(homeScrollSaveTimer.current);
-      homeScrollSaveTimer.current = null;
-      if (homeScrollInterval.current) clearInterval(homeScrollInterval.current);
-      homeScrollInterval.current = null;
-      window.removeEventListener("scroll", saveScroll);
-      window.removeEventListener("beforeunload", saveScroll);
-      window.removeEventListener("visibilitychange", onVisibility);
-       if (clickSaveHandler.current) {
-        window.removeEventListener("click", clickSaveHandler.current, true);
-        window.removeEventListener("touchstart", clickSaveHandler.current, true);
-      }
-    };
-  }, [pathname]);
-
-  // Save home scroll when leaving for a product page; restore once when back on home
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const prev = previousPathRef.current;
-    // Save scroll if navigating from home to a product page
-    if (prev === "/" && pathname.startsWith("/product/")) {
-      try {
-        sessionStorage.setItem("restoreHomeScroll", String(window.scrollY));
-      } catch {}
-    }
-    previousPathRef.current = pathname;
-  }, [pathname]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (pathname !== "/") return;
-
-    let raw = null;
-    try {
-      raw = sessionStorage.getItem("restoreHomeScroll");
-    } catch {}
-    const targetY = raw ? parseInt(raw, 10) : 0;
-    if (!Number.isFinite(targetY) || targetY <= 0) return;
-
-    // Consume the stored value so it doesn't fire again
-    try {
-      sessionStorage.removeItem("restoreHomeScroll");
-    } catch {}
-
-    const restore = () => {
-      try {
-        window.scrollTo(0, targetY);
-      } catch {}
-    };
-
-    // Few attempts around mount/load to cover late layout shifts on mobile
-    const timers = [
-      requestAnimationFrame(restore),
-      setTimeout(restore, 180), // single retry
-    ];
-    const onLoad = () => restore(); // load-based retry (counts as the single retry window)
-    window.addEventListener("load", onLoad, { once: true });
-
-    return () => {
-      timers.forEach((t) => {
-        if (typeof t === "number") clearTimeout(t);
-        else if (typeof t === "object" || typeof t === "undefined") {
-          try { cancelAnimationFrame(t); } catch {}
-        }
-      });
-      window.removeEventListener("load", onLoad);
-    };
-  }, [pathname]);
 
   // Listen for service worker navigation messages (for push notification clicks)
   useEffect(() => {
@@ -389,49 +249,6 @@ export default function ClientLayoutWrapper({ children }) {
     };
   }, [router]);
 
-  // Global hashchange precise scroll handler (mobile friendly) with gating after first success
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onHashChange = () => {
-      const hash = window.location.hash;
-      if (!hash || hash.length <= 1) return;
-      const id = hash.slice(1);
-      const attempts = [0, 120, 240, 400, 650, 900, 1300, 1800];
-      let done = false;
-      const tryAnchor = () => {
-        const el = document.getElementById(id);
-        if (!el) return false;
-        try {
-          const header = document.querySelector('header');
-          const headerHeight = header ? header.offsetHeight : 0;
-          const rect = el.getBoundingClientRect();
-          const currentY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-          const y = rect.top + currentY - Math.max(headerHeight, 80);
-          const scrollingElement = document.scrollingElement || document.documentElement || document.body;
-          requestAnimationFrame(() => {
-            try { window.scrollTo({ top: y, left: 0, behavior: 'auto' }); } catch {}
-            try { scrollingElement.scrollTop = y; } catch {}
-            try { document.documentElement.scrollTop = y; } catch {}
-            try { document.body.scrollTop = y; } catch {}
-          });
-          setTimeout(() => {
-            const near = Math.abs((window.pageYOffset || document.documentElement.scrollTop || 0) - y) < 2;
-            if (!near) {
-              try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch {}
-            }
-          }, 60);
-        } catch {}
-        return true;
-      };
-      const timers = attempts.map((ms) => setTimeout(() => {
-        if (done) return;
-        if (tryAnchor()) done = true;
-      }, ms));
-      setTimeout(() => { timers.forEach(clearTimeout); }, Math.max(...attempts) + 300);
-    };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
 
 
 
@@ -443,20 +260,20 @@ export default function ClientLayoutWrapper({ children }) {
       {/* Spacer for fixed navbar height so content isn't hidden (mobile has taller header with search) */}
       {showNavbar && <div className="h-[96px] md:h-[72px]"></div>}
       <main>
-        {/* Suppress global LoadingScreen when returning from a product page */}
-        {(() => {
-          try {
-            const returning = sessionStorage.getItem('returnFromProduct') === '1';
-            if (returning) {
-              sessionStorage.removeItem('returnFromProduct');
-              // Render children directly (LoadingScreen logic inside pages should check this too)
-              return children;
-            }
-          } catch {}
-          return children;
-        })()}
+        {children}
       </main>
       <Toaster richColors position="top-center" />
+
+      {/* Floating message (agent chat) button — above bottom nav, beside the bulb in top nav */}
+      {showNavbar && !pathname.includes("/agent-chat") && (
+        <Link
+          href="/agent-chat"
+          className="fixed right-5 z-[70] flex h-14 w-14 items-center justify-center rounded-full bg-[#0865ff] text-white shadow-lg transition hover:bg-[#075ae6] md:bottom-8 md:right-6 bottom-24"
+          aria-label="Chat with support"
+        >
+          <ChatBubbleLeftRightIcon className="h-6 w-6" aria-hidden="true" />
+        </Link>
+      )}
 
       {/* Mobile Bottom Navigation */}
       {showMobileNav && (
@@ -493,8 +310,8 @@ export default function ClientLayoutWrapper({ children }) {
       )}
 
       {showFooter && <Footer />}
-      {/* Mobile Footer Spacer - Always show on mobile when footer is hidden */}
-      {!showFooter && (
+      {/* Mobile Footer Spacer - when footer is hidden; skip on /agent-chat to avoid external scrollbar */}
+      {!showFooter && !pathname.includes("/agent-chat") && (
         <div className="block md:hidden h-20"></div>
       )}
     </>

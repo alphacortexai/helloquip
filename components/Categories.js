@@ -7,6 +7,7 @@ import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 import SkeletonLoader from "./SkeletonLoader";
+import HorizontalScrollWithArrows from "./HorizontalScrollWithArrows";
 
 function cleanFirebaseUrl(url) {
   if (!url || typeof url !== "string") return "";
@@ -172,7 +173,7 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
     <>
       {/* Mobile: Horizontal scroll (only when not in sidebar) */}
       <div className="block md:hidden">
-        <div className="overflow-x-auto no-scrollbar px-1">
+        <HorizontalScrollWithArrows scrollClassName="no-scrollbar px-1" itemCount={categories.length} useFlex={false}>
           <div
             className="grid grid-flow-col grid-rows-2 auto-cols-[70px] gap-x-2 gap-y-4"
             style={{ width: "max-content", paddingRight: "16px" }}
@@ -214,7 +215,7 @@ export default function Categories({ onCategorySelect, isSidebar = false, onLoad
               </Link>
             ))}
           </div>
-        </div>
+        </HorizontalScrollWithArrows>
       </div>
 
       {/* Desktop: Vertical list */}

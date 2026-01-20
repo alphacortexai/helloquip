@@ -1,14 +1,12 @@
 import "./globals.css";
-import { Inter } from "next/font/google";
 import ClientWrapper from "@/components/ClientWrapper";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "HelloQuip",
   description: "Medical eCommerce",
   manifest: "/manifest.json",
+  icons: { icon: "/logo.png" },
   themeColor: "#0f4a73",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
@@ -27,6 +25,7 @@ export default function RootLayout({ children }) {
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
         
         {/* Preload critical resources */}
         <link rel="preload" href="/logo.png" as="image" type="image/png" />
@@ -53,7 +52,7 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
-      <body className={inter.className}>
+      <body className="roboto">
         <ClientWrapper>{children}</ClientWrapper>
         <SpeedInsights />
       </body>

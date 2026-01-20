@@ -8,8 +8,22 @@ import { doc, onSnapshot } from "firebase/firestore";
 const defaultSettings = {
   showMOQ: true,
   showSKU: true,
-  productNameCase: 'normal' // 'normal', 'uppercase', 'lowercase'
+  productNameCase: 'titlecase' // 'titlecase', 'uppercase', 'lowercase', 'normal'
 };
+
+function toTitleCase(str) {
+  if (!str || typeof str !== 'string') return str;
+  return str
+    .trim()
+    .split(/\s+/)
+    .map((word) =>
+      word
+        .split('-')
+        .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part))
+        .join('-')
+    )
+    .join(' ');
+}
 
 // Create context
 const ProductSettingsContext = createContext({
@@ -31,9 +45,8 @@ export function ProductSettingsProvider({ children }) {
       settingsRef,
       (doc) => {
         if (doc.exists()) {
-          setSettings(doc.data());
+          setSettings({ ...defaultSettings, ...doc.data() });
         } else {
-          // If document doesn't exist, use default settings
           setSettings(defaultSettings);
         }
         setLoading(false);
@@ -70,14 +83,17 @@ export function useProductSettings() {
 // Utility function to format product name based on settings
 export function formatProductName(name, settings) {
   if (!name) return 'Unnamed Product';
-  
-  switch (settings.productNameCase) {
+  const caseType = settings?.productNameCase || 'titlecase';
+
+  switch (caseType) {
     case 'uppercase':
       return name.toUpperCase();
     case 'lowercase':
       return name.toLowerCase();
+    case 'normal':
+    case 'titlecase':
     default:
-      return name;
+      return toTitleCase(name);
   }
 }
 

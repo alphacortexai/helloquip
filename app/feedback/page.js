@@ -95,7 +95,7 @@ export default function FeedbackPage() {
             <div className="space-y-3">
               <button
                 onClick={() => router.push("/login")}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                className="w-full bg-[#0865ff] text-white py-3 px-6 rounded-xl font-semibold hover:bg-[#075ae6] transition-colors"
               >
                 Login
               </button>
@@ -136,7 +136,7 @@ export default function FeedbackPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Share Your Experience</h1>
             <p className="text-gray-600 mb-4">
-              Help other customers by sharing your experience with HalloQuip
+              Help other customers by sharing your experience with HeloQuip
             </p>
             <div className="bg-blue-50 rounded-xl p-4 mb-4">
               <p className="text-sm text-blue-800">
@@ -210,7 +210,7 @@ export default function FeedbackPage() {
                 value={formData.feedback}
                 onChange={(e) => setFormData(prev => ({ ...prev, feedback: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                placeholder="Share your experience with HalloQuip. What did you like? What could we improve?"
+                placeholder="Share your experience with HeloQuip. What did you like? What could we improve?"
               />
             </div>
 

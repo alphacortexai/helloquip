@@ -8,12 +8,14 @@ import { getProductImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { useProductSuggestions } from '@/hooks/useProductSuggestions';
+import { useProductSettings, formatProductName } from '@/hooks/useProductSettings';
 
 export default function ProductRecommendations({ limit = 3, showTitle = true, title = "Recommended for You", onLoadComplete }) {
   const [user, setUser] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const { suggestions, loading: suggestionsLoading } = useProductSuggestions();
+  const { settings } = useProductSettings();
   
   // Debug suggestions loading
   useEffect(() => {
@@ -234,7 +236,7 @@ export default function ProductRecommendations({ limit = 3, showTitle = true, ti
               </div>
               <div className="mt-2">
                 <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600">
-                  {product.name}
+                  {formatProductName(product.name, settings)}
                 </h3>
                 <p className="text-sm text-gray-500">
                   UGX {product.price?.toLocaleString() || 'N/A'}

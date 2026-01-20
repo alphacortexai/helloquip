@@ -48,7 +48,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   // Centralized image props for Next.js Image component
   const imageProps = {
     src: imageUrl || '/fallback.jpg',
-    alt: product.name || 'Product',
+    alt: formatProductName(product.name, settings) || 'Product',
     priority: isFirst, // Use priority instead of loading="eager" for Next.js Image
     fetchPriority: 'high', // High fetch priority for all product images
     onLoad: () => setImageLoaded(true),
@@ -120,7 +120,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       
       {/* Badge */}
       {badge && (
-        <div className="absolute top-2 left-2 z-10 bg-[#1877F2] text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
+        <div className="absolute top-2 left-2 z-10 bg-[#0865ff] text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
           {badge}
         </div>
       )}
@@ -158,49 +158,39 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
   const renderCarousel = () => (
     <div 
-      className={`relative bg-white rounded-2xl overflow-hidden hover:shadow-md transition flex w-full h-[400px] max-w-5xl mx-auto cursor-pointer`}
+      className={`relative bg-white rounded-2xl overflow-hidden hover:shadow-md transition flex w-full h-full max-w-5xl mx-auto cursor-pointer`}
+      style={{ maxHeight: '100%', height: '100%' }}
       onClick={onClick}
     >
       
       {/* Badge */}
       {badge && (
-        <div className="absolute top-4 left-4 z-10 bg-[#1877F2] text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
+        <div className="absolute top-4 left-4 z-10 bg-[#0865ff] text-white text-xs font-medium px-2.5 py-0.5 rounded-full shadow-sm">
           {badge}
         </div>
       )}
 
-      {/* Taller image to match Featured Deal height */}
+      {/* Product image */}
       <div className="relative w-80 h-full bg-gray-50 flex-shrink-0 overflow-hidden">
         <Image {...imageProps} fill sizes="320px" className="object-cover rounded-l-2xl" />
       </div>
 
-      {/* Content area with more padding */}
-      <div className="flex flex-col justify-between p-8 w-full">
-        <div>
-          <h3 className="hidden md:block text-xl font-semibold text-gray-800 line-clamp-2 mb-3">
-            {formatProductName(product.name, settings)}
-          </h3>
-          {shouldShowSKU(settings) && !hideSKU && (
-            <p className="text-sm text-gray-500 italic mb-2">
-              SKU: {product.sku}
-            </p>
-          )}
-          
-          {/* Product Title */}
+      {/* Content: name (uppercase), description, price - centered vertically */}
+      <div className="flex flex-1 flex-col justify-center items-center p-8 pl-10 w-full min-h-0">
+        <div className="w-full">
           {product.name && (
-            <p className="text-xl text-gray-600 line-clamp-3 mb-4">
+            <h3 className="text-2xl font-normal text-gray-800 line-clamp-2 mb-2 uppercase">
               {product.name}
+            </h3>
+          )}
+          {product.description && (
+            <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+              {product.description}
             </p>
           )}
-
-          <div className="mt-auto">
-            <p className="text-lg text-gray-900 font-semibold mb-2">
-              UGX {discountedPrice.toLocaleString()}
-            </p>
-            {shouldShowMOQ(settings) && (
-              <p className="text-sm text-gray-500">1 item (MOQ)</p>
-            )}
-          </div>
+          <p className="text-lg text-gray-900 font-bold">
+            UGX {discountedPrice.toLocaleString()}
+          </p>
         </div>
       </div>
     </div>
@@ -212,45 +202,34 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       onClick={onClick}
     >
       
-      {/* Image container - increased width to fill more space */}
+      {/* Product image */}
       <div className="relative w-52 h-44 flex-shrink-0 overflow-hidden">
         <Image {...imageProps} fill sizes="208px" className="object-cover" style={{ objectPosition: 'center', transform: 'scale(0.99)' }} />
         
         {/* Trending Badge on Image */}
         {badge && (
-          <div className="absolute top-2 left-2 z-10 bg-[#1877F2] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+          <div className="absolute top-2 left-2 z-10 bg-[#0865ff] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
             {badge}
           </div>
         )}
       </div>
 
-      {/* Content area on the right - centered vertically */}
-      <div className="flex flex-col justify-center w-full text-right pr-3">
+      {/* Content: name (uppercase), description, price - centered vertically */}
+      <div className="flex flex-1 flex-col justify-center min-h-[11rem] pl-3 pr-3 py-4">
         <div>
-          <h3 className="hidden md:block text-sm font-semibold text-gray-800 line-clamp-2 mb-0">
-            {formatProductName(product.name, settings)}
-          </h3>
-          {shouldShowSKU(settings) && !hideSKU && (
-            <p className="text-[9px] text-gray-500 italic mt-0.5">
-              SKU: {product.sku}
-            </p>
-          )}
-          
-          {/* Product Title for Mobile */}
           {product.name && (
-            <p className="text-base text-gray-600 line-clamp-2 mt-1">
+            <h3 className="text-lg font-normal text-gray-800 line-clamp-2 uppercase">
               {product.name}
+            </h3>
+          )}
+          {product.description && (
+            <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+              {product.description}
             </p>
           )}
-        </div>
-
-        <div className="mt-2">
-          <p className="text-sm text-gray-900 font-semibold">
+          <p className="text-sm text-gray-900 font-bold mt-2">
             UGX {discountedPrice.toLocaleString()}
           </p>
-          {shouldShowMOQ(settings) && (
-            <p className="text-[9px] text-gray-500">1 item (MOQ)</p>
-          )}
         </div>
       </div>
     </div>
@@ -290,7 +269,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
                
                {/* Trending Badge */}
                {badge && (
-                 <div className="bg-[#1877F2] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+                 <div className="bg-[#0865ff] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
                    {badge}
                  </div>
                )}
@@ -347,7 +326,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
            
            {/* Trending Badge */}
            {badge && (
-             <div className="bg-[#1877F2] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
+             <div className="bg-[#0865ff] text-white text-xs font-medium px-2 py-1 rounded-full shadow-sm">
                {badge}
              </div>
            )}
