@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   ArrowRight,
   Bot,
@@ -20,6 +22,26 @@ const QUICK_STARTS = [
   'Do you ship to my location?',
 ];
 
+const STORAGE_KEY_UUID = 'helloquip_agent_chat_uuid';
+const STORAGE_KEY_MESSAGES = 'helloquip_agent_chat_messages';
+
+function getOrCreateUuid() {
+  if (typeof window === 'undefined') return null;
+  let u = localStorage.getItem(STORAGE_KEY_UUID);
+  if (!u) {
+    try {
+      u = crypto.randomUUID();
+    } catch {
+      u = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+    localStorage.setItem(STORAGE_KEY_UUID, u);
+  }
+  return u;
+}
+
 export default function AgentChat() {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: DEFAULT_GREETING },
@@ -27,10 +49,44 @@ export default function AgentChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(true); // assume anonymous until auth resolves
+  const hasLoadedRef = useRef(false);
   const bottomRef = useRef(null);
 
   const canSend = input.trim().length > 0 && !loading;
   const lastMessages = useMemo(() => messages.slice(-10), [messages]);
+
+  // Resolve auth: only persist for anonymous (not logged in)
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setIsAnonymous(!user);
+    });
+    return () => unsub();
+  }, []);
+
+  // Load persisted history once when anonymous
+  useEffect(() => {
+    if (!isAnonymous || hasLoadedRef.current || typeof window === 'undefined') return;
+    hasLoadedRef.current = true;
+    getOrCreateUuid();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_MESSAGES);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+    } catch (_) {}
+  }, [isAnonymous]);
+
+  // Persist messages when anonymous
+  useEffect(() => {
+    if (!isAnonymous || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+    } catch (_) {}
+  }, [isAnonymous, messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
