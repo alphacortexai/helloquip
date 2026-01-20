@@ -42,13 +42,10 @@ Create a `.env.local` file in the root directory with:
 # Google Gemini API Key (server-side only)
 GOOGLE_API_KEY=your_gemini_api_key_here
 
-# Firebase Admin credentials (server-side lookups)
-# Option A: inline JSON (stringified service account)
-FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
-# Option B: path to JSON file (relative or absolute)
-FIREBASE_SERVICE_ACCOUNT_PATH=server/firebase/your-service-account.json
+# Firebase: Agent-chat uses the same client Firestore as the rest of the app (lib/firebase).
+# No FIREBASE_SERVICE_ACCOUNT or service account file is needed for agent-chat.
 
-# Existing Firebase Configuration (if not already set)
+# Existing Firebase Configuration (if not already in lib/firebase.js)
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key_here
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain_here
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id_here
@@ -103,6 +100,12 @@ Handles Gemini responses via LangChain.
 3. **No replies**
    - Confirm the API route `app/api/agent-chat/route.js` is deployed
    - Verify the request body contains `message`
+
+## Reducing Hallucinations
+The system prompt includes anti-hallucination rules so the agent does not claim backend actions that do not exist (e.g. "I have logged your request," "our sales team will contact you"). In particular:
+- The chat does **not** save conversations or forward requests to any team.
+- **Quote requests** are only created via the "Request Quote" form on cart/checkout—not from chat. The agent is instructed to direct users there for new quotes and never to say an in-chat message has been "submitted" or "noted."
+If you add new behavior (e.g. saving chat leads or creating quote requests from the chat), update the system prompt in `app/api/agent-chat/route.js` so the agent can accurately describe what the system does.
 
 ## Security Considerations
 1. **Environment variables**: Never commit `.env.local`
