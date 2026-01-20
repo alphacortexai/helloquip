@@ -6,6 +6,7 @@ export const metadata = {
   title: "HelloQuip",
   description: "Medical eCommerce",
   manifest: "/manifest.json",
+  icons: { icon: "/logo.png" },
   themeColor: "#0f4a73",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
