@@ -5,7 +5,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import {
   ArrowRight,
-  Bot,
   CircleDot,
   CornerDownLeft,
   Loader2,
@@ -143,14 +142,14 @@ export default function AgentChat() {
   return (
     <div className="flex h-full w-full flex-col">
       <section className="flex flex-1 flex-col overflow-hidden rounded-none md:rounded-2xl border-0 md:border md:border-slate-200 bg-white shadow-none md:shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div className="fixed top-0 left-0 right-0 z-20 flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 py-4 md:static md:z-10">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e4493]/10">
-              <Bot className="h-5 w-5 text-[#2e4493]" />
+              <User className="h-5 w-5 text-[#2e4493]" />
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900">
-                Support
+                HeloQuip Support
               </p>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <CircleDot className="h-3 w-3 text-emerald-500" />
@@ -166,7 +165,7 @@ export default function AgentChat() {
               }
               className="text-xs font-medium text-slate-500 hover:text-[#2e4493] transition"
             >
-              New chat
+              Clear Chat
             </button>
             <button
               type="button"
@@ -179,7 +178,7 @@ export default function AgentChat() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-6 space-y-4 bg-gradient-to-b from-white to-slate-50">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pt-20 pb-6 md:pt-6 space-y-4 bg-gradient-to-b from-white to-slate-50">
           {messages.map((msg, index) => (
             <div
               key={`${msg.role}-${index}`}
@@ -198,8 +197,8 @@ export default function AgentChat() {
               ) : (
                 <div className="w-full max-w-[85%]">
                   <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1">
-                    <Bot className="h-3 w-3 text-[#2e4493]" />
-                    Support
+                    <User className="h-3 w-3 text-[#2e4493]" />
+                    HeloQuip Support
                   </div>
                   <div className="whitespace-pre-wrap text-sm text-slate-800">{msg.content}</div>
                 </div>
@@ -209,7 +208,7 @@ export default function AgentChat() {
           {loading && (
             <div className="flex justify-start w-full max-w-[85%] items-center gap-2 text-sm text-slate-600">
               <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#2e4493]" />
-              Thinking...
+              Waiting for reply....
             </div>
           )}
           <div ref={bottomRef} />
@@ -248,7 +247,7 @@ export default function AgentChat() {
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
-              placeholder="Ask about your order, quotes, or shipping..."
+              placeholder="Message HeloQuip"
               className="w-full resize-none rounded-full border border-slate-200 pl-4 pr-14 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2e4493]/30"
               disabled={loading}
             />
