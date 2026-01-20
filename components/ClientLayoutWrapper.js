@@ -123,18 +123,20 @@ import { db } from "@/lib/firebase";
 
 // Import Heroicons React components
 import {
+  ChatBubbleLeftRightIcon,
   HomeIcon,
   Squares2X2Icon,
   ChatBubbleLeftEllipsisIcon,
   ShoppingCartIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const hideNavbarOn = ["/register", "/login", "/messenger", "/admin"];
+  const hideNavbarOn = ["/register", "/login", "/messenger", "/admin", "/agent-chat"];
   const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin", "/admin/chat", "/agent-chat"];
   const hideMobileNavOn = ["/admin", "/login", "/register", "/messenger", "/agent-chat"];
 
@@ -261,6 +263,17 @@ export default function ClientLayoutWrapper({ children }) {
         {children}
       </main>
       <Toaster richColors position="top-center" />
+
+      {/* Floating message (agent chat) button — above bottom nav, beside the bulb in top nav */}
+      {showNavbar && !pathname.includes("/agent-chat") && (
+        <Link
+          href="/agent-chat"
+          className="fixed right-5 z-[70] flex h-14 w-14 items-center justify-center rounded-full bg-[#0865ff] text-white shadow-lg transition hover:bg-[#075ae6] md:bottom-8 md:right-6 bottom-24"
+          aria-label="Chat with support"
+        >
+          <ChatBubbleLeftRightIcon className="h-6 w-6" aria-hidden="true" />
+        </Link>
+      )}
 
       {/* Mobile Bottom Navigation */}
       {showMobileNav && (

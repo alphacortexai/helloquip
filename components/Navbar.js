@@ -7,7 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import SearchBar from "@/components/SearchBar";
 import CachedLogo from "@/components/CachedLogo";
 import { collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from "firebase/firestore";
-import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon, LightBulbIcon } from "@heroicons/react/24/outline";
+import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   const router = useRouter();
@@ -172,43 +172,47 @@ export default function Navbar() {
 
             {/* User Actions */}
             <div className="flex items-center gap-0 relative" ref={dropdownRef}>
-              {/* Notifications */}
-              <button onClick={() => setOpenNotifications((o) => !o)} className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors">
-                <BellIcon className="h-6 w-6" />
-                {notifications > 0 && (
-                  <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center pointer-events-none">
-                    {notifications}
-                  </span>
-                )}
-              </button>
-              {openNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-auto">
-                  <div className="p-3 border-b border-gray-100 font-semibold">Notifications</div>
-                  {notificationItems.length === 0 ? (
-                    <div className="p-4 text-sm text-gray-500">No notifications</div>
-                  ) : (
-                    <ul className="divide-y divide-gray-100">
-                      {notificationItems.slice(0,20).map((n) => (
-                        <li key={n.id} className="p-3 text-sm">
-                          <button
-                            className="text-left w-full"
-                            onClick={() => {
-                              setOpenNotifications(false);
-                              const target = n.target || (n.orderId ? `/order/${n.orderId}` : "/order?tab=submitted");
-                              router.push(target);
-                            }}
-                          >
-                            <p className="font-medium text-gray-800">{n.title || 'Update'}</p>
-                            <p className="text-gray-600">{n.text || n.body}</p>
-                            {n.timestamp && (
-                              <p className="text-xs text-gray-400 mt-1">{new Date(n.timestamp.toMillis()).toLocaleString()}</p>
-                            )}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+              {/* Notifications - only when logged in */}
+              {user && (
+                <>
+                  <button onClick={() => setOpenNotifications((o) => !o)} className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors" aria-label="Notifications">
+                    <BellIcon className="h-6 w-6" />
+                    {notifications > 0 && (
+                      <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center pointer-events-none">
+                        {notifications}
+                      </span>
+                    )}
+                  </button>
+                  {openNotifications && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-auto">
+                      <div className="p-3 border-b border-gray-100 font-semibold">Notifications</div>
+                      {notificationItems.length === 0 ? (
+                        <div className="p-4 text-sm text-gray-500">No notifications</div>
+                      ) : (
+                        <ul className="divide-y divide-gray-100">
+                          {notificationItems.slice(0,20).map((n) => (
+                            <li key={n.id} className="p-3 text-sm">
+                              <button
+                                className="text-left w-full"
+                                onClick={() => {
+                                  setOpenNotifications(false);
+                                  const target = n.target || (n.orderId ? `/order/${n.orderId}` : "/order?tab=submitted");
+                                  router.push(target);
+                                }}
+                              >
+                                <p className="font-medium text-gray-800">{n.title || 'Update'}</p>
+                                <p className="text-gray-600">{n.text || n.body}</p>
+                                {n.timestamp && (
+                                  <p className="text-xs text-gray-400 mt-1">{new Date(n.timestamp.toMillis()).toLocaleString()}</p>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
               {/* Cart Icon */}
@@ -238,15 +242,6 @@ export default function Navbar() {
                   </span>
                 </button>
               )}
-
-              {/* Customer Service Chat Icon */}
-              <button
-                onClick={() => router.push("/agent-chat")}
-                className="text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors"
-                aria-label="Customer service chat"
-              >
-                <LightBulbIcon className="h-6 w-6" />
-              </button>
 
               {/* User Avatar or Sign In */}
               {user ? (
@@ -353,7 +348,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => router.push("/register")}
-                  className="bg-[#0865ff] text-white hover:bg-[#075ae6] transition-colors px-4 py-2 text-sm rounded-lg font-medium"
+                  className="bg-[#0865ff] text-white hover:bg-[#075ae6] transition-colors px-4 py-2 text-sm rounded-full font-medium"
                 >
                   Sign In
                 </button>
