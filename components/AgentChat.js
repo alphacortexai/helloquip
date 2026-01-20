@@ -2,11 +2,11 @@
 
 import { useMemo, useRef, useEffect, useState } from 'react';
 import {
+  ArrowRight,
   Bot,
   CircleDot,
   CornerDownLeft,
   Loader2,
-  Send,
   User,
 } from 'lucide-react';
 
@@ -83,7 +83,7 @@ export default function AgentChat() {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="flex flex-1 flex-col overflow-hidden rounded-none md:rounded-2xl border-0 md:border md:border-slate-200 bg-white shadow-none md:shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e4493]/10">
@@ -180,20 +180,22 @@ export default function AgentChat() {
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="Ask about your order, quotes, or shipping..."
-              className="w-full resize-none rounded-2xl border border-slate-200 pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2e4493]/30"
+              className="w-full resize-none rounded-full border border-slate-200 pl-4 pr-14 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2e4493]/30"
               disabled={loading}
             />
-            <button
-              type="submit"
-              disabled={!canSend}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2e4493] text-white transition hover:bg-[#1d2b66] disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </button>
+            <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end p-2 pointer-events-none [&>*]:pointer-events-auto">
+              <button
+                type="submit"
+                disabled={!canSend}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2e4493] text-white transition hover:bg-[#1d2b66] disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
           <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
             <CornerDownLeft className="h-3 w-3" />
