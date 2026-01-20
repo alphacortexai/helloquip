@@ -110,7 +110,7 @@ export default function AgentChat() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 bg-gradient-to-b from-white to-slate-50">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-6 space-y-4 bg-gradient-to-b from-white to-slate-50">
           {messages.map((msg, index) => (
             <div
               key={`${msg.role}-${index}`}
@@ -118,36 +118,29 @@ export default function AgentChat() {
                 msg.role === 'user' ? 'justify-end' : 'justify-start'
               }`}
             >
-              <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow ${
-                  msg.role === 'user'
-                    ? 'bg-[#2e4493] text-white rounded-br-md'
-                    : 'bg-white text-slate-900 border border-slate-200 rounded-bl-md'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-1">
-                  {msg.role === 'user' ? (
-                    <>
-                      <User className="h-3 w-3" />
-                      You
-                    </>
-                  ) : (
-                    <>
-                      <Bot className="h-3 w-3 text-[#2e4493]" />
-                      Support
-                    </>
-                  )}
+              {msg.role === 'user' ? (
+                <div className="max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow bg-[#2e4493] text-white rounded-br-md">
+                  <div className="flex items-center gap-2 text-[11px] text-white/80 mb-1">
+                    <User className="h-3 w-3" />
+                    You
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
                 </div>
-                <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
-              </div>
+              ) : (
+                <div className="w-full max-w-[85%]">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1">
+                    <Bot className="h-3 w-3 text-[#2e4493]" />
+                    Support
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm text-slate-800">{msg.content}</div>
+                </div>
+              )}
             </div>
           ))}
           {loading && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-[#2e4493]" />
-                Thinking...
-              </div>
+            <div className="flex justify-start w-full max-w-[85%] items-center gap-2 text-sm text-slate-600">
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#2e4493]" />
+              Thinking...
             </div>
           )}
           <div ref={bottomRef} />
@@ -180,36 +173,33 @@ export default function AgentChat() {
           }}
           className="border-t border-slate-100 bg-white px-5 py-4"
         >
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <textarea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-                placeholder="Ask about your order, quotes, or shipping..."
-                className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2e4493]/30"
-                disabled={loading}
-              />
-              <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                <CornerDownLeft className="h-3 w-3" />
-                Press Enter to send, Shift+Enter for a new line
-              </div>
-              {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
-            </div>
+          <div className="relative">
+            <textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              placeholder="Ask about your order, quotes, or shipping..."
+              className="w-full resize-none rounded-2xl border border-slate-200 pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2e4493]/30"
+              disabled={loading}
+            />
             <button
               type="submit"
               disabled={!canSend}
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-[#2e4493] px-5 text-sm font-medium text-white transition hover:bg-[#1d2b66] disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2e4493] text-white transition hover:bg-[#1d2b66] disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              Send
             </button>
           </div>
+          <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+            <CornerDownLeft className="h-3 w-3" />
+            Press Enter to send, Shift+Enter for a new line
+          </div>
+          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
         </form>
       </section>
     </div>

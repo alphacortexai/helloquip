@@ -136,7 +136,7 @@ export default function ClientLayoutWrapper({ children }) {
 
   const hideNavbarOn = ["/register", "/login", "/messenger", "/admin"];
   const hideFooterOn = ["/order", "/categories", "/register", "/messenger", "/account", "/admin", "/admin/chat", "/agent-chat"];
-  const hideMobileNavOn = ["/admin", "/login", "/register", "/messenger"];
+  const hideMobileNavOn = ["/admin", "/login", "/register", "/messenger", "/agent-chat"];
 
   const showNavbar = !hideNavbarOn.includes(pathname) && !pathname.startsWith('/admin');
   const showFooter = !hideFooterOn.includes(pathname) && !pathname.startsWith('/admin');
@@ -297,8 +297,8 @@ export default function ClientLayoutWrapper({ children }) {
       )}
 
       {showFooter && <Footer />}
-      {/* Mobile Footer Spacer - Always show on mobile when footer is hidden */}
-      {!showFooter && (
+      {/* Mobile Footer Spacer - when footer is hidden; skip on /agent-chat to avoid external scrollbar */}
+      {!showFooter && !pathname.includes("/agent-chat") && (
         <div className="block md:hidden h-20"></div>
       )}
     </>
