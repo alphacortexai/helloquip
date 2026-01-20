@@ -296,8 +296,8 @@ export default function OrderManager() {
       const total = (updated.totalAmount != null ? updated.totalAmount : (updated.items||[]).reduce((sum, it) => sum + ((it.discount>0? it.price*(1-it.discount/100):it.price)*(it.quantity||1)), 0));
       const items = (updated.items || []).map((it) => `${it.name} x ${it.quantity||1}`);
       const summary = items.length > 3 ? `${items.slice(0,3).join(", ")} and ${items.length-3} more` : items.join(", ");
-      const shortId = orderId.slice(0,6).toUpperCase();
-      const body = `Your order ${shortId} (${summary}, UGX ${Number(total||0).toLocaleString()}) changed from ${prev || 'previous'} to ${newStatus}.`;
+      const orderIdDisplay = orderId.toUpperCase();
+      const body = `Your order ${orderIdDisplay} (${summary}, UGX ${Number(total||0).toLocaleString()}) changed from ${prev || 'previous'} to ${newStatus}.`;
       if (fcmToken) {
         try {
           const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -411,7 +411,7 @@ export default function OrderManager() {
                 selected?.id === order.id ? "bg-blue-100" : ""
               }`}
             >
-              <p className="font-semibold">Order #{order.id.slice(-5)}</p>
+              <p className="font-semibold">Order #{order.id.toUpperCase()}</p>
               <p className="text-sm text-gray-500">
                 {(order.userName || order.address?.fullName || "No Name")} —{" "}
                 <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>

@@ -193,7 +193,7 @@ export default function CustomerDashboard() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          Order #{order.id.slice(0, 8)}
+                          Order #{order.id.toUpperCase()}
                         </p>
                         <p className="text-sm text-gray-500">
                           {formatDate(order.createdAt)}
