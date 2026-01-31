@@ -250,6 +250,12 @@ export default function OrderManager() {
         id: doc.id,
         ...doc.data(),
       }));
+      // Sort by createdAt descending (latest orders first)
+      data.sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() ?? (a.createdAt ? new Date(a.createdAt) : new Date(0));
+        const dateB = b.createdAt?.toDate?.() ?? (b.createdAt ? new Date(b.createdAt) : new Date(0));
+        return dateB - dateA;
+      });
       setOrders(data);
     };
 

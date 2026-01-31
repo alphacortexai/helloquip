@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 const DEFAULT_GREETING =
-  "Hi! I'm the HelloQuip support assistant. Ask me about orders, quotes, shipping, or products.";
+  "Hi! I'm the Heloquip support assistant. Ask me about orders, quotes, shipping, or products.";
 
 const QUICK_STARTS = [
   'Where is my order?',
