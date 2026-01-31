@@ -171,6 +171,21 @@ export default function SearchBar() {
     setSuggestions([]);
   }, [pathname]);
 
+  // Close suggestions when clicking outside the search bar
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsFocused(false);
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("click", handleClickOutside, true);
+    };
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
