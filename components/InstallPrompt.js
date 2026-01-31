@@ -70,7 +70,7 @@ export default function InstallPrompt() {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>Install HelloQuip</div>
+          <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>Install HeloQuip</div>
           <div style={{ fontSize: 12, color: "#4b5563", marginTop: 2 }}>
             Add the app to your device for faster access.
           </div>

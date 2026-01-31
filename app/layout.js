@@ -3,7 +3,7 @@ import ClientWrapper from "@/components/ClientWrapper";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
-  title: "HelloQuip",
+  title: "HeloQuip",
   description: "Medical eCommerce",
   manifest: "/manifest.json",
   icons: { icon: "/logo.png" },
@@ -12,7 +12,7 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "HelloQuip",
+    title: "HeloQuip",
   },
 };
 
@@ -40,10 +40,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://securetoken.googleapis.com" />
 
         {/* PWA Meta Tags */}
-        <meta name="application-name" content="HelloQuip" />
+        <meta name="application-name" content="HeloQuip" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="HelloQuip" />
+        <meta name="apple-mobile-web-app-title" content="HeloQuip" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#0f4a73" />
         <meta name="msapplication-tap-highlight" content="no" />

@@ -1,7 +1,7 @@
 # Chatbase Integration Guide
 
 ## Overview
-The HelloQuip application now uses Chatbase for customer support chat functionality. Chatbase provides a professional chat widget that appears on the main page and allows customers to get instant support.
+The Heloquip application now uses Chatbase for customer support chat functionality. Chatbase provides a professional chat widget that appears on the main page and allows customers to get instant support.
 
 ## Features Implemented
 
