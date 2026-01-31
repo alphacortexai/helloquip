@@ -12,6 +12,7 @@ import CenteredCard from "@/components/CenteredCard";
 import ContactButtons from "@/components/ContactButtons";
 import ConvertToQuotationButton from "@/components/ConvertToQuotationButton";
 import RequestQuoteButton from "@/components/RequestQuoteButton";
+import { useCart } from "@/components/CartContext";
 
 function cleanFirebaseUrl(url) {
   if (!url || typeof url !== "string") return "";
@@ -64,11 +65,13 @@ function isAddressComplete(address) {
 export default function OrderClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { cartItems: guestCartItems, clearCart: clearGuestCart, getCartForTransfer } = useCart();
   const initialTab = searchParams.get("tab") || "cart"; // cart | submitted
   const [activeTab, setActiveTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [transferringCart, setTransferringCart] = useState(false);
   const [orders, setOrders] = useState([]); // submitted orders list
   const [address, setAddress] = useState({
     customerType: "individual", // 'individual' | 'company'
@@ -135,9 +138,43 @@ export default function OrderClient() {
         phoneNumber: userAddress.phoneNumber || "",
       });
 
+      // Load existing Firebase cart
       const cartRef = collection(db, "carts", user.uid, "items");
       const cartSnap = await getDocs(cartRef);
-      const items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      let items = cartSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      // Check if there are guest cart items to transfer
+      const guestItems = getCartForTransfer();
+      if (guestItems && guestItems.length > 0) {
+        setTransferringCart(true);
+        const existingIds = new Set(items.map(item => item.id));
+        
+        // Transfer guest cart items to Firebase
+        for (const guestItem of guestItems) {
+          if (!existingIds.has(guestItem.id)) {
+            try {
+              const itemRef = doc(db, "carts", user.uid, "items", guestItem.id);
+              await setDoc(itemRef, {
+                ...guestItem,
+                addedAt: serverTimestamp(),
+              });
+              // Add to local items array
+              items.push(guestItem);
+            } catch (e) {
+              console.warn("Failed to transfer guest cart item:", guestItem.id, e);
+            }
+          }
+        }
+        
+        // Clear guest cart after transfer
+        clearGuestCart();
+        setTransferringCart(false);
+        
+        if (guestItems.length > 0) {
+          toast.success(`${guestItems.length} item(s) from your cart have been added!`);
+        }
+      }
+
       setCartItems(items);
 
       // Load submitted orders for this user
@@ -158,7 +195,7 @@ export default function OrderClient() {
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, getCartForTransfer, clearGuestCart]);
 
   const updateQuantity = async (itemId, change) => {
     if (!userId) return;

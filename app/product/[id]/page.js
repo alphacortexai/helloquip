@@ -16,6 +16,7 @@ import ProductComparisonButton from "@/components/ProductComparisonButton";
 import CurrencyDropdown from "@/components/CurrencyDropdown";
 import { CustomerExperienceService } from "@/lib/customerExperienceService";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useCart } from "@/components/CartContext";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ProductDetail() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { formatPrice, currency } = useCurrency();
+  const { addToCart, isInCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -139,41 +141,52 @@ export default function ProductDetail() {
   // (Reverted) No auto-add on return; just return to the product page
 
   const handleAddToOrder = async () => {
-    if (!user) {
-      router.push(`/register?redirect=/product/${product.id}`);
-      return;
-    }
-
     if (quantity < 1) {
       toast.error("Quantity must be at least 1");
       return;
     }
 
-    try {
-      const itemRef = doc(db, "carts", user.uid, "items", product.id);
-      const itemSnap = await getDoc(itemRef);
+    // If user is logged in, add to Firebase cart
+    if (user) {
+      try {
+        const itemRef = doc(db, "carts", user.uid, "items", product.id);
+        const itemSnap = await getDoc(itemRef);
 
-      if (itemSnap.exists()) {
+        if (itemSnap.exists()) {
+          toast.info("This product is already in your cart.");
+          return;
+        }
+
+        await setDoc(itemRef, {
+          ...product,
+          quantity,
+          addedAt: serverTimestamp(),
+        });
+
+        toast.success("Product added to your cart!");
+      } catch (error) {
+        console.error("Failed to add product to cart:", error);
+        toast.error("Failed to add to cart. Please try again.");
+      }
+    } else {
+      // Guest user - add to local cart
+      if (isInCart(product.id)) {
         toast.info("This product is already in your cart.");
         return;
       }
 
-      await setDoc(itemRef, {
-        ...product,
-        quantity,
-        addedAt: serverTimestamp(),
-      });
-
-      toast.success("Product added to your cart!");
-    } catch (error) {
-      console.error("Failed to add product to cart:", error);
-      toast.error("Failed to add to cart. Please try again.");
+      addToCart(product, quantity);
+      toast.success("Product added to your cart! Sign in to checkout.");
     }
   };
 
   const handleBuyNow = () => {
     if (!user) {
-      router.push(`/register?redirect=/order?productId=${product.id}`);
+      // Guest user - add to cart and go to cart page
+      if (!isInCart(product.id)) {
+        addToCart(product, quantity);
+      }
+      router.push("/cart");
     } else {
       router.push(`/order?productId=${product.id}`);
     }
