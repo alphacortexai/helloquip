@@ -4,7 +4,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, getDoc, doc, query, where, limit, orderBy, getCountFromServer } from "firebase/firestore";
 import { productSearchableText, extractProductSearchPhrase, runIntelligentSearch, buildSearchTerms } from "@/lib/intelligentProductSearch";
 
-const systemPrompt =
+const defaultSystemPrompt =
   "You are Heloquip's customer service assistant. Be concise, friendly, and helpful. " +
   "Answer questions about products, quotes, orders, shipping, returns, and account issues. " +
   "When 'Company Information' is provided in the context, use it to answer questions about contact details, phone numbers, email addresses, working hours, location, shipping policies, return policies, payment methods, and any other company-related questions. Always provide the actual company contact info from the context when users ask how to reach the company. " +
@@ -211,12 +211,19 @@ export async function POST(req) {
     });
 
     const contextNotes = [];
+    let customSystemPrompt = null;
 
-    // Fetch company info for context
+    // Fetch company info and custom system prompt
     try {
       const companyInfoDoc = await getDoc(doc(db, "settings", "companyInfo"));
       if (companyInfoDoc.exists()) {
         const info = companyInfoDoc.data();
+        
+        // Get custom system prompt if set
+        if (info.systemPrompt && info.systemPrompt.trim()) {
+          customSystemPrompt = info.systemPrompt.trim();
+        }
+        
         const companyContext = [];
         
         if (info.companyName) companyContext.push(`Company name: ${info.companyName}`);
@@ -556,10 +563,13 @@ export async function POST(req) {
           )
       : [];
 
+    // Use custom system prompt if set, otherwise use default
+    const activeSystemPrompt = customSystemPrompt || defaultSystemPrompt;
+    
     const systemWithContext =
       contextNotes.length > 0
-        ? `${systemPrompt}\n\nDatabase context:\n${contextNotes.join("\n")}`
-        : systemPrompt;
+        ? `${activeSystemPrompt}\n\nDatabase context:\n${contextNotes.join("\n")}`
+        : activeSystemPrompt;
 
     const response = await llm.invoke([
       new SystemMessage(systemWithContext),

@@ -4,6 +4,34 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
+const defaultSystemPrompt = `You are Heloquip's customer service assistant. Be concise, friendly, and helpful.
+
+Answer questions about products, quotes, orders, shipping, returns, and account issues.
+
+When 'Company Information' is provided in the context, use it to answer questions about contact details, phone numbers, email addresses, working hours, location, shipping policies, return policies, payment methods, and any other company-related questions. Always provide the actual company contact info from the context when users ask how to reach the company.
+
+When 'Products in database' is provided in the context, use that list to answer product and catalog questions. Do not say you do not have product data when it is provided—always use the list.
+
+Product data may include description, warranty, manufacturer, and attributes. Use these when answering questions about a product's features, warranty, or specifications.
+
+Use database lookup results when provided and never invent order or product details.
+
+When listing orders, always show the order number in UPPERCASE (e.g. Order #0NO20PBGDP1XUGM9AAU4).
+
+If a user asks about an order but order number or email is missing, request the order number and the email used at checkout.
+
+If you are unsure or need human help, ask a clarifying question and offer to connect them.
+
+Do not ask for sensitive payment details.
+
+IMPORTANT—do not invent processes or promise outcomes this chat cannot deliver:
+- This chat does NOT save conversations, log requests, or forward them to any team.
+- Do NOT say you have 'noted', 'logged', 'recorded', or 'submitted' the user's request.
+- Do NOT promise that 'a team member will contact you' for requests made only in this chat.
+- For quote requests: tell users to add items to their cart and use the 'Request Quote' button on the cart or checkout page.
+
+In general: only describe actions and systems that exist. If you are not sure whether something happens in the background, do not claim it does.`;
+
 const defaultInfo = {
   companyName: "Heloquip",
   phoneNumbers: [],
@@ -22,6 +50,7 @@ const defaultInfo = {
   returnPolicy: "",
   paymentMethods: "",
   additionalInfo: "",
+  systemPrompt: "",
 };
 
 export default function CompanyInfoSettings() {
@@ -364,6 +393,36 @@ export default function CompanyInfoSettings() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             placeholder="Any additional information the AI should know..."
           />
+        </div>
+
+        {/* AI System Prompt */}
+        <div className="bg-white border border-purple-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-sm font-semibold text-purple-700">AI Assistant System Prompt</h3>
+            <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">Advanced</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            This is the core instruction that defines how the AI assistant behaves. Edit carefully - this controls the AI's personality, capabilities, and limitations.
+          </p>
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={() => setInfo({ ...info, systemPrompt: defaultSystemPrompt })}
+              className="text-xs text-purple-600 hover:text-purple-800 underline"
+            >
+              Reset to default prompt
+            </button>
+          </div>
+          <textarea
+            value={info.systemPrompt || ""}
+            onChange={(e) => setInfo({ ...info, systemPrompt: e.target.value })}
+            rows={15}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+            placeholder={defaultSystemPrompt}
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            Leave empty to use the default prompt. The AI will automatically have access to company info and product data from the database.
+          </p>
         </div>
 
         {/* Save Button */}
