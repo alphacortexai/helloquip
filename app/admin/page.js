@@ -38,6 +38,7 @@ import RecommendationAnalytics from "./components/RecommendationAnalytics";
 import ProductControl from "./components/ProductControl";
 import ProductSuggestions from "./components/ProductSuggestions";
 import ProductReorder from "./components/ProductReorder";
+import CompanyInfoSettings from "./components/CompanyInfoSettings";
 import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
@@ -59,6 +60,7 @@ import {
   StarIcon,
   ArrowsUpDownIcon,
   DocumentTextIcon,
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 
 const tabs = [
@@ -325,6 +327,15 @@ const tabs = [
     bgColor: "bg-slate-50",
     borderColor: "border-slate-100"
   },
+  {
+    id: "companyInfo",
+    icon: <InformationCircleIcon className="w-5 h-5" />,
+    label: "Company Info",
+    description: "Info for AI chat assistant",
+    color: "text-teal-600",
+    bgColor: "bg-teal-50",
+    borderColor: "border-teal-100"
+  },
 ];
 
 function AdminDashboard({ currentAdminUid }) {
@@ -495,6 +506,8 @@ function AdminDashboard({ currentAdminUid }) {
       case "legal":
       case "privacyPolicy":
         return <LegalSettings />;
+      case "companyInfo":
+        return <CompanyInfoSettings />;
       default:
         return null;
     }

@@ -7,6 +7,7 @@ import { productSearchableText, extractProductSearchPhrase, runIntelligentSearch
 const systemPrompt =
   "You are Heloquip's customer service assistant. Be concise, friendly, and helpful. " +
   "Answer questions about products, quotes, orders, shipping, returns, and account issues. " +
+  "When 'Company Information' is provided in the context, use it to answer questions about contact details, phone numbers, email addresses, working hours, location, shipping policies, return policies, payment methods, and any other company-related questions. Always provide the actual company contact info from the context when users ask how to reach the company. " +
   "When 'Products in database' is provided in the context, use that list to answer product and catalog questions. Do not say you do not have product data when it is provided—always use the list. " +
   "Product search (priority) is the first-priority product lookup (SearchBar-style: any term in name/description/sku/manufacturer/tags). Always use it when present. 'Intelligent search' or 'Keyword search' results are also pre-filtered and relevance-ranked; use them to answer. " +
   "When 'Total active products in database' is given, use that for counts (e.g. 'how many products do you have'). When 'FULL catalog' is provided, you can list or summarize from the full set; when it is a sample, you may say it is a selection and they can ask for 'all products' or 'full catalog' to see more. " +
@@ -210,6 +211,43 @@ export async function POST(req) {
     });
 
     const contextNotes = [];
+
+    // Fetch company info for context
+    try {
+      const companyInfoDoc = await getDoc(doc(db, "settings", "companyInfo"));
+      if (companyInfoDoc.exists()) {
+        const info = companyInfoDoc.data();
+        const companyContext = [];
+        
+        if (info.companyName) companyContext.push(`Company name: ${info.companyName}`);
+        if (info.phoneNumbers?.length > 0) companyContext.push(`Phone numbers: ${info.phoneNumbers.join(", ")}`);
+        if (info.emails?.length > 0) companyContext.push(`Email addresses: ${info.emails.join(", ")}`);
+        if (info.whatsapp) companyContext.push(`WhatsApp: ${info.whatsapp}`);
+        if (info.address) companyContext.push(`Address: ${info.address}`);
+        if (info.workingHours) companyContext.push(`Working hours: ${info.workingHours}`);
+        if (info.website) companyContext.push(`Website: ${info.website}`);
+        if (info.shippingInfo) companyContext.push(`Shipping info: ${info.shippingInfo}`);
+        if (info.returnPolicy) companyContext.push(`Return policy: ${info.returnPolicy}`);
+        if (info.paymentMethods) companyContext.push(`Payment methods: ${info.paymentMethods}`);
+        if (info.additionalInfo) companyContext.push(`Additional info: ${info.additionalInfo}`);
+        
+        if (info.socialMedia) {
+          const socials = [];
+          if (info.socialMedia.facebook) socials.push(`Facebook: ${info.socialMedia.facebook}`);
+          if (info.socialMedia.twitter) socials.push(`Twitter: ${info.socialMedia.twitter}`);
+          if (info.socialMedia.instagram) socials.push(`Instagram: ${info.socialMedia.instagram}`);
+          if (info.socialMedia.linkedin) socials.push(`LinkedIn: ${info.socialMedia.linkedin}`);
+          if (socials.length > 0) companyContext.push(`Social media: ${socials.join(", ")}`);
+        }
+        
+        if (companyContext.length > 0) {
+          contextNotes.push(`Company Information:\n${companyContext.join("\n")}`);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch company info:", e);
+    }
+
     const wantsOrder = /order|shipping|delivery|track|status/i.test(message);
     const wantsQuote = /quote|quotation/i.test(message);
     const wantsProduct = /product|pdt|price|availability|stock|warranty|description|specification|spec|feature|attributes|manufacturer/i.test(message);
