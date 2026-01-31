@@ -195,7 +195,7 @@ export default function Navbar() {
                     )}
                   </button>
                   {openNotifications && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-auto">
+                    <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-full sm:mt-2 w-auto sm:w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-auto">
                       <div className="p-3 border-b border-gray-100 font-semibold">Notifications</div>
                       {notificationItems.length === 0 ? (
                         <div className="p-4 text-sm text-gray-500">No notifications</div>
