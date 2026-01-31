@@ -5,8 +5,9 @@ import Image from "next/image";
 
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ProductCard from "@/components/ProductCard";
@@ -49,8 +50,22 @@ export default function SearchResults() {
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const scrollContainerRef = useRef(null);
 
   const query = searchParams.get("q")?.toLowerCase() || "";
+
+  // Scroll functions for navigation arrows
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -400, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 400, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -85,7 +100,7 @@ export default function SearchResults() {
           const matchesText = keywords.some((word) => text.includes(word));
 
           return matchesCategory || matchesPrice || matchesText;
-        }).slice(0, 6); // Limit to 6 similar items
+        }).slice(0, 10); // Limit to 10 similar items
 
         setSimilarProducts(suggestions);
       } catch (error) {
@@ -153,7 +168,8 @@ export default function SearchResults() {
           <h3 className="mt-4 text-xl font-semibold mb-2 text-gray-700">
             Similar Products You Might Like
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {/* Mobile: 2-column grid, Desktop: horizontal scroll */}
+          <div className="grid grid-cols-2 gap-3 md:hidden">
             {similarProducts.map(
               ({ id, name, description, price, discount, imageUrl, sku }, index) => (
                 <Link
@@ -177,7 +193,56 @@ export default function SearchResults() {
                 </Link>
               )
             )}
+          </div>
+          {/* Desktop: horizontal scrollable row with navigation arrows */}
+          <div className="hidden md:block relative">
+            {/* Left Arrow */}
+            <button
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 border border-gray-200 transition-all hover:scale-110"
+              aria-label="Scroll left"
+            >
+              <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
+            </button>
 
+            {/* Scrollable Container */}
+            <div
+              ref={scrollContainerRef}
+              className="flex overflow-x-auto gap-4 pb-4 px-10 scrollbar-hide scroll-smooth"
+            >
+              {similarProducts.map(
+                ({ id, name, description, price, discount, imageUrl, sku }, index) => (
+                  <Link
+                    key={id}
+                    href={`/product/${id}`}
+                    className="flex-shrink-0 w-[180px] rounded-lg overflow-hidden cursor-pointer"
+                  >
+                    <ProductCard
+                      variant="compact"
+                      isFirst={index === 0}
+                      product={{
+                        id,
+                        name: name || "Unnamed Product",
+                        description: description || "",
+                        sku: sku || "",
+                        price: price || 0,
+                        discount: discount || 0,
+                        image: getPreferredImageUrl(imageUrl),
+                      }}
+                    />
+                  </Link>
+                )
+              )}
+            </div>
+
+            {/* Right Arrow */}
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-2 border border-gray-200 transition-all hover:scale-110"
+              aria-label="Scroll right"
+            >
+              <ChevronRightIcon className="w-5 h-5 text-gray-700" />
+            </button>
           </div>
         </>
       )}
