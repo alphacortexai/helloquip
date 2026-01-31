@@ -20,6 +20,7 @@ export default function Navbar() {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [notificationItems, setNotificationItems] = useState([]);
   const dropdownRef = useRef();
+  const notificationRef = useRef();
   const showSearch = ["/category", "/shop", "/search"].some((path) => pathname.startsWith(path)) || pathname === "/";
 
   // Auth listener
@@ -125,15 +126,20 @@ export default function Navbar() {
     markRead();
   }, [openNotifications, user, notificationItems]);
 
-  // Close dropdown if clicked outside
+  // Close dropdowns if clicked outside
   useEffect(() => {
     function handleClickOutside(event) {
+      // Close user menu if clicked outside
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
+      // Close notifications dropdown if clicked outside
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setOpenNotifications(false);
+      }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside, true);
+    return () => document.removeEventListener("click", handleClickOutside, true);
   }, []);
 
   const handleLogout = async () => {
@@ -174,7 +180,7 @@ export default function Navbar() {
             <div className="flex items-center gap-0 relative" ref={dropdownRef}>
               {/* Notifications - only when logged in */}
               {user && (
-                <>
+                <div className="relative" ref={notificationRef}>
                   <button onClick={() => setOpenNotifications((o) => !o)} className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors" aria-label="Notifications">
                     <BellIcon className="h-6 w-6" />
                     {notifications > 0 && (
@@ -212,7 +218,7 @@ export default function Navbar() {
                       )}
                     </div>
                   )}
-                </>
+                </div>
               )}
 
               {/* Cart Icon */}

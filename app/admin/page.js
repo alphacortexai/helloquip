@@ -339,19 +339,25 @@ function AdminDashboard({ currentAdminUid }) {
   const [adminNotifications, setAdminNotifications] = useState([]);
   const adminNotifRef = useRef(null);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      // Close Account dropdown if clicked outside
+      if (accountDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setAccountDropdownOpen(false);
+      }
+      // Close Notifications dropdown if clicked outside
+      if (adminDropdownOpen && adminNotifRef.current && !adminNotifRef.current.contains(event.target)) {
+        setAdminDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Use click event for more reliable detection
+    document.addEventListener('click', handleClickOutside, true);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside, true);
     };
-  }, []);
+  }, [accountDropdownOpen, adminDropdownOpen]);
 
   const handleAccountAction = (action) => {
     setAccountDropdownOpen(false);
@@ -415,16 +421,6 @@ function AdminDashboard({ currentAdminUid }) {
     return () => unsub();
   }, []);
 
-  // Close admin notif dropdown on outside click
-  useEffect(() => {
-    function handleOutside(e) {
-      if (adminNotifRef.current && !adminNotifRef.current.contains(e.target)) {
-        setAdminDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, []);
 
   const markAllAdminNotifsRead = async () => {
     const unread = adminNotifications.filter((n) => !n.read);
@@ -602,28 +598,28 @@ function AdminDashboard({ currentAdminUid }) {
                 </button>
                 
                 {/* Dropdown Menu */}
-                <div className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 transition-all duration-200 z-50 ${
-                  accountDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-                }`}>
-                  <div className="py-1">
-                    <button 
-                      onClick={() => handleAccountAction('settings')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    >
-                      <CogIcon className="w-4 h-4 mr-2" />
-                      Settings
-                    </button>
-                    <button 
-                      onClick={() => handleAccountAction('profile')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    >
-                      <UserCircleIcon className="w-4 h-4 mr-2" />
-                      Profile
-                    </button>
-                    <div className="border-t border-gray-200 my-1"></div>
-                    <LogoutButton isDropdown={true} />
+                {accountDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                    <div className="py-1">
+                      <button 
+                        onClick={() => handleAccountAction('settings')}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                      >
+                        <CogIcon className="w-4 h-4 mr-2" />
+                        Settings
+                      </button>
+                      <button 
+                        onClick={() => handleAccountAction('profile')}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                      >
+                        <UserCircleIcon className="w-4 h-4 mr-2" />
+                        Profile
+                      </button>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <LogoutButton isDropdown={true} />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
