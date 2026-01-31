@@ -6,15 +6,17 @@ import { useRouter, usePathname } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import SearchBar from "@/components/SearchBar";
 import CachedLogo from "@/components/CachedLogo";
+import { useCart } from "@/components/CartContext";
 import { collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from "firebase/firestore";
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { cartCount: guestCartCount } = useCart();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+  const [firebaseCartCount, setFirebaseCartCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [notifications, setNotifications] = useState(0);
   const [openNotifications, setOpenNotifications] = useState(false);
@@ -34,15 +36,18 @@ export default function Navbar() {
   // Listen for cart count realtime updates if user logged in
   useEffect(() => {
     if (!user) {
-      setCartCount(0);
+      setFirebaseCartCount(0);
       return;
     }
     const itemsRef = collection(db, "carts", user.uid, "items");
     const unsubscribe = onSnapshot(itemsRef, (snapshot) => {
-      setCartCount(snapshot.size);
+      setFirebaseCartCount(snapshot.size);
     });
     return () => unsubscribe();
   }, [user]);
+
+  // Total cart count: Firebase cart for logged-in users, guest cart for guests
+  const cartCount = user ? firebaseCartCount : guestCartCount;
 
   // Listen for unread messages sent to this user (exclude system/notification)
   useEffect(() => {
@@ -221,10 +226,10 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Cart Icon */}
-              {user && cartCount > 0 && (
+              {/* Cart Icon - shows for both logged-in and guest users */}
+              {cartCount > 0 && (
                 <button
-                  onClick={() => router.push("/order")}
+                  onClick={() => router.push(user ? "/order" : "/cart")}
                   className="relative text-gray-600 hover:text-[#2e4493] focus:outline-none p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors"
                   aria-label="View cart"
                 >
