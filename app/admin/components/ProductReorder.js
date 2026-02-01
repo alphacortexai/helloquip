@@ -6,8 +6,11 @@ import {
   collection,
   getDocs,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
   writeBatch,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   ArrowUpIcon,
@@ -15,7 +18,22 @@ import {
   ArrowsUpDownIcon,
   CheckIcon,
   XMarkIcon,
+  Cog6ToothIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
+
+// Shuffle interval options in milliseconds
+const SHUFFLE_INTERVALS = [
+  { value: "manual", label: "Manual Only", ms: null },
+  { value: "page_reload", label: "On Page Reload", ms: 0 },
+  { value: "5min", label: "Every 5 minutes", ms: 5 * 60 * 1000 },
+  { value: "30min", label: "Every 30 minutes", ms: 30 * 60 * 1000 },
+  { value: "1hr", label: "Every 1 hour", ms: 60 * 60 * 1000 },
+  { value: "5hr", label: "Every 5 hours", ms: 5 * 60 * 60 * 1000 },
+  { value: "24hr", label: "Every 24 hours", ms: 24 * 60 * 60 * 1000 },
+  { value: "48hr", label: "Every 48 hours", ms: 48 * 60 * 60 * 1000 },
+  { value: "1week", label: "Every 1 week", ms: 7 * 24 * 60 * 60 * 1000 },
+];
 
 export default function ProductReorder() {
   const [products, setProducts] = useState([]);
@@ -23,10 +41,59 @@ export default function ProductReorder() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [filter, setFilter] = useState("all"); // 'all', 'ordered', 'unordered'
+  
+  // Reorder settings
+  const [reorderMode, setReorderMode] = useState("manual"); // 'manual' or 'automatic'
+  const [shuffleInterval, setShuffleInterval] = useState("page_reload");
+  const [lastShuffleAt, setLastShuffleAt] = useState(null);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     fetchProducts();
+    fetchReorderSettings();
   }, []);
+
+  const fetchReorderSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const settingsRef = doc(db, "settings", "productReorder");
+      const settingsSnap = await getDoc(settingsRef);
+      
+      if (settingsSnap.exists()) {
+        const data = settingsSnap.data();
+        setReorderMode(data.mode || "manual");
+        setShuffleInterval(data.interval || "page_reload");
+        setLastShuffleAt(data.lastShuffleAt?.toDate?.() || null);
+      }
+    } catch (error) {
+      console.error("Error fetching reorder settings:", error);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const saveReorderSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const settingsRef = doc(db, "settings", "productReorder");
+      await setDoc(settingsRef, {
+        mode: reorderMode,
+        interval: reorderMode === "manual" ? "manual" : shuffleInterval,
+        updatedAt: serverTimestamp(),
+        // Preserve lastShuffleAt if it exists
+        ...(lastShuffleAt && { lastShuffleAt }),
+      }, { merge: true });
+      
+      setMessage({ type: "success", text: "Reorder settings saved successfully!" });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+    } catch (error) {
+      console.error("Error saving reorder settings:", error);
+      setMessage({ type: "error", text: "Failed to save settings" });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -107,8 +174,8 @@ export default function ProductReorder() {
     setProducts(updatedProducts);
   };
 
-  const shuffleProducts = () => {
-    if (!confirm("Are you sure you want to randomly shuffle all products?")) {
+  const shuffleProducts = (skipConfirm = false) => {
+    if (!skipConfirm && !confirm("Are you sure you want to randomly shuffle all products?")) {
       return;
     }
 
@@ -145,6 +212,66 @@ export default function ProductReorder() {
 
     // Update state with completely shuffled and sorted products
     setProducts(allProductsCopy);
+  };
+
+  // Function to shuffle and save automatically (used by automatic mode)
+  const shuffleAndSaveProducts = async () => {
+    setSaving(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      // Create a copy of ALL products
+      const allProductsCopy = products.map(p => ({ ...p }));
+      
+      // Fisher-Yates shuffle algorithm
+      for (let i = allProductsCopy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allProductsCopy[i], allProductsCopy[j]] = [allProductsCopy[j], allProductsCopy[i]];
+      }
+
+      // Assign new sequential order
+      allProductsCopy.forEach((product, idx) => {
+        product.displayOrder = idx + 1;
+      });
+
+      // Save to Firestore in batches
+      const BATCH_LIMIT = 500;
+      const totalProducts = allProductsCopy.length;
+
+      for (let i = 0; i < totalProducts; i += BATCH_LIMIT) {
+        const batch = writeBatch(db);
+        const batchProducts = allProductsCopy.slice(i, i + BATCH_LIMIT);
+        
+        batchProducts.forEach((product, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          const newOrder = globalIndex + 1;
+          const productRef = doc(db, "products", product.id);
+          batch.update(productRef, { displayOrder: newOrder });
+        });
+
+        await batch.commit();
+      }
+
+      // Update lastShuffleAt timestamp
+      const now = new Date();
+      const settingsRef = doc(db, "settings", "productReorder");
+      await setDoc(settingsRef, {
+        lastShuffleAt: serverTimestamp(),
+      }, { merge: true });
+      setLastShuffleAt(now);
+
+      setMessage({
+        type: "success",
+        text: `Products shuffled and saved! ${totalProducts} products reordered.`,
+      });
+      await fetchProducts();
+    } catch (error) {
+      console.error("Error shuffling products:", error);
+      setMessage({ type: "error", text: "Failed to shuffle products: " + error.message });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage({ type: "", text: "" }), 5000);
+    }
   };
 
   const clearOrder = async () => {
@@ -231,6 +358,34 @@ export default function ProductReorder() {
     );
   }
 
+  // Get current interval info
+  const getCurrentIntervalInfo = () => {
+    const interval = SHUFFLE_INTERVALS.find(i => i.value === shuffleInterval);
+    return interval || SHUFFLE_INTERVALS[0];
+  };
+
+  // Format last shuffle time
+  const formatLastShuffle = () => {
+    if (!lastShuffleAt) return "Never";
+    return lastShuffleAt.toLocaleString();
+  };
+
+  // Calculate next shuffle time
+  const getNextShuffleInfo = () => {
+    if (reorderMode === "manual") return "Manual mode - no automatic shuffle";
+    
+    const interval = getCurrentIntervalInfo();
+    if (interval.value === "page_reload") return "Will shuffle on next page reload";
+    if (!interval.ms) return "N/A";
+    if (!lastShuffleAt) return "Will shuffle on next check";
+    
+    const nextShuffle = new Date(lastShuffleAt.getTime() + interval.ms);
+    const now = new Date();
+    
+    if (nextShuffle <= now) return "Due now - will shuffle on next page load";
+    return `Next shuffle: ${nextShuffle.toLocaleString()}`;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -256,7 +411,143 @@ export default function ProductReorder() {
         </div>
       )}
 
-      {/* Controls */}
+      {/* Reorder Mode Settings */}
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Cog6ToothIcon className="w-5 h-5 text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Shuffle Settings</h3>
+        </div>
+
+        {settingsLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-2 text-gray-500">Loading settings...</span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Mode Selection */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shuffle Mode
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="reorderMode"
+                      value="manual"
+                      checked={reorderMode === "manual"}
+                      onChange={(e) => setReorderMode(e.target.value)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Manual</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="reorderMode"
+                      value="automatic"
+                      checked={reorderMode === "automatic"}
+                      onChange={(e) => setReorderMode(e.target.value)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Automatic</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Interval Selection (only for automatic mode) */}
+              {reorderMode === "automatic" && (
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Shuffle Interval
+                  </label>
+                  <select
+                    value={shuffleInterval}
+                    onChange={(e) => setShuffleInterval(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {SHUFFLE_INTERVALS.filter(i => i.value !== "manual").map((interval) => (
+                      <option key={interval.value} value={interval.value}>
+                        {interval.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Status Info */}
+            {reorderMode === "automatic" && (
+              <div className="flex flex-col sm:flex-row gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <ClockIcon className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-blue-800">
+                    <strong>Last shuffle:</strong> {formatLastShuffle()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ClockIcon className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-blue-800">
+                    {getNextShuffleInfo()}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Save Settings Button */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={saveReorderSettings}
+                disabled={savingSettings}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {savingSettings ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon className="w-4 h-4" />
+                    Save Settings
+                  </>
+                )}
+              </button>
+
+              {reorderMode === "automatic" && (
+                <button
+                  onClick={shuffleAndSaveProducts}
+                  disabled={saving || products.length === 0}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Shuffling...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowsUpDownIcon className="w-4 h-4" />
+                      Shuffle Now
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Mode Description */}
+            <p className="text-xs text-gray-500">
+              {reorderMode === "manual" 
+                ? "In manual mode, you can manually reorder products using the controls below or the Shuffle All button."
+                : "In automatic mode, products will be randomly shuffled based on the selected interval. The shuffle happens when any user loads the main page and the interval has passed."}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Manual Controls */}
       <div className="flex flex-wrap items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-700">Filter:</label>
@@ -412,12 +703,15 @@ export default function ProductReorder() {
             their order value.
           </li>
           <li>
-            Use the up/down arrows to reorder products, or click "Shuffle All"
-            for a random order.
+            <strong>Manual Mode:</strong> Use the up/down arrows to reorder products, or click "Shuffle All"
+            for a random order. Click "Save Order" to apply changes.
           </li>
           <li>
-            Click "Save Order" to save your changes. Changes take effect
-            immediately on the main page.
+            <strong>Automatic Mode:</strong> Products are automatically shuffled based on your selected interval
+            (page reload, 5min, 30min, 1hr, 5hr, 24hrs, 48hrs, or 1 week).
+          </li>
+          <li>
+            The automatic shuffle happens when a user visits the main page and the interval has passed since the last shuffle.
           </li>
           <li>
             Products without order numbers are sorted by creation date (newest
