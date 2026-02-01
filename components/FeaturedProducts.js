@@ -21,7 +21,10 @@ import {
   addDoc,
   where,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
+  writeBatch,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -94,9 +97,122 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
   const initialPageSize = 48; // Both desktop and mobile: Show first 48 products
   const pageSize = 30; // Both desktop and mobile: 30 products per page after initial 48
 
-  // Products are now sorted consistently by creation date (oldest first)
-  // No more randomization to ensure users can track their progress
+  // Products are now sorted by displayOrder (if set by admin), then by creation date
+  // Automatic shuffle can be enabled from admin panel
 
+  // Check and perform auto-shuffle if enabled and due
+  const checkAndPerformAutoShuffle = useCallback(async (productsList) => {
+    try {
+      const settingsRef = doc(db, "settings", "productReorder");
+      const settingsSnap = await getDoc(settingsRef);
+      
+      if (!settingsSnap.exists()) return productsList;
+      
+      const settings = settingsSnap.data();
+      
+      // Only proceed if automatic mode is enabled
+      if (settings.mode !== "automatic") return productsList;
+      
+      const interval = settings.interval;
+      const lastShuffleAt = settings.lastShuffleAt?.toDate?.() || null;
+      const shuffleLockUntil = settings.shuffleLockUntil?.toDate?.() || null;
+      
+      // Define intervals in milliseconds
+      const intervals = {
+        page_reload: 0, // Always shuffle on page reload
+        "5min": 5 * 60 * 1000,
+        "30min": 30 * 60 * 1000,
+        "1hr": 60 * 60 * 1000,
+        "5hr": 5 * 60 * 60 * 1000,
+        "24hr": 24 * 60 * 60 * 1000,
+        "48hr": 48 * 60 * 60 * 1000,
+        "1week": 7 * 24 * 60 * 60 * 1000,
+      };
+      
+      const intervalMs = intervals[interval];
+      if (intervalMs === undefined) return productsList;
+      
+      const now = new Date();
+      
+      // Check if another shuffle is in progress (lock active)
+      if (shuffleLockUntil && shuffleLockUntil > now) {
+        console.log('🔒 Shuffle locked by another user, skipping...');
+        return productsList;
+      }
+      
+      // Check if shuffle is due
+      const shouldShuffle = 
+        interval === "page_reload" || 
+        !lastShuffleAt || 
+        (now.getTime() - lastShuffleAt.getTime() >= intervalMs);
+      
+      if (!shouldShuffle) return productsList;
+      
+      // Acquire lock - set lock for 60 seconds (enough time to complete shuffle)
+      const lockExpiry = new Date(now.getTime() + 60 * 1000);
+      await setDoc(settingsRef, {
+        shuffleLockUntil: lockExpiry,
+      }, { merge: true });
+      
+      // Double-check we got the lock (re-read to handle race condition)
+      const recheckSnap = await getDoc(settingsRef);
+      const recheckData = recheckSnap.data();
+      const recheckLock = recheckData?.shuffleLockUntil?.toDate?.();
+      
+      // If someone else set a different lock time, they won the race - abort
+      if (recheckLock && Math.abs(recheckLock.getTime() - lockExpiry.getTime()) > 1000) {
+        console.log('🔒 Lost lock race to another user, skipping...');
+        return productsList;
+      }
+      
+      console.log('🔀 Auto-shuffle triggered:', interval);
+      
+      // Perform shuffle using Fisher-Yates algorithm
+      const shuffledProducts = [...productsList];
+      for (let i = shuffledProducts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+      }
+      
+      // Save new displayOrder to Firestore in batches
+      const BATCH_LIMIT = 500;
+      for (let i = 0; i < shuffledProducts.length; i += BATCH_LIMIT) {
+        const batch = writeBatch(db);
+        const batchProducts = shuffledProducts.slice(i, i + BATCH_LIMIT);
+        
+        batchProducts.forEach((product, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          const productRef = doc(db, "products", product.id);
+          batch.update(productRef, { displayOrder: globalIndex + 1 });
+          // Also update local reference
+          shuffledProducts[globalIndex].displayOrder = globalIndex + 1;
+        });
+        
+        await batch.commit();
+      }
+      
+      // Update lastShuffleAt timestamp and release lock
+      await setDoc(settingsRef, {
+        lastShuffleAt: serverTimestamp(),
+        shuffleLockUntil: null, // Release lock
+      }, { merge: true });
+      
+      console.log('✅ Auto-shuffle complete:', shuffledProducts.length, 'products');
+      
+      // Return shuffled products sorted by new displayOrder
+      return shuffledProducts.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    } catch (error) {
+      console.error("Error in auto-shuffle:", error);
+      // Try to release lock on error
+      try {
+        const settingsRef = doc(db, "settings", "productReorder");
+        await setDoc(settingsRef, { shuffleLockUntil: null }, { merge: true });
+      } catch (e) {
+        // Ignore lock release error
+      }
+      return productsList;
+    }
+  }, []);
 
   // Initialize scroll manager
   useEffect(() => {
@@ -182,6 +298,11 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
         return aDate - bDate;
       });
 
+      // Check for auto-shuffle if enabled (only on main page, not for filtered searches)
+      if (!keyword && !name && !manufacturer && !(tags && tags.length)) {
+        fetchedProducts = await checkAndPerformAutoShuffle(fetchedProducts);
+      }
+
       // Filter by similarity if search criteria exist
         if (keyword || name || manufacturer || (tags && tags.length)) {
           const lowerKeyword = keyword?.trim().toLowerCase();
@@ -206,7 +327,7 @@ export default function FeaturedProducts({ selectedCategory, keyword, tags, manu
       setAllProducts([]);
       }
       setLoading(false);
-  }, [keyword, tags, manufacturer, name]);
+  }, [keyword, tags, manufacturer, name, checkAndPerformAutoShuffle]);
 
 
   // Fetch latest uploads (last 2 months up to current hour)
