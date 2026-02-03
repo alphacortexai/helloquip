@@ -47,8 +47,6 @@ import CachedLogo from "@/components/CachedLogo";
 import { db, auth } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
 
 import {
   CubeIcon,
@@ -978,45 +976,6 @@ function AdminDashboard({ currentAdminUid }) {
         <div className="border-t border-gray-200 p-4 flex-shrink-0">
           <div className="text-xs text-gray-500 text-center">
             Admin Dashboard v1.0
-              
-              {/* Account Settings Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button 
-                  onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                  className="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors"
-                >
-                  <UserCircleIcon className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Account</span>
-                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {/* Dropdown Menu */}
-                {accountDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-                    <div className="py-1">
-                      <button 
-                        onClick={() => handleAccountAction('settings')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                      >
-                        <CogIcon className="w-4 h-4 mr-2" />
-                        Settings
-                      </button>
-                      <button 
-                        onClick={() => handleAccountAction('profile')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                      >
-                        <UserCircleIcon className="w-4 h-4 mr-2" />
-                        Profile
-                      </button>
-                      <div className="border-t border-gray-200 my-1"></div>
-                      <LogoutButton isDropdown={true} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </aside>

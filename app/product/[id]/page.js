@@ -172,13 +172,6 @@ export default function ProductDetail() {
           addedAt: serverTimestamp(),
         });
 
-
-        await setDoc(itemRef, {
-          ...product,
-          quantity,
-          addedAt: serverTimestamp(),
-        });
-
         toast.success("Product added to your cart!");
       } catch (error) {
         console.error("Failed to add product to cart:", error);
