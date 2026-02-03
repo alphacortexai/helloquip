@@ -71,7 +71,7 @@ export default function SubCategoryForm({ onSuccess }) {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div>
         {/* Header */}
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">

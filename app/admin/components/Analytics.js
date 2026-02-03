@@ -199,7 +199,7 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading analytics...</p>
@@ -214,7 +214,6 @@ export default function Analytics() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Analytics & Insights</h2>
-          <p className="text-sm text-gray-600 mt-1">Track your store performance</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -241,7 +240,7 @@ export default function Analytics() {
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Revenue Trend
           {revenueData.length > 0 && (
@@ -303,7 +302,7 @@ export default function Analytics() {
       </div>
 
       {/* Orders Chart */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Orders per Day</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={ordersData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -335,7 +334,7 @@ export default function Analytics() {
       </div>
 
       {/* User Growth Chart */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           User Growth
           {userGrowthData.length > 0 && (
@@ -387,7 +386,7 @@ export default function Analytics() {
       </div>
 
       {/* Product Performance */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Products by Views</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={productPerformance} layout="vertical" margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

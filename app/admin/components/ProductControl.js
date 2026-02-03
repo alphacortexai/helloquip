@@ -85,21 +85,20 @@ export default function ProductControl() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <Cog6ToothIcon className="h-6 w-6 text-gray-600 mr-3" />
-            <h1 className="text-xl font-semibold text-gray-900">Product Display Control</h1>
-          </div>
-          <p className="text-sm text-gray-600 mt-1">
-            Configure how product information is displayed across the application
-          </p>
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center">
+          <Cog6ToothIcon className="h-6 w-6 text-gray-600 mr-3" />
+          <h1 className="text-xl font-semibold text-gray-900">Product Display Control</h1>
         </div>
+        <p className="text-sm text-gray-600 mt-1">
+          Configure how product information is displayed across the application
+        </p>
+      </div>
 
-        {/* Settings Form */}
-        <div className="p-6 space-y-8">
+      {/* Settings Form */}
+      <div className="space-y-8">
           {/* MOQ and SKU Visibility */}
           <div className="space-y-4">
             <h2 className="text-lg font-medium text-gray-900 flex items-center">
@@ -228,7 +227,7 @@ export default function ProductControl() {
             
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="max-w-xs">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div className="bg-white rounded-lg border border-gray-200 p-3">
                   <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
                     <span className="text-gray-400 text-sm">Product Image</span>
                   </div>
@@ -287,7 +286,6 @@ export default function ProductControl() {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }

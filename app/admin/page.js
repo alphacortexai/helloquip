@@ -824,6 +824,21 @@ function AdminDashboard({ currentAdminUid }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex" data-page="admin">
+      <style dangerouslySetInnerHTML={{__html: `
+        .admin-sidebar-nav::-webkit-scrollbar {
+          width: 8px;
+        }
+        .admin-sidebar-nav::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+        .admin-sidebar-nav::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+        .admin-sidebar-nav::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}} />
       {/* Mobile Sidebar Overlay - Clickable area to close sidebar */}
       {sidebarOpen && (
         <div 
@@ -834,14 +849,15 @@ function AdminDashboard({ currentAdminUid }) {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
+        fixed lg:static left-0 z-50
         w-64 bg-white border-r border-gray-200
+        h-screen max-h-screen
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col
       `}>
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center">
             <CachedLogo 
               variant="default"
@@ -857,7 +873,10 @@ function AdminDashboard({ currentAdminUid }) {
         </div>
 
         {/* Sidebar Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 admin-sidebar-nav min-h-0" style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#cbd5e1 #f1f5f9'
+        }}>
           {menuGroups.map((group) => {
             const GroupIcon = group.icon;
             const isExpanded = expandedGroups[group.id];
@@ -930,7 +949,7 @@ function AdminDashboard({ currentAdminUid }) {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 p-4 flex-shrink-0">
           <div className="text-xs text-gray-500 text-center">
             Admin Dashboard v1.0
           </div>
@@ -1074,7 +1093,7 @@ function AdminDashboard({ currentAdminUid }) {
         <main className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-6 lg:px-8 py-2 sm:py-2">
             {view ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white rounded-lg border border-gray-200">
                 <div className="p-4 sm:p-6">
                   {renderSection()}
                 </div>
@@ -1088,9 +1107,6 @@ function AdminDashboard({ currentAdminUid }) {
                       <h2 className="text-lg sm:text-xl font-semibold text-gray-900 leading-tight">
                         Welcome back{userName ? `, ${userName}` : ""}!
                       </h2>
-                      <p className="text-sm text-gray-600 mt-0.5 leading-snug">
-                        Manage your HeloQuip store with our admin tools
-                      </p>
                     </div>
                     <div className="hidden lg:block flex-shrink-0">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
