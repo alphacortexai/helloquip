@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getPreferredImageUrl } from "@/lib/imageUtils";
 
 export default function LatestProductsViewer() {
   const [latestProducts, setLatestProducts] = useState([]);
@@ -71,16 +72,8 @@ export default function LatestProductsViewer() {
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
-    if (typeof imageUrl === 'string') {
-      return imageUrl;
-    }
-    
-    if (typeof imageUrl === 'object') {
-      return imageUrl['200x200'] || imageUrl['original'] || Object.values(imageUrl)[0];
-    }
-    
-    return null;
+    // Use the standard image utility that handles Firebase Storage URLs properly
+    return getPreferredImageUrl(imageUrl, "200x200");
   };
 
   if (loading) {
@@ -135,11 +128,14 @@ export default function LatestProductsViewer() {
               <div className="flex items-start space-x-4">
                 {/* Product Image */}
                 <div className="flex-shrink-0">
-                  {getImageUrl(product.imageUrl) ? (
+                  {getImageUrl(product.imageUrl) && getImageUrl(product.imageUrl) !== "/fallback.jpg" ? (
                     <img
                       src={getImageUrl(product.imageUrl)}
                       alt={product.name}
                       className="w-16 h-16 object-cover rounded-lg"
+                      onError={(e) => {
+                        e.target.src = "/fallback.jpg";
+                      }}
                     />
                   ) : (
                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
