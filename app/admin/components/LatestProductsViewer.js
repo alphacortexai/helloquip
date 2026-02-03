@@ -190,10 +190,6 @@ export default function LatestProductsViewer() {
                     </span>
                   </div>
 
-                  {/* Product ID for debugging */}
-                  <div className="mt-1 text-xs text-gray-400">
-                    ID: {product.id}
-                  </div>
                 </div>
               </div>
             </div>

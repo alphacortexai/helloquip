@@ -12,7 +12,6 @@ import {
   limit,
 } from "firebase/firestore";
 import {
-  UsersIcon,
   CubeIcon,
   FireIcon,
   ClockIcon,
@@ -20,6 +19,7 @@ import {
   CalendarIcon,
   CalendarDaysIcon,
 } from "@heroicons/react/24/outline";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
 
 export default function SummaryCard() {
   const [stats, setStats] = useState({
@@ -36,6 +36,8 @@ export default function SummaryCard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [revenueSparkline, setRevenueSparkline] = useState([]);
+  const [ordersSparkline, setOrdersSparkline] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -164,6 +166,39 @@ export default function SummaryCard() {
           monthlyRevenue,
           averageOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
         });
+
+        // Fetch sparkline data for last 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const sparklineQuery = query(
+          collection(db, 'orders'),
+          where('createdAt', '>=', sevenDaysAgo.toISOString()),
+          orderBy('createdAt', 'asc')
+        );
+        const sparklineSnap = await getDocs(sparklineQuery);
+        
+        const dailyData = {};
+        sparklineSnap.forEach(doc => {
+          const orderData = doc.data();
+          const date = new Date(orderData.createdAt);
+          const dayKey = `${date.getDate()}/${date.getMonth() + 1}`;
+          
+          if (!dailyData[dayKey]) {
+            dailyData[dayKey] = { date: dayKey, revenue: 0, orders: 0 };
+          }
+          dailyData[dayKey].revenue += orderData.totalAmount || orderData.total || orderData.amount || 0;
+          dailyData[dayKey].orders += 1;
+        });
+
+        const sparklineData = Object.values(dailyData).sort((a, b) => {
+          const [aDay, aMonth] = a.date.split("/").map(Number);
+          const [bDay, bMonth] = b.date.split("/").map(Number);
+          return aMonth - bMonth || aDay - bDay;
+        });
+
+        setRevenueSparkline(sparklineData.map(d => ({ value: d.revenue })));
+        setOrdersSparkline(sparklineData.map(d => ({ value: d.orders })));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -175,13 +210,6 @@ export default function SummaryCard() {
   }, []);
 
   const statCards = [
-    {
-      title: "Users",
-      value: stats.users,
-      icon: UsersIcon,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50"
-    },
     {
       title: "Products",
       value: stats.products,
@@ -204,18 +232,13 @@ export default function SummaryCard() {
       bgColor: "bg-yellow-50"
     },
     {
-      title: "Completed",
-      value: stats.completedOrders,
-      icon: CheckCircleIcon,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50"
-    },
-    {
       title: "Monthly Orders",
       value: stats.monthlyOrders,
       icon: CalendarIcon,
       color: "text-purple-600",
-      bgColor: "bg-purple-50"
+      bgColor: "bg-purple-50",
+      hasSparkline: true,
+      sparklineData: ordersSparkline
     },
     {
       title: "Yearly Orders",
@@ -229,7 +252,9 @@ export default function SummaryCard() {
       value: `UGX ${stats.monthlyRevenue.toLocaleString()}`,
       icon: CalendarIcon,
       color: "text-purple-600",
-      bgColor: "bg-purple-50"
+      bgColor: "bg-purple-50",
+      hasSparkline: true,
+      sparklineData: revenueSparkline
     },
     {
       title: "Yearly Revenue",
@@ -250,7 +275,7 @@ export default function SummaryCard() {
   if (loading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div key={i} className="bg-gray-50 rounded-lg p-3 animate-pulse">
             <div className="flex items-center justify-between mb-2">
               <div className="w-6 h-6 bg-gray-200 rounded"></div>
@@ -269,7 +294,7 @@ export default function SummaryCard() {
       {statCards.map((stat, index) => (
         <div
           key={index}
-          className={`bg-gray-50 rounded-lg p-3 border border-gray-100 hover:shadow-sm transition-shadow`}
+          className={`bg-gray-50 rounded-lg p-3 border border-gray-100 hover:shadow-sm transition-shadow ${stat.hasSparkline ? 'relative' : ''}`}
         >
           <div className="flex items-center justify-between mb-2">
             <div className={`w-6 h-6 ${stat.bgColor} rounded flex items-center justify-center`}>
@@ -286,10 +311,26 @@ export default function SummaryCard() {
             {stat.title}
           </h3>
           
-          <div className="flex items-center text-xs text-gray-500">
-            <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${stat.bgColor}`}></span>
-            Active
-          </div>
+          {stat.hasSparkline && stat.sparklineData && stat.sparklineData.length > 0 ? (
+            <div className="h-8 mt-1 -mx-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={stat.sparklineData}>
+                  <Line
+                    type={stat.sparklineData.length < 5 ? 'linear' : 'natural'}
+                    dataKey="value"
+                    stroke={stat.title.includes('Revenue') ? '#9333ea' : '#10b981'}
+                    strokeWidth={2}
+                    dot={stat.sparklineData.length <= 7 ? { r: 2, fill: stat.title.includes('Revenue') ? '#9333ea' : '#10b981' } : false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex items-center text-xs text-gray-500">
+              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${stat.bgColor}`}></span>
+              Active
+            </div>
+          )}
         </div>
       ))}
     </div>

@@ -22,6 +22,7 @@ import SubCategoryForm from "./components/SubCategoryForm";
 import EditSubCategoryForm from "./components/EditSubCategoryForm";
 import SummaryCard from "./components/SummaryCard";
 import DraftsList from "./components/DraftsList";
+import Analytics from "./components/Analytics";
 import { useRouter, useSearchParams } from "next/navigation";
 import QuotationViewer from "./components/QuotationViewer";
 import QuoteRequestManager from "./components/QuoteRequestManager";
@@ -39,9 +40,11 @@ import ProductControl from "./components/ProductControl";
 import ProductSuggestions from "./components/ProductSuggestions";
 import ProductReorder from "./components/ProductReorder";
 import CompanyInfoSettings from "./components/CompanyInfoSettings";
+import QuickActionsSettings from "./components/QuickActionsSettings";
+import AdminUsers from "./components/AdminUsers";
 import CachedLogo from "@/components/CachedLogo";
 import { db, auth } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
 import {
@@ -82,6 +85,11 @@ const menuGroups = [
         id: null, 
         label: "Store Overview",
         description: "View store statistics and metrics"
+      },
+      { 
+        id: "analytics", 
+        label: "Analytics & Insights",
+        description: "Revenue, orders, and user growth charts"
       }
     ]
   },
@@ -260,6 +268,11 @@ const menuGroups = [
     icon: Cog6ToothIcon,
     items: [
       { 
+        id: "adminUsers", 
+        label: "Users",
+        description: "View registered users"
+      },
+      { 
         id: "displaySettings", 
         label: "Display Settings",
         description: "Configure product display options"
@@ -288,10 +301,22 @@ const menuGroups = [
         id: "notificationTracker", 
         label: "Notification Tracker",
         description: "Track FCM and in-app notifications"
+      },
+      { 
+        id: "quickActionsSettings", 
+        label: "Quick Actions",
+        description: "Choose up to 8 items to show on dashboard"
       }
     ]
   }
 ];
+
+// Flat list of all menu items (excluding Store Overview) for quick actions
+const allMenuItemsForQuickActions = menuGroups.flatMap((group) =>
+  group.items
+    .filter((item) => item.id != null)
+    .map((item) => ({ id: item.id, label: item.label, groupLabel: group.label }))
+);
 
 // Legacy tabs array for backward compatibility
 const tabs = [
@@ -574,6 +599,7 @@ function AdminDashboard({ currentAdminUid }) {
   const adminNotifRef = useRef(null);
   const [userName, setUserName] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({ dashboard: true });
+  const [quickActionIds, setQuickActionIds] = useState([]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -671,6 +697,32 @@ function AdminDashboard({ currentAdminUid }) {
     return () => unsubscribe();
   }, []);
 
+  // Load quick actions when dashboard is shown (so they appear after saving)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const snap = await getDoc(doc(db, "settings", "quickActions"));
+        console.log("Quick actions loaded:", snap.exists() ? snap.data() : "not found");
+        if (snap.exists() && Array.isArray(snap.data().itemIds)) {
+          const ids = snap.data().itemIds.slice(0, 8);
+          console.log("Setting quick action IDs:", ids);
+          setQuickActionIds(ids);
+        } else {
+          console.log("No quick actions found or invalid format");
+          setQuickActionIds([]);
+        }
+      } catch (e) {
+        console.error("Quick actions load failed:", e);
+        setQuickActionIds([]);
+      }
+    };
+    
+    // Load on mount and whenever view becomes null (dashboard)
+    if (view === null) {
+      load();
+    }
+  }, [view]); // Re-run when view changes so returning to dashboard shows latest quick actions
+
 
   const markAllAdminNotifsRead = async () => {
     const unread = adminNotifications.filter((n) => !n.read);
@@ -747,6 +799,12 @@ function AdminDashboard({ currentAdminUid }) {
         return <LegalSettings />;
       case "companyInfo":
         return <CompanyInfoSettings />;
+      case "analytics":
+        return <Analytics />;
+      case "quickActionsSettings":
+        return <QuickActionsSettings allMenuItems={allMenuItemsForQuickActions} />;
+      case "adminUsers":
+        return <AdminUsers />;
       default:
         return null;
     }
@@ -1044,6 +1102,36 @@ function AdminDashboard({ currentAdminUid }) {
 
                 {/* Store Overview */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                  {/* Quick Actions - Right before Store Overview content */}
+                  {quickActionIds.length > 0 && (
+                    <div className="mb-4 pb-3 border-b border-gray-200">
+                      <div className="flex flex-wrap gap-1.5">
+                        {quickActionIds.map((id) => {
+                          let item = null;
+                          for (const group of menuGroups) {
+                            const found = group.items.find((i) => i.id === id);
+                            if (found) {
+                              item = found;
+                              break;
+                            }
+                          }
+                          if (!item) {
+                            console.warn("Quick action item not found for ID:", id);
+                            return null;
+                          }
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => setView(item.id)}
+                              className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-300 text-xs font-medium text-gray-700 hover:text-blue-700 transition-colors whitespace-nowrap"
+                            >
+                              {item.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Store Overview</h3>
                   <SummaryCard />
                 </div>
