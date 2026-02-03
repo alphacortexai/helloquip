@@ -17,6 +17,7 @@ import CurrencyDropdown from "@/components/CurrencyDropdown";
 import { CustomerExperienceService } from "@/lib/customerExperienceService";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useCart } from "@/components/CartContext";
+import { useProductTracking } from "@/hooks/useTracking";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -38,6 +39,13 @@ export default function ProductDetail() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // Track product views
+  useProductTracking(product?.id, product?.name, product ? {
+    category: product.category,
+    manufacturer: product.manufacturer,
+    price: product.price,
+  } : null);
 
   // Handle back navigation - preserve page state
   useEffect(() => {
@@ -100,9 +108,10 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  // Increment weekly view count when product is loaded
+  // Increment weekly view count when product is loaded (exclude admin traffic)
   useEffect(() => {
     if (!product?.id) return;
+    if (typeof document !== "undefined" && document.referrer && document.referrer.includes("/admin")) return;
     const recordView = async () => {
       try {
         const now = new Date();
@@ -130,8 +139,8 @@ export default function ProductDetail() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       
-      // Track product view when user is available and product is loaded
-      if (user && product) {
+      // Track product view when user is available and product is loaded (exclude admin traffic)
+      if (user && product && typeof document !== "undefined" && !document.referrer?.includes("/admin")) {
         CustomerExperienceService.trackProductView(user.uid, product.id, product);
       }
     });

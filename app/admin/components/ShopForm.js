@@ -64,7 +64,7 @@ export default function ShopForm({ shopId, onSuccess, onCancel }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div>
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Shop</h3>
       
       <form onSubmit={handleSubmit} className="space-y-4">

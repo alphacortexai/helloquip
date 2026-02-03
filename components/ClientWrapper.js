@@ -70,7 +70,18 @@ import { CartProvider } from "@/components/CartContext";
 import { ProductSettingsProvider } from "@/hooks/useProductSettings";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import InstallPrompt from "@/components/InstallPrompt";
+import CookieConsent from "@/components/CookieConsent";
 import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { initUserTracking } from "@/lib/userTrackingService";
+import { usePageTracking } from "@/hooks/useTracking";
+
+/** Tracks every page view (home, categories, product, search, etc.) when user has consent. */
+function PageViewTracker() {
+  usePageTracking();
+  return null;
+}
 
 export default function ClientWrapper({ children }) {
   // NOTE: Keep this — globals.css sets `html { visibility: hidden; }` until
@@ -83,15 +94,35 @@ export default function ClientWrapper({ children }) {
     }
   }, []);
 
+  // Initialize tracking service and expose Firebase user
+  useEffect(() => {
+    // Initialize tracking service
+    const trackingService = initUserTracking();
+    
+    // Listen for auth state changes and expose user to tracking service
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (typeof window !== "undefined") {
+        window.firebaseUser = user;
+        if (trackingService && user) {
+          trackingService.userId = user.uid;
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <SessionProvider>
       <AutoSignIn />
       <ProductSettingsProvider>
         <CurrencyProvider>
           <CartProvider>
+            <PageViewTracker />
             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
             <NotificationSetup />
             <InstallPrompt />
+            <CookieConsent />
           </CartProvider>
         </CurrencyProvider>
       </ProductSettingsProvider>

@@ -81,7 +81,7 @@ export default function TrendingProducts({ onLoadComplete }) {
         }
         
         // Fetch trending product IDs
-        const q = query(collection(db, "trendingProducts"), limit(5));
+        const q = query(collection(db, "trendingProducts"), limit(20));
         const snapshot = await getDocs(q);
         console.log('📊 Found trending docs:', snapshot.docs.length);
 

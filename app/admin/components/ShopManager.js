@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, doc, deleteDoc, getDoc } from "firebase/firestore";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import ShopForm from "./ShopForm";
 import CreateShopForm from "./CreateShopForm";
 
@@ -145,9 +146,9 @@ export default function ShopManager({ currentAdminUid }) {
 
       {/* Shops List */}
       {!showCreateForm && !editingShop && (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {shops.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="col-span-full text-center py-8 text-gray-500">
               <p>No shops found. Create your first shop to get started.</p>
             </div>
           ) : (
@@ -157,43 +158,45 @@ export default function ShopManager({ currentAdminUid }) {
                 className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 mb-1 truncate">
                       {shop.name}
                     </h3>
                     {shop.description && (
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-[10px] text-gray-600 mb-2 line-clamp-2 break-words">
                         {shop.description}
                       </p>
                     )}
-                    <div className="text-xs text-gray-500">
+                    <div className="text-[9px] text-gray-500">
                       Created: {shop.createdAt?.toDate?.()?.toLocaleDateString() || 'Unknown'}
                       {shop.updatedAt && (
                         <span className="ml-4">
                           Updated: {shop.updatedAt?.toDate?.()?.toLocaleDateString()}
                         </span>
                       )}
-                                                   {shop.createdBy && (
-                               <div className="mt-1">
-                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                   Created by: {userNames[shop.createdBy] ? `(${userNames[shop.createdBy]})` : shop.createdBy}
-                                 </span>
-                               </div>
-                             )}
+                      {shop.createdBy && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 text-blue-800 truncate max-w-full">
+                            Created by: {userNames[shop.createdBy] ? `(${userNames[shop.createdBy]})` : shop.createdBy}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex space-x-2 ml-4">
+                  <div className="flex space-x-2 ml-4 flex-shrink-0">
                     <button
                       onClick={() => handleEdit(shop)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                      className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded transition-colors"
+                      title="Edit shop"
                     >
-                      Edit
+                      <PencilIcon className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(shop.id, shop.name)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded transition-colors"
+                      title="Delete shop"
                     >
-                      Delete
+                      <TrashIcon className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

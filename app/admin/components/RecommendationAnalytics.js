@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, doc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { CustomerExperienceService } from '@/lib/customerExperienceService';
+import UserTrackingAnalytics from './UserTrackingAnalytics';
 
 export default function RecommendationAnalytics() {
   const [analytics, setAnalytics] = useState({
@@ -22,9 +23,95 @@ export default function RecommendationAnalytics() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [userRecommendations, setUserRecommendations] = useState([]);
+  const [categoryMap, setCategoryMap] = useState({});
+  const [userMap, setUserMap] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [resetting, setResetting] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [trackingDataKey, setTrackingDataKey] = useState(0);
+
+  /** Delete all documents in a collection in batches (Firestore limit 500 per batch). */
+  const deleteCollection = async (collectionName) => {
+    const colRef = collection(db, collectionName);
+    const batchSize = 500;
+    let totalDeleted = 0;
+    let hasMore = true;
+    while (hasMore) {
+      const q = query(colRef, limit(batchSize));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) break;
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      totalDeleted += snapshot.docs.length;
+      if (snapshot.docs.length < batchSize) hasMore = false;
+    }
+    return totalDeleted;
+  };
+
+  const clearAllTrackingData = async () => {
+    if (!resetConfirm) return;
+    try {
+      setResetting(true);
+      const collections = ['userPageViews', 'userClicks', 'userProductViews', 'userNavigation'];
+      const counts = {};
+      for (const name of collections) {
+        counts[name] = await deleteCollection(name);
+      }
+      setResetConfirm(false);
+      setTrackingDataKey((k) => k + 1); // Remount UserTrackingAnalytics so it refetches
+      await fetchAnalytics();
+      alert(`Tracking data cleared.\n\nDeleted: ${collections.map((c) => `${c}: ${counts[c]}`).join(', ')}`);
+    } catch (error) {
+      console.error('Error clearing tracking data:', error);
+      alert('Failed to clear tracking data: ' + (error.message || String(error)));
+    } finally {
+      setResetting(false);
+    }
+  };
 
   useEffect(() => {
     fetchAnalytics();
+    setCurrentPage(1); // Reset to first page when analytics refresh
+  }, []);
+
+  // Fetch category and user mappings
+  useEffect(() => {
+    const fetchMappings = async () => {
+      try {
+        // Fetch all categories
+        const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+        const catMap = {};
+        categoriesSnapshot.forEach((doc) => {
+          const data = doc.data();
+          catMap[doc.id] = data.name || 'Unknown Category';
+          // Also map by name for reverse lookup
+          if (data.name) {
+            catMap[data.name] = data.name;
+          }
+        });
+        setCategoryMap(catMap);
+
+        // Fetch all users
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const usrMap = {};
+        usersSnapshot.forEach((doc) => {
+          const data = doc.data();
+          // Use name, email, or fallback to ID
+          const displayName = data.name || data.email || data.address?.email || doc.id;
+          usrMap[doc.id] = {
+            name: displayName,
+            email: data.email || data.address?.email || null,
+            id: doc.id
+          };
+        });
+        setUserMap(usrMap);
+      } catch (error) {
+        console.error('Error fetching mappings:', error);
+      }
+    };
+    fetchMappings();
   }, []);
 
   const fetchAnalytics = async () => {
@@ -36,13 +123,38 @@ export default function RecommendationAnalytics() {
         recentViewsSnapshot,
         wishlistSnapshot,
         comparisonsSnapshot,
-        trendingSnapshot
+        trendingSnapshot,
+        categoriesSnapshot,
+        usersSnapshot
       ] = await Promise.all([
         getDocs(collection(db, 'recentViews')),
         getDocs(collection(db, 'wishlist')),
         getDocs(collection(db, 'productComparisons')),
-        getDocs(collection(db, 'trendingProducts'))
+        getDocs(collection(db, 'trendingProducts')),
+        getDocs(collection(db, 'categories')),
+        getDocs(collection(db, 'users'))
       ]);
+
+      // Build category map
+      const catMap = {};
+      categoriesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        catMap[doc.id] = data.name || 'Unknown Category';
+      });
+      setCategoryMap(catMap);
+
+      // Build user map
+      const usrMap = {};
+      usersSnapshot.forEach((doc) => {
+        const data = doc.data();
+        const displayName = data.name || data.email || data.address?.email || doc.id;
+        usrMap[doc.id] = {
+          name: displayName,
+          email: data.email || data.address?.email || null,
+          id: doc.id
+        };
+      });
+      setUserMap(usrMap);
 
       // Process recent views
       const recentViews = recentViewsSnapshot.docs.map(doc => ({
@@ -62,7 +174,18 @@ export default function RecommendationAnalytics() {
         ...doc.data()
       }));
 
-      // Calculate analytics
+      // Helper function to normalize user IDs (trim whitespace, convert to string, filter invalid)
+      const normalizeUserId = (userId) => {
+        if (!userId) return null;
+        const normalized = String(userId).trim();
+        // Filter out empty strings, 'guest', 'anonymous', 'null', 'undefined'
+        if (!normalized || normalized === 'guest' || normalized === 'anonymous' || normalized === 'null' || normalized === 'undefined') {
+          return null;
+        }
+        return normalized;
+      };
+
+      // Calculate analytics - track by actual user IDs with normalization
       const uniqueUsers = new Set();
       const usersWithViews = new Set();
       const usersWithWishlist = new Set();
@@ -72,8 +195,11 @@ export default function RecommendationAnalytics() {
 
       // Analyze recent views
       recentViews.forEach(view => {
-        uniqueUsers.add(view.userId);
-        usersWithViews.add(view.userId);
+        const userId = normalizeUserId(view.userId);
+        if (userId) {
+          uniqueUsers.add(userId);
+          usersWithViews.add(userId);
+        }
         
         if (view.productCategory) {
           categoryCounts[view.productCategory] = (categoryCounts[view.productCategory] || 0) + 1;
@@ -85,31 +211,118 @@ export default function RecommendationAnalytics() {
 
       // Analyze wishlist
       wishlistItems.forEach(item => {
-        uniqueUsers.add(item.userId);
-        usersWithWishlist.add(item.userId);
+        const userId = normalizeUserId(item.userId);
+        if (userId) {
+          uniqueUsers.add(userId);
+          usersWithWishlist.add(userId);
+        }
       });
 
-      // Analyze comparisons
+      // Analyze comparisons - document ID is the userId for productComparisons collection
       comparisons.forEach(comparison => {
-        uniqueUsers.add(comparison.id); // comparison.id is the userId
-        usersWithComparisons.add(comparison.id);
+        // For productComparisons, the document ID IS the userId
+        const userId = normalizeUserId(comparison.userId || comparison.id);
+        if (userId) {
+          uniqueUsers.add(userId);
+          usersWithComparisons.add(userId);
+        }
       });
 
-      // Get top categories and manufacturers
+      // Get top categories and manufacturers with names
       const topCategories = Object.entries(categoryCounts)
         .sort(([,a], [,b]) => b - a)
         .slice(0, 10)
-        .map(([category, count]) => ({ category, count }));
+        .map(([categoryId, count]) => ({ 
+          categoryId,
+          category: catMap[categoryId] || categoryId || 'Unknown Category',
+          count 
+        }));
 
       const topManufacturers = Object.entries(manufacturerCounts)
         .sort(([,a], [,b]) => b - a)
         .slice(0, 10)
         .map(([manufacturer, count]) => ({ manufacturer, count }));
 
-      // Get recent activity (last 20 views)
-      const recentActivity = recentViews
-        .sort((a, b) => b.viewedAt?.toDate() - a.viewedAt?.toDate())
-        .slice(0, 20);
+      // Get recent activity (last 50 views) with enriched data, then group by user
+      const allActivity = recentViews
+        .sort((a, b) => {
+          const aTime = a.viewedAt?.toDate?.() || new Date(0);
+          const bTime = b.viewedAt?.toDate?.() || new Date(0);
+          return bTime - aTime;
+        })
+        .map((activity) => {
+          const userId = normalizeUserId(activity.userId);
+          
+          // Get user info - check if it's an anonymous user or registered user
+          let userInfo = usrMap[userId];
+          if (!userInfo) {
+            // Check if it's an anonymous user
+            if (userId && userId.startsWith('anonymous_')) {
+              userInfo = { name: 'Anonymous User', email: null, id: userId };
+            } else if (userId && userId.length > 20) {
+              // Likely a Firebase Auth UID, try to fetch from users collection
+              userInfo = { name: userId.slice(0, 12) + '...', email: null, id: userId };
+            } else {
+              userInfo = { name: userId || 'Unknown User', email: null, id: userId };
+            }
+          }
+          
+          // Try to get category name - check if it's an ID or name
+          let categoryName = 'Unknown Category';
+          if (activity.productCategory) {
+            const catId = activity.productCategory;
+            // First check if it's a direct ID match
+            if (catMap[catId]) {
+              categoryName = catMap[catId];
+            } else {
+              // Try to find by name match (in case category was stored as name)
+              const foundEntry = Object.entries(catMap).find(([id, name]) => 
+                name === catId || id === catId
+              );
+              categoryName = foundEntry ? foundEntry[1] : (catId || 'Unknown Category');
+            }
+          }
+          
+          return {
+            ...activity,
+            userId: userId || activity.userId,
+            userName: userInfo.name,
+            userEmail: userInfo.email,
+            categoryName
+          };
+        })
+        .filter(activity => activity.userId); // Filter out invalid users
+
+      // Group by user and take most recent activity per user
+      // Use a Map to ensure we only keep one entry per user (the most recent one)
+      const userActivityMap = new Map();
+      
+      // Sort all activities by date first (most recent first)
+      const sortedActivities = [...allActivity].sort((a, b) => {
+        const aTime = a.viewedAt?.toDate?.() || new Date(0);
+        const bTime = b.viewedAt?.toDate?.() || new Date(0);
+        return bTime.getTime() - aTime.getTime();
+      });
+      
+      // Only keep the first (most recent) activity for each user
+      // Use normalized userId as key to prevent duplicates
+      sortedActivities.forEach(activity => {
+        const normalizedId = normalizeUserId(activity.userId);
+        if (normalizedId && !userActivityMap.has(normalizedId)) {
+          userActivityMap.set(normalizedId, {
+            ...activity,
+            userId: normalizedId // Ensure consistent userId
+          });
+        }
+      });
+      
+      // Convert to array and sort again by date (most recent first)
+      const recentActivity = Array.from(userActivityMap.values())
+        .sort((a, b) => {
+          const aTime = a.viewedAt?.toDate?.() || new Date(0);
+          const bTime = b.viewedAt?.toDate?.() || new Date(0);
+          return bTime.getTime() - aTime.getTime();
+        });
 
       setAnalytics({
         totalUsers: uniqueUsers.size,
@@ -135,6 +348,26 @@ export default function RecommendationAnalytics() {
     try {
       setSelectedUser(userId);
       
+      // Try to get user info from Firebase Auth or users collection
+      let userInfo = userMap[userId] || { name: userId, email: null, id: userId };
+      
+      // If userId looks like Firebase Auth UID, try to get from users collection
+      if (!userMap[userId] && userId.length > 20) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', userId));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            userInfo = {
+              name: data.name || data.email || data.address?.email || userId,
+              email: data.email || data.address?.email || null,
+              id: userId
+            };
+          }
+        } catch (err) {
+          console.warn('Could not fetch user details:', err);
+        }
+      }
+      
       // Fetch user's data
       const [recentViews, wishlist, comparisons, recommendations] = await Promise.all([
         CustomerExperienceService.getRecentlyViewed(userId, 10),
@@ -144,6 +377,7 @@ export default function RecommendationAnalytics() {
       ]);
 
       setUserDetails({
+        userInfo,
         recentViews,
         wishlist,
         comparisons,
@@ -208,184 +442,55 @@ export default function RecommendationAnalytics() {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommendation System Analytics</h2>
+    <div className="p-0 sm:p-1">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">Recommendation System Analytics</h2>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Users</h3>
-          <p className="text-2xl font-bold text-gray-900">{analytics.totalUsers}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Users with Views</h3>
-          <p className="text-2xl font-bold text-blue-600">{analytics.usersWithViews}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Users with Wishlist</h3>
-          <p className="text-2xl font-bold text-red-600">{analytics.usersWithWishlist}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Users with Comparisons</h3>
-          <p className="text-2xl font-bold text-purple-600">{analytics.usersWithComparisons}</p>
+      {/* User Tracking Analytics Section */}
+      <div className="mt-4 bg-white p-3 sm:p-4 rounded-lg shadow">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Detailed User Tracking Analytics</h3>
+        <UserTrackingAnalytics key={trackingDataKey} />
+      </div>
+
+      {/* Tracking data management - at bottom */}
+      <div className="mt-4 bg-white p-3 rounded-lg shadow border border-gray-200">
+        <h3 className="text-base font-semibold text-gray-900 mb-1.5">Tracking data</h3>
+        <p className="text-sm text-gray-600 mb-2">
+          Clear all user tracking data (page views, clicks, product views, navigation) from the database. This cannot be undone.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {!resetConfirm ? (
+            <button
+              type="button"
+              onClick={() => setResetConfirm(true)}
+              disabled={resetting}
+              className="px-4 py-2 text-sm font-medium text-amber-800 bg-amber-100 border border-amber-300 rounded-md hover:bg-amber-200 disabled:opacity-50"
+            >
+              Clear all tracking data
+            </button>
+          ) : (
+            <>
+              <span className="text-sm text-gray-600">Are you sure?</span>
+              <button
+                type="button"
+                onClick={clearAllTrackingData}
+                disabled={resetting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {resetting ? 'Clearing…' : 'Yes, clear all'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setResetConfirm(false)}
+                disabled={resetting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Activity Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Product Views</h3>
-          <p className="text-2xl font-bold text-green-600">{analytics.totalViews}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Wishlist Items</h3>
-          <p className="text-2xl font-bold text-red-600">{analytics.totalWishlistItems}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Comparisons</h3>
-          <p className="text-2xl font-bold text-purple-600">{analytics.totalComparisons}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Top Categories */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Viewed Categories</h3>
-          <div className="space-y-2">
-            {analytics.topCategories.map((item, index) => (
-              <div key={index} className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">{item.category}</span>
-                <span className="text-sm font-medium text-gray-900">{item.count} views</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Top Manufacturers */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Viewed Manufacturers</h3>
-          <div className="space-y-2">
-            {analytics.topManufacturers.map((item, index) => (
-              <div key={index} className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">{item.manufacturer}</span>
-                <span className="text-sm font-medium text-gray-900">{item.count} views</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* User Analysis Section */}
-      <div className="mt-8 bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">User Analysis</h3>
-        
-        {/* Recent Activity */}
-        <div className="mb-6">
-          <h4 className="text-md font-medium text-gray-700 mb-3">Recent Activity (Last 20 Views)</h4>
-          <div className="max-h-64 overflow-y-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Manufacturer</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Views</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Last Viewed</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {analytics.recentActivity.map((activity) => (
-                  <tr key={activity.id}>
-                    <td className="px-4 py-2 text-sm text-gray-900 font-mono">
-                      {activity.userId.slice(0, 8)}...
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-900">
-                      {activity.productName || 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
-                      {activity.productCategory || 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
-                      {activity.productManufacturer || 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-900">
-                      {activity.viewCount || 1}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
-                      {activity.viewedAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-sm">
-                      <button
-                        onClick={() => fetchUserDetails(activity.userId)}
-                        className="text-blue-600 hover:text-blue-800 mr-2"
-                      >
-                        Analyze
-                      </button>
-                      <button
-                        onClick={() => testRecommendationLogic(activity.userId)}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        Test Logic
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* User Details */}
-        {selectedUser && userDetails && (
-          <div className="border-t pt-6">
-            <h4 className="text-md font-medium text-gray-700 mb-3">
-              User Analysis: {selectedUser.slice(0, 8)}...
-            </h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-blue-50 p-3 rounded">
-                <h5 className="text-sm font-medium text-blue-800">Recent Views</h5>
-                <p className="text-lg font-bold text-blue-900">{userDetails.recentViews.length}</p>
-              </div>
-              <div className="bg-red-50 p-3 rounded">
-                <h5 className="text-sm font-medium text-red-800">Wishlist Items</h5>
-                <p className="text-lg font-bold text-red-900">{userDetails.wishlist.length}</p>
-              </div>
-              <div className="bg-purple-50 p-3 rounded">
-                <h5 className="text-sm font-medium text-purple-800">Comparisons</h5>
-                <p className="text-lg font-bold text-purple-900">{userDetails.comparisons.products.length}</p>
-              </div>
-            </div>
-
-            {/* User's Recommendations */}
-            {userRecommendations.length > 0 && (
-              <div className="mt-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-2">Generated Recommendations:</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {userRecommendations.map((rec, index) => (
-                    <div key={index} className="border rounded p-3 bg-gray-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <h6 className="text-sm font-medium text-gray-900 line-clamp-2">{rec.name}</h6>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          rec.recommendationReason === 'Similar category' ? 'bg-blue-100 text-blue-800' :
-                          rec.recommendationReason === 'Same manufacturer' ? 'bg-green-100 text-green-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}>
-                          {rec.recommendationReason}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600">Category: {rec.category}</p>
-                      <p className="text-xs text-gray-600">Manufacturer: {rec.manufacturer}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

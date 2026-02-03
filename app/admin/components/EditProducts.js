@@ -322,28 +322,6 @@ export default function EditProducts({ currentAdminUid }) {
             className="mb-4 w-full px-4 py-2 border rounded-lg bg-white"
           />
 
-          {/* Debug Information */}
-          <div className="mb-4 p-3 bg-gray-100 rounded-lg text-sm">
-            <div className="font-semibold mb-2">🔍 Debug Info:</div>
-            <div>Selected Shop ID: <span className="font-mono">{selectedShopId}</span></div>
-            <div>Total Products Fetched: <span className="font-mono">{products.length}</span></div>
-            <div>Filtered Products: <span className="font-mono">{filteredProducts.length}</span></div>
-            <div>Search Term: <span className="font-mono">"{searchTerm}"</span></div>
-            {products.length > 0 && (
-              <div className="mt-2">
-                <div className="font-semibold">Product Shop IDs:</div>
-                <div className="text-xs font-mono">
-                  {products.map(p => `${p.name}: ${p.shopId || 'null'}`).join(', ')}
-                </div>
-              </div>
-            )}
-            <button
-              onClick={checkAllProducts}
-              className="mt-3 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-            >
-              🔍 Check All Products
-            </button>
-          </div>
 
           {loadingProducts ? (
             <p>Loading products...</p>

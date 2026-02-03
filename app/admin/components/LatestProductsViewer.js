@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getPreferredImageUrl } from "@/lib/imageUtils";
 
 export default function LatestProductsViewer() {
   const [latestProducts, setLatestProducts] = useState([]);
@@ -71,21 +72,13 @@ export default function LatestProductsViewer() {
 
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
-    if (typeof imageUrl === 'string') {
-      return imageUrl;
-    }
-    
-    if (typeof imageUrl === 'object') {
-      return imageUrl['200x200'] || imageUrl['original'] || Object.values(imageUrl)[0];
-    }
-    
-    return null;
+    // Use the standard image utility that handles Firebase Storage URLs properly
+    return getPreferredImageUrl(imageUrl, "200x200");
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div>
         <h2 className="text-xl font-bold text-gray-800 mb-4">Latest Product Uploads</h2>
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-r-green-500 border-b-yellow-500 border-l-red-500 mx-auto mb-4"></div>
@@ -97,7 +90,7 @@ export default function LatestProductsViewer() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div>
         <h2 className="text-xl font-bold text-gray-800 mb-4">Latest Product Uploads</h2>
         <div className="text-center py-8">
           <p className="text-red-600 mb-4">Error loading products: {error}</p>
@@ -113,7 +106,7 @@ export default function LatestProductsViewer() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Latest Product Uploads</h2>
         <button 
@@ -131,15 +124,18 @@ export default function LatestProductsViewer() {
       ) : (
         <div className="space-y-4">
           {latestProducts.map((product, index) => (
-            <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+            <div key={product.id} className="border-b border-gray-200 pb-4 last:border-b-0">
               <div className="flex items-start space-x-4">
                 {/* Product Image */}
                 <div className="flex-shrink-0">
-                  {getImageUrl(product.imageUrl) ? (
+                  {getImageUrl(product.imageUrl) && getImageUrl(product.imageUrl) !== "/fallback.jpg" ? (
                     <img
                       src={getImageUrl(product.imageUrl)}
                       alt={product.name}
                       className="w-16 h-16 object-cover rounded-lg"
+                      onError={(e) => {
+                        e.target.src = "/fallback.jpg";
+                      }}
                     />
                   ) : (
                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -194,10 +190,6 @@ export default function LatestProductsViewer() {
                     </span>
                   </div>
 
-                  {/* Product ID for debugging */}
-                  <div className="mt-1 text-xs text-gray-400">
-                    ID: {product.id}
-                  </div>
                 </div>
               </div>
             </div>

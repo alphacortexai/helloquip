@@ -70,8 +70,9 @@ export default function CategoriesPage() {
 
         prodSnap.forEach((doc) => {
           const data = doc.data();
-          const catName = data.category || data.categoryName || "Uncategorized";
-          counts[catName] = (counts[catName] || 0) + 1;
+          // Products store category as ID (document ID), not name
+          const catId = data.category || "Uncategorized";
+          counts[catId] = (counts[catId] || 0) + 1;
         });
 
         setCategories([allCategory, ...fetchedCategories]);
@@ -93,7 +94,7 @@ export default function CategoriesPage() {
           const count =
             cat.id === "all"
               ? Object.values(productCounts).reduce((a, b) => a + b, 0)
-              : productCounts[cat.name] || 0;
+              : productCounts[cat.id] || 0;
           return (
             <Link
               key={cat.id}

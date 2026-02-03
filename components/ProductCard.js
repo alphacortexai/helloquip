@@ -3,10 +3,20 @@ import Image from 'next/image';
 import WishlistButton from './WishlistButton';
 import ProductComparisonButton from './ProductComparisonButton';
 import { useProductSettings, formatProductName, shouldShowMOQ, shouldShowSKU } from '@/hooks/useProductSettings';
+import { trackProductClick } from '@/hooks/useTracking';
 
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution, hideSKU = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { settings } = useProductSettings();
+
+  const handleClick = () => {
+    trackProductClick(product.id, product.name, {
+      price: product.price,
+      category: product.category,
+      manufacturer: product.manufacturer,
+    });
+    if (onClick) onClick();
+  };
 
   // Helper hey bro function to get the appropriate image URL based on variant and size
   const getImageUrl = (product, variant) => {
@@ -160,7 +170,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
     <div 
       className={`relative bg-white rounded-2xl overflow-hidden hover:shadow-md transition flex w-full h-full max-w-5xl mx-auto cursor-pointer`}
       style={{ maxHeight: '100%', height: '100%' }}
-      onClick={onClick}
+      onClick={handleClick}
     >
       
       {/* Badge */}
@@ -199,7 +209,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const renderMobileCarousel = () => (
     <div 
       className={`relative bg-white rounded-2xl overflow-hidden hover:shadow-md transition flex w-full cursor-pointer`}
-      onClick={onClick}
+      onClick={handleClick}
     >
       
       {/* Product image */}
@@ -250,7 +260,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const renderCompact = () => (
          <div 
            className={`bg-gray-50 p-0 w-full mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl cursor-pointer`}
-           onClick={onClick}
+           onClick={handleClick}
          >
            <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: '5 / 6' }}>
              {/* Skeleton placeholder with exact same dimensions */}
@@ -312,7 +322,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
   const renderCompactX = () => (
          <div 
            className={`bg-gray-50 p-0 w-full mx-auto hover:shadow-md transition break-inside-avoid rounded-3xl cursor-pointer`}
-           onClick={onClick}
+           onClick={handleClick}
          >
                                                        <div className="relative w-full h-full sm:h-48 rounded-2xl overflow-hidden flex items-center justify-center">
          {/* Badges */}
