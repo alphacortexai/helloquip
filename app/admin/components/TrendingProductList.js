@@ -144,7 +144,7 @@ export default function TrendingProductsTab() {
           {trendingList.map((item) => (
             <li
               key={item.id}
-              className="flex bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm space-x-4"
+              className="flex bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm space-x-4 overflow-hidden"
             >
               {(() => {
                 const raw = typeof item.imageUrl === 'object'
@@ -160,15 +160,15 @@ export default function TrendingProductsTab() {
                   />
                 ) : null;
               })()}
-              <div className="flex flex-col justify-center flex-grow">
-                <h3 className="font-semibold text-lg truncate">{item.name}</h3>
-                <p className="text-sm text-gray-600 line-clamp-2">
+              <div className="flex flex-col justify-center flex-grow min-w-0">
+                <h3 className="font-semibold text-sm truncate">{item.name}</h3>
+                <p className="text-xs text-gray-600 line-clamp-2 break-words">
                   {item.description || "No description available."}
                 </p>
                 {item.source && (
-                  <p className="text-xs mt-1 text-gray-500">Source: {item.source}</p>
+                  <p className="text-[10px] mt-1 text-gray-500 truncate">Source: {item.source}</p>
                 )}
-                <p className="text-sm mt-2 italic text-gray-500">
+                <p className="text-xs mt-2 italic text-gray-500 truncate">
                   From shop: <strong>{item.shopName}</strong>
                 </p>
               </div>

@@ -219,7 +219,7 @@ export default function TrendingProductSelector() {
           {products.map((product) => (
             <div
               key={product.id}
-              className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm flex items-start space-x-4"
+              className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm flex items-start space-x-4 overflow-hidden"
             >
               {(() => {
                 const raw = typeof product.imageUrl === 'object'
@@ -236,20 +236,20 @@ export default function TrendingProductSelector() {
                 ) : null;
               })()}
 
-              <div className="flex flex-col flex-grow">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
-                <p className="text-gray-600 text-sm">{product.description || "No description"}</p>
-                <p className="text-sm text-gray-500 mt-1">Price: ${product.price || 0}</p>
+              <div className="flex flex-col flex-grow min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
+                <p className="text-gray-600 text-xs line-clamp-2 break-words mt-1">{product.description || "No description"}</p>
+                <p className="text-xs text-gray-500 mt-1">Price: ${product.price || 0}</p>
 
-                <label className="mt-auto flex items-center space-x-3 cursor-pointer select-none pt-2">
+                <label className="mt-auto flex items-center space-x-2 cursor-pointer select-none pt-2">
                   <input
                     type="checkbox"
                     checked={trendingProductIds.includes(product.id)}
                     onChange={() => toggleTrending(product.id)}
                     disabled={loading}
-                    className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                    className="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
                   />
-                  <span className="text-gray-900 font-medium">
+                  <span className="text-gray-900 font-medium text-xs">
                     {trendingProductIds.includes(product.id) ? "Trending" : "Mark as Trending"}
                   </span>
                 </label>

@@ -17,6 +17,7 @@ import CurrencyDropdown from "@/components/CurrencyDropdown";
 import { CustomerExperienceService } from "@/lib/customerExperienceService";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useCart } from "@/components/CartContext";
+import { useProductTracking } from "@/hooks/useTracking";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -38,6 +39,13 @@ export default function ProductDetail() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // Track product views
+  useProductTracking(product?.id, product?.name, product ? {
+    category: product.category,
+    manufacturer: product.manufacturer,
+    price: product.price,
+  } : null);
 
   // Handle back navigation - preserve page state
   useEffect(() => {

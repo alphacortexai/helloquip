@@ -188,7 +188,7 @@ const menuGroups = [
   },
   {
     id: "trending",
-    label: "Trending & Recommendations",
+    label: "Trending",
     icon: FireIcon,
     items: [
       { 
@@ -205,7 +205,14 @@ const menuGroups = [
         id: "trendingFromViews", 
         label: "Auto Trending (Views)",
         description: "Pick top viewed products"
-      },
+      }
+    ]
+  },
+  {
+    id: "recommendations",
+    label: "Recommendations",
+    icon: ChartBarIcon,
+    items: [
       { 
         id: "recommendationAnalytics", 
         label: "Recommendation Analytics",
@@ -970,13 +977,13 @@ function AdminDashboard({ currentAdminUid }) {
                 <Bars3Icon className="w-6 h-6" />
               </button>
 
-              {/* Page Title */}
-              <div className="flex-1 ml-4 lg:ml-0">
-                <h1 className="text-lg font-semibold text-gray-900">
+              {/* Page Title - min-w-0 + overflow so text doesn't spill on mobile */}
+              <div className="flex-1 min-w-0 ml-4 lg:ml-0 overflow-hidden">
+                <h1 className="text-lg font-semibold text-gray-900 break-words" title={currentSection.label}>
                   {currentSection.label}
                 </h1>
                 {currentSection.description && (
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-gray-500 mt-0.5 break-words line-clamp-2" title={currentSection.description}>
                     {currentSection.description}
                   </p>
                 )}
