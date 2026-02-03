@@ -5,7 +5,7 @@ import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebas
 import { db } from '@/lib/firebase';
 import { getProductImageUrl } from '@/lib/imageUtils';
 import { cleanFirebaseUrl } from '@/lib/urlUtils';
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export default function UserTrackingAnalytics() {
   const [trackingData, setTrackingData] = useState({
@@ -222,8 +222,16 @@ export default function UserTrackingAnalytics() {
     currentPage * itemsPerPage
   ) || [];
 
+  const closeDetails = () => {
+    setSelectedUserId(null);
+    setUserDetails(null);
+  };
+
   return (
     <div className="space-y-6">
+      {/* When viewing details, hide table and show only the modal */}
+      {!selectedUserId && (
+        <>
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg">
@@ -493,13 +501,38 @@ export default function UserTrackingAnalytics() {
           </div>
         )}
       </div>
+        </>
+      )}
 
-      {/* User Details Modal */}
+      {/* User Details – full-screen overlay (jumbotron) with close */}
       {selectedUserId && userDetails && (
-        <div className="mt-6 border-t pt-6">
-          <h5 className="text-md font-medium text-gray-700 mb-4">
-            Detailed Activity: {selectedUserId.startsWith('anonymous_') ? 'Anonymous User' : selectedUserId.slice(0, 20) + '...'}
-          </h5>
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gray-900/60 p-4 sm:p-6"
+          onClick={closeDetails}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="detail-activity-title"
+        >
+          <div
+            className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden my-4 sm:my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sticky header with title + close */}
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 sm:px-6 py-4 bg-white border-b border-gray-200">
+              <h5 id="detail-activity-title" className="text-lg font-semibold text-gray-900 truncate">
+                Detailed Activity: {selectedUserId.startsWith('anonymous_') ? 'Anonymous User' : selectedUserId.slice(0, 24) + (selectedUserId.length > 24 ? '...' : '')}
+              </h5>
+              <button
+                type="button"
+                onClick={closeDetails}
+                className="flex-shrink-0 p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                aria-label="Close"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            {/* Scrollable body */}
+            <div className="overflow-y-auto max-h-[calc(100vh-8rem)] px-4 sm:px-6 py-4">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
@@ -640,19 +673,21 @@ export default function UserTrackingAnalytics() {
                       </div>
                     );
                   })}
-              </div>
-            </div>
+          </div>
+          </div>
           )}
 
-          <button
-            onClick={() => {
-              setSelectedUserId(null);
-              setUserDetails(null);
-            }}
-            className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm"
-          >
-            Close Details
-          </button>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeDetails}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
