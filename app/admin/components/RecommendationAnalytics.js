@@ -442,13 +442,19 @@ export default function RecommendationAnalytics() {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommendation System Analytics</h2>
+    <div className="p-0 sm:p-1">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">Recommendation System Analytics</h2>
 
-      {/* Tracking data management */}
-      <div className="mb-6 bg-white p-4 rounded-lg shadow border border-gray-200">
-        <h3 className="text-base font-semibold text-gray-900 mb-2">Tracking data</h3>
-        <p className="text-sm text-gray-600 mb-3">
+      {/* User Tracking Analytics Section */}
+      <div className="mt-4 bg-white p-3 sm:p-4 rounded-lg shadow">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Detailed User Tracking Analytics</h3>
+        <UserTrackingAnalytics key={trackingDataKey} />
+      </div>
+
+      {/* Tracking data management - at bottom */}
+      <div className="mt-4 bg-white p-3 rounded-lg shadow border border-gray-200">
+        <h3 className="text-base font-semibold text-gray-900 mb-1.5">Tracking data</h3>
+        <p className="text-sm text-gray-600 mb-2">
           Clear all user tracking data (page views, clicks, product views, navigation) from the database. This cannot be undone.
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -483,12 +489,6 @@ export default function RecommendationAnalytics() {
             </>
           )}
         </div>
-      </div>
-
-      {/* User Tracking Analytics Section */}
-      <div className="mt-8 bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Detailed User Tracking Analytics</h3>
-        <UserTrackingAnalytics key={trackingDataKey} />
       </div>
 
     </div>

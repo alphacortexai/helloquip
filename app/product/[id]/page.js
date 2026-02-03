@@ -108,9 +108,10 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  // Increment weekly view count when product is loaded
+  // Increment weekly view count when product is loaded (exclude admin traffic)
   useEffect(() => {
     if (!product?.id) return;
+    if (typeof document !== "undefined" && document.referrer && document.referrer.includes("/admin")) return;
     const recordView = async () => {
       try {
         const now = new Date();
@@ -138,8 +139,8 @@ export default function ProductDetail() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       
-      // Track product view when user is available and product is loaded
-      if (user && product) {
+      // Track product view when user is available and product is loaded (exclude admin traffic)
+      if (user && product && typeof document !== "undefined" && !document.referrer?.includes("/admin")) {
         CustomerExperienceService.trackProductView(user.uid, product.id, product);
       }
     });

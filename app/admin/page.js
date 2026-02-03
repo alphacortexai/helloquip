@@ -36,6 +36,7 @@ import LegalSettings from "./components/LegalSettings";
 import NotificationTracker from "./components/NotificationTracker";
 import LatestProductsViewer from "./components/LatestProductsViewer";
 import RecommendationAnalytics from "./components/RecommendationAnalytics";
+import IntelligentAnalysis from "./components/IntelligentAnalysis";
 import ProductControl from "./components/ProductControl";
 import ProductSuggestions from "./components/ProductSuggestions";
 import ProductReorder from "./components/ProductReorder";
@@ -217,6 +218,11 @@ const menuGroups = [
         id: "recommendationAnalytics", 
         label: "Recommendation Analytics",
         description: "View and manage recommendation system"
+      },
+      { 
+        id: "intelligentAnalysis", 
+        label: "Intelligent Analysis",
+        description: "AI report on trends, behaviour, and improvements"
       },
       { 
         id: "productSuggestions", 
@@ -554,7 +560,16 @@ const tabs = [
     bgColor: "bg-slate-50",
     borderColor: "border-slate-100"
   },
-  {
+  { 
+    id: "intelligentAnalysis",
+    icon: <ChartBarIcon className="w-5 h-5" />,
+    label: "Intelligent Analysis",
+    description: "AI report on trends, behaviour, and improvements",
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-100"
+  },
+  { 
     id: "productSuggestions",
     icon: <StarIcon className="w-5 h-5" />,
     label: "Product Suggestions",
@@ -770,6 +785,8 @@ function AdminDashboard({ currentAdminUid }) {
         return <DraftsList />;
       case "recommendationAnalytics":
         return <RecommendationAnalytics />;
+      case "intelligentAnalysis":
+        return <IntelligentAnalysis />;
       case "quatations":
         return <QuotationViewer />;
       case "quoteRequests":
@@ -977,16 +994,11 @@ function AdminDashboard({ currentAdminUid }) {
                 <Bars3Icon className="w-6 h-6" />
               </button>
 
-              {/* Page Title - min-w-0 + overflow so text doesn't spill on mobile */}
+              {/* Page Title - smaller on mobile, no sub text */}
               <div className="flex-1 min-w-0 ml-4 lg:ml-0 overflow-hidden">
-                <h1 className="text-lg font-semibold text-gray-900 break-words" title={currentSection.label}>
+                <h1 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 break-words" title={currentSection.label}>
                   {currentSection.label}
                 </h1>
-                {currentSection.description && (
-                  <p className="text-xs text-gray-500 mt-0.5 break-words line-clamp-2" title={currentSection.description}>
-                    {currentSection.description}
-                  </p>
-                )}
               </div>
 
               {/* Header Actions */}
@@ -1098,13 +1110,17 @@ function AdminDashboard({ currentAdminUid }) {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 lg:px-8 py-2 sm:py-2">
+          <div className={view === "recommendationAnalytics" || view === "intelligentAnalysis" ? "px-2 sm:px-4 py-1" : "px-4 sm:px-6 lg:px-8 py-2 sm:py-2"}>
             {view ? (
-              <div className="bg-white rounded-lg border border-gray-200">
-                <div className="p-4 sm:p-6">
-                  {renderSection()}
+              view === "recommendationAnalytics" || view === "intelligentAnalysis" ? (
+                renderSection()
+              ) : (
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <div className="p-4 sm:p-6">
+                    {renderSection()}
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <div className="space-y-2">
                 {/* Welcome Section */}

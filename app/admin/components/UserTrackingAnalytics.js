@@ -68,7 +68,8 @@ export default function UserTrackingAnalytics() {
         getDocs(query(collection(db, 'userNavigation'), orderBy('createdAt', 'desc'), limit(100))),
       ]);
 
-      const pageViews = pageViewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const pageViewsRaw = pageViewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const pageViews = pageViewsRaw.filter(p => !(p.path || p.pagePath || "").startsWith("/admin"));
       const clicks = clicksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const productViews = productViewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const navigation = navSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
