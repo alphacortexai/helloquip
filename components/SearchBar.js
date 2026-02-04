@@ -7,6 +7,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { Search } from "lucide-react";
 import Image from "next/image";
 import { cacheUtils, CACHE_KEYS, CACHE_DURATIONS } from "@/lib/cacheUtils";
+import { getUserTrackingService } from "@/lib/userTrackingService";
 
 // Helper function to get preferred image URL
 const getPreferredImageUrl = (imageUrl) => {
@@ -62,6 +63,7 @@ export default function SearchBar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchRef = useRef(null);
+  const trackingService = getUserTrackingService();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -189,6 +191,9 @@ export default function SearchBar() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
+      if (trackingService && trackingService.isTrackingEnabled) {
+        trackingService.trackSearchTerm(searchTerm.trim());
+      }
       router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
@@ -206,6 +211,9 @@ export default function SearchBar() {
 
     // Delay navigation by ~1s to avoid accidental underlying taps
     const target = `/search?q=${encodeURIComponent(product.name)}`;
+    if (trackingService && trackingService.isTrackingEnabled) {
+      trackingService.trackSearchTerm(product.name);
+    }
     setTimeout(() => {
       router.push(target);
     }, 1000);

@@ -27,6 +27,7 @@ export default function UserTrackingAnalytics() {
   const [itemsPerPage] = useState(10);
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
   const [showColumnFilters, setShowColumnFilters] = useState(false);
+  const [knownUsers, setKnownUsers] = useState({}); // userId -> { name, email }
   const [columnVisibility, setColumnVisibility] = useState({
     userId: true,
     device: true,
@@ -55,6 +56,36 @@ export default function UserTrackingAnalytics() {
   useEffect(() => {
     fetchTrackingData();
   }, []);
+
+  // Fetch registered/known users for name/email display
+  useEffect(() => {
+    const fetchKnownUsers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        const map = {};
+        snap.forEach((d) => {
+          const data = d.data() || {};
+          const name = data.name || null;
+          const email = data.email || data.address?.email || null;
+          map[d.id] = { name, email };
+        });
+        setKnownUsers(map);
+      } catch (e) {
+        console.warn('Failed to fetch known users:', e);
+      }
+    };
+    fetchKnownUsers();
+  }, []);
+
+  const getUserLabel = (userId) => {
+    const id = String(userId || '');
+    if (!id) return { title: 'Unknown User', subtitle: null };
+    if (id.startsWith('anonymous_')) return { title: 'Anonymous User', subtitle: null };
+    const info = knownUsers[id];
+    const title = (info?.name || info?.email || (id.length > 24 ? id.slice(0, 24) + '…' : id)) || 'Unknown User';
+    const subtitle = info?.email && info?.name ? info.email : (info?.email ? info.email : (info?.name ? (id.length > 24 ? id.slice(0, 24) + '…' : id) : null));
+    return { title, subtitle };
+  };
 
   const fetchTrackingData = async () => {
     try {
@@ -386,8 +417,18 @@ export default function UserTrackingAnalytics() {
                   paginatedUsers.map((user) => (
                     <tr key={user.userId} className="hover:bg-gray-50">
                       {columnVisibility.userId && (
-                        <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-mono max-w-[140px] sm:max-w-[200px] truncate" title={user.userId}>
-                          {user.userId.startsWith('anonymous_') ? 'Anonymous User' : user.userId.slice(0, 20) + '...'}
+                        <td className="px-3 py-2.5 sm:px-4 sm:py-3 max-w-[220px] truncate" title={user.userId}>
+                          {(() => {
+                            const { title, subtitle } = getUserLabel(user.userId);
+                            return (
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-gray-900 truncate">{title}</div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {subtitle ? subtitle : (String(user.userId || '').startsWith('anonymous_') ? '' : String(user.userId || '').slice(0, 28) + (String(user.userId || '').length > 28 ? '…' : ''))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </td>
                       )}
                       {columnVisibility.device && (
@@ -439,9 +480,15 @@ export default function UserTrackingAnalytics() {
                     {columnVisibility.userId && (
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase">User ID</div>
-                        <div className="text-sm font-mono truncate" title={user.userId}>
-                          {user.userId.startsWith('anonymous_') ? 'Anonymous User' : user.userId.slice(0, 24) + (user.userId.length > 24 ? '...' : '')}
-                        </div>
+                        {(() => {
+                          const { title, subtitle } = getUserLabel(user.userId);
+                          return (
+                            <div className="text-sm truncate" title={user.userId}>
+                              <div className="font-medium text-gray-900 truncate">{title}</div>
+                              {subtitle ? <div className="text-xs text-gray-500 truncate">{subtitle}</div> : null}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     {columnVisibility.device && (
@@ -521,7 +568,15 @@ export default function UserTrackingAnalytics() {
             {/* Sticky header with title + close */}
             <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 sm:px-6 py-4 bg-white border-b border-gray-200">
               <h5 id="detail-activity-title" className="text-lg font-semibold text-gray-900 truncate">
-                Detailed Activity: {selectedUserId.startsWith('anonymous_') ? 'Anonymous User' : selectedUserId.slice(0, 24) + (selectedUserId.length > 24 ? '...' : '')}
+                {(() => {
+                  const { title, subtitle } = getUserLabel(selectedUserId);
+                  return (
+                    <span className="inline-flex flex-col">
+                      <span className="truncate">Detailed Activity: {title}</span>
+                      {subtitle ? <span className="text-xs font-normal text-gray-500 truncate">{subtitle}</span> : null}
+                    </span>
+                  );
+                })()}
               </h5>
               <button
                 type="button"
