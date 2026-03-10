@@ -120,6 +120,24 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const isCompanyCustomer = address?.customerType === "company";
+
+  const getRecipientDetails = (addr = {}) => {
+    const isCompany = addr.customerType === "company";
+
+    if (isCompany) {
+      return {
+        primaryName: addr.organizationName || "N/A",
+        secondaryName: addr.contactPerson ? `Attn: ${addr.contactPerson}` : "",
+      };
+    }
+
+    return {
+      primaryName: addr.fullName || "N/A",
+      secondaryName: "",
+    };
+  };
+
   const generatePDF = (quotationData) => {
     const doc = new jsPDF();
 
@@ -140,9 +158,16 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
     doc.setFont(undefined, "bold");
     doc.text("QUOTE TO:", 14, 40);
     doc.setFont(undefined, "normal");
-    doc.text(`${addr.fullName || "N/A"}`, 14, 46);
-    doc.text(`${addr.city || ""}, ${addr.area || ""}`, 14, 52);
-    doc.text(`Phone: ${addr.phoneNumber || "N/A"}`, 14, 58);
+    const recipient = getRecipientDetails(addr);
+    doc.text(recipient.primaryName, 14, 46);
+    if (recipient.secondaryName) {
+      doc.text(recipient.secondaryName, 14, 52);
+    }
+
+    const locationY = recipient.secondaryName ? 58 : 52;
+    const phoneY = recipient.secondaryName ? 64 : 58;
+    doc.text(`${addr.city || ""}, ${addr.area || ""}`, 14, locationY);
+    doc.text(`Phone: ${addr.phoneNumber || "N/A"}`, 14, phoneY);
 
     // Item Table
     const tableData = quotationData.items.map((item) => [
@@ -198,7 +223,9 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
       if (!Array.isArray(cartItems) || cartItems.length === 0) {
         throw new Error("Your cart is empty. Add items before generating a quotation.");
       }
-      const required = [address?.fullName, address?.city, address?.area, address?.phoneNumber];
+      const required = isCompanyCustomer
+        ? [address?.organizationName, address?.contactPerson, address?.city, address?.area, address?.phoneNumber]
+        : [address?.fullName, address?.city, address?.area, address?.phoneNumber];
       if (required.some((v) => !v || String(v).trim() === "")) {
         throw new Error("Please complete your shipping address to generate a quotation.");
       }
