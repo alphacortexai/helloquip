@@ -583,28 +583,30 @@ export default function OrderClient() {
 
               <div className="space-y-4">
                 {/* Customer Type */}
-                <div>
-                  <label className="block text-sm font-semibold text-blue-900 mb-1">Customer Type</label>
+                <div className="bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-400 rounded-lg p-4">
+                  <label className="block text-sm font-bold text-red-900 mb-3">Customer Type</label>
                   <div className="flex items-center gap-4 text-sm">
-                    <label className="inline-flex items-center gap-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="customerType"
                         value="individual"
                         checked={safeAddress.customerType === 'individual'}
                         onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
+                        className="w-4 h-4 accent-red-600"
                       />
-                      <span className="font-bold text-black">Individual</span>
+                      <span className="font-bold text-red-800 bg-white px-2 py-1 rounded">Individual</span>
                     </label>
-                    <label className="inline-flex items-center gap-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="customerType"
                         value="company"
                         checked={safeAddress.customerType === 'company'}
                         onChange={(e) => setAddress({ ...address, customerType: e.target.value })}
+                        className="w-4 h-4 accent-red-600"
                       />
-                      <span className="font-bold text-black">Company / Institution</span>
+                      <span className="font-bold text-red-800 bg-white px-2 py-1 rounded">Company / Institution</span>
                     </label>
                   </div>
                 </div>

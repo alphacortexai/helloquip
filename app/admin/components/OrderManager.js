@@ -477,6 +477,11 @@ export default function OrderManager() {
             <hr className="my-4" />
 
             <h4 className="font-semibold mb-2">Customer Info</h4>
+            <div className="bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-400 rounded-lg p-4 mb-4">
+              <p className="text-sm font-bold text-red-900 mb-3">
+                Customer Type: <span className="bg-white px-2 py-1 rounded text-red-800">{selected.address?.customerType === 'company' ? 'Company' : 'Individual'}</span>
+              </p>
+            </div>
             {selected.address?.customerType === 'company' ? (
               <div className="text-sm">
                 <p><strong>Organization:</strong> {selected.address.organizationName || 'N/A'}</p>
