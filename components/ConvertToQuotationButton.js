@@ -115,10 +115,12 @@ import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function ConvertToQuotationButton({ cartItems, address, userId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { currency, formatPrice } = useCurrency();
 
   const isCompanyCustomer = address?.customerType === "company";
 
@@ -172,9 +174,9 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
     // Item Table
     const tableData = quotationData.items.map((item) => [
       item.name,
-      `UGX ${item.price.toLocaleString()}`,
+      formatPrice(item.price),
       item.quantity,
-      `UGX ${(item.price * item.quantity).toLocaleString()}`
+      formatPrice(item.price * item.quantity)
     ]);
 
     autoTable(doc, {
@@ -192,11 +194,11 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
 
     let finalY = doc.lastAutoTable.finalY + 10;
     doc.setFont(undefined, "bold");
-    doc.text(`SUBTOTAL: UGX ${subtotal.toLocaleString()}`, 140, finalY);
+    doc.text(`SUBTOTAL: ${formatPrice(subtotal)}`, 140, finalY);
     finalY += 7;
-    doc.text(`TAX: UGX ${tax.toLocaleString()}`, 140, finalY);
+    doc.text(`TAX: ${formatPrice(tax)}`, 140, finalY);
     finalY += 7;
-    doc.text(`GRAND TOTAL: UGX ${grandTotal.toLocaleString()}`, 140, finalY);
+    doc.text(`GRAND TOTAL: ${formatPrice(grandTotal)}`, 140, finalY);
 
     // Footer
     doc.setFontSize(9);
@@ -245,6 +247,7 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
           (sum, item) => sum + item.price * (item.quantity || 1),
           0
         ),
+        displayCurrency: currency,
         createdAt: new Date().toISOString(),
       };
 

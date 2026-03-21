@@ -13,6 +13,7 @@ import ContactButtons from "@/components/ContactButtons";
 import ConvertToQuotationButton from "@/components/ConvertToQuotationButton";
 import RequestQuoteButton from "@/components/RequestQuoteButton";
 import { useCart } from "@/components/CartContext";
+import { useCurrency } from "@/hooks/useCurrency";
 
 function cleanFirebaseUrl(url) {
   if (!url || typeof url !== "string") return "";
@@ -87,6 +88,7 @@ export default function OrderClient() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const { currency, formatPrice } = useCurrency();
 
   // Ensure all address values are strings to prevent controlled/uncontrolled input errors
   const safeAddress = {
@@ -290,6 +292,7 @@ export default function OrderClient() {
         userPhone: address.phoneNumber || undefined,
         paymentMethod: selectedPayment,
         paymentStatus: selectedPayment === "cod" ? "unpaid" : "pending",
+        displayCurrency: currency,
       };
 
       const orderRef = doc(collection(db, "orders"));
@@ -360,7 +363,7 @@ export default function OrderClient() {
             const itemsSummary = cartItems.map((it) => `${it.name} x ${it.quantity||1}`).slice(0,3);
             const extra = cartItems.length > 3 ? ` and ${cartItems.length-3} more` : "";
             const adminTitle = `New order submitted by ${customerName}`;
-            const adminText = `${customerName} submitted order ${orderIdDisplay} (${itemsSummary.join(", ")}${extra}) totaling UGX ${calculateTotal(cartItems).toLocaleString()}.`;
+            const adminText = `${customerName} submitted order ${orderIdDisplay} (${itemsSummary.join(", ")}${extra}) totaling ${formatPrice(calculateTotal(cartItems))}.`;
             await addDoc(collection(db, "adminNotifications"), {
               type: "order_submitted",
               orderId: orderRef.id,
@@ -508,14 +511,14 @@ export default function OrderClient() {
                            
                            <div className="text-right ml-2 md:ml-4">
                                <div className="text-xs text-gray-400 mb-1">
-                                 (Unit Price: UGX {(item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price).toLocaleString()} X {(item.quantity || 1)}pcs)
+                                 (Unit Price: {formatPrice(item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price)} X {(item.quantity || 1)}pcs)
                                </div>
                                <div className="text-base md:text-lg font-semibold text-gray-900">
-                                 UGX {((item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price) * (item.quantity || 1)).toLocaleString()}
+                                 {formatPrice((item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price) * (item.quantity || 1))}
                                </div>
                                {item.discount > 0 && (
                                  <div className="text-xs md:text-sm text-gray-500 line-through">
-                                   UGX {(item.price * (item.quantity || 1)).toLocaleString()}
+                                   {formatPrice(item.price * (item.quantity || 1))}
                                  </div>
                                )}
                              </div>
@@ -561,7 +564,7 @@ export default function OrderClient() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">UGX {calculateTotal(cartItems).toLocaleString()}</span>
+                  <span className="font-medium">{formatPrice(calculateTotal(cartItems))}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Shipping</span>
@@ -570,7 +573,7 @@ export default function OrderClient() {
                 <hr className="border-gray-200" />
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span className="text-green-600">UGX {calculateTotal(cartItems).toLocaleString()}</span>
+                  <span className="text-green-600">{formatPrice(calculateTotal(cartItems))}</span>
                 </div>
               </div>
             </div>

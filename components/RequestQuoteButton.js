@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function RequestQuoteButton({ cartItems, address, userId }) {
+  const { currency } = useCurrency();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -46,6 +48,7 @@ export default function RequestQuoteButton({ cartItems, address, userId }) {
           0
         ),
         status: "pending", // pending, approved, rejected
+        displayCurrency: currency,
         createdAt: new Date().toISOString(),
         type: "quote_request" // to distinguish from regular quotations
       };
