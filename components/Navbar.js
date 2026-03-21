@@ -9,6 +9,7 @@ import CachedLogo from "@/components/CachedLogo";
 import { useCart } from "@/components/CartContext";
 import { collection, onSnapshot, query, where, orderBy, doc, updateDoc, getDocs } from "firebase/firestore";
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, BellIcon } from "@heroicons/react/24/outline";
+import CurrencyDropdown from "@/components/CurrencyDropdown";
 
 export default function Navbar() {
   const router = useRouter();
@@ -182,7 +183,8 @@ export default function Navbar() {
             )}
 
             {/* User Actions */}
-            <div className="flex items-center gap-0 relative" ref={dropdownRef}>
+            <div className="flex items-center gap-2 relative" ref={dropdownRef}>
+              <CurrencyDropdown />
               {/* Notifications - only when logged in */}
               {user && (
                 <div className="relative" ref={notificationRef}>

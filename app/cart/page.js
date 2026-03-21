@@ -8,6 +8,7 @@ import { useCart } from "@/components/CartContext";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCartIcon, TrashIcon, MinusIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // Helper to get preferred image URL
 const getPreferredImageUrl = (imageUrl) => {
@@ -38,6 +39,7 @@ export default function CartPage() {
   const { cartItems, cartCount, removeFromCart, updateItemQuantity, totalAmount, clearCart } = useCart();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -56,10 +58,6 @@ export default function CartPage() {
     // Redirect to register with a redirect back to order page
     // The order page will handle transferring the cart
     router.push("/register?redirect=/order&fromCart=true");
-  };
-
-  const formatPrice = (price) => {
-    return `UGX ${Number(price).toLocaleString()}`;
   };
 
   const getItemPrice = (item) => {

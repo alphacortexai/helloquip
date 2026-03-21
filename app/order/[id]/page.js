@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -70,7 +72,7 @@ export default function OrderDetailPage() {
                 <p className="text-xs text-gray-600">SKU: {it.sku}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-900">UGX {((it.discount>0? it.price*(1-it.discount/100):it.price)*(it.quantity||1)).toLocaleString()}</p>
+                <p className="text-sm text-gray-900">{formatPrice((it.discount>0? it.price*(1-it.discount/100):it.price)*(it.quantity||1))}</p>
                 <p className="text-xs text-gray-500">Qty: {it.quantity || 1}</p>
               </div>
             </li>
@@ -96,7 +98,7 @@ export default function OrderDetailPage() {
 
         <div className="flex items-center justify-between border-t border-gray-200 pt-3">
           <span className="text-sm font-medium">Total</span>
-          <span className="text-base font-semibold text-green-700">UGX {total.toLocaleString()}</span>
+          <span className="text-base font-semibold text-green-700">{formatPrice(total)}</span>
         </div>
       </div>
     </div>

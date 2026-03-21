@@ -4,10 +4,12 @@ import WishlistButton from './WishlistButton';
 import ProductComparisonButton from './ProductComparisonButton';
 import { useProductSettings, formatProductName, shouldShowMOQ, shouldShowSKU } from '@/hooks/useProductSettings';
 import { trackProductClick } from '@/hooks/useTracking';
+import { useCurrency } from '@/hooks/useCurrency';
 
 const ProductCard = ({ badge, product, variant = 'default', isFirst = false, largeDesktop = false, onClick, customResolution, hideSKU = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { settings } = useProductSettings();
+  const { formatPrice } = useCurrency();
 
   const handleClick = () => {
     trackProductClick(product.id, product.name, {
@@ -80,7 +82,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       <h2 className="hidden md:block text-lg font-semibold">{formatProductName(product.name, settings)}</h2>
       <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-600 mt-1">{product.description}</p>
-      <p className="text-blue-600 font-bold mt-2">UGX {discountedPrice.toLocaleString()}</p>
+      <p className="text-blue-600 font-bold mt-2">{formatPrice(discountedPrice)}</p>
     </div>
   );
 
@@ -93,7 +95,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
         <h2 className="hidden md:block text-lg font-semibold">{formatProductName(product.name, settings)}</h2>
         <p className="text-sm text-gray-400 italic mb-1">CODE: {productCodeText}</p>
         <p className="text-gray-600 mt-1 line-clamp-2">{product.description}</p>
-        <p className="text-blue-600 font-bold mt-2">UGX {discountedPrice.toLocaleString()}</p>
+        <p className="text-blue-600 font-bold mt-2">{formatPrice(discountedPrice)}</p>
       </div>
     </div>
   );
@@ -111,7 +113,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
         <div className="flex items-end justify-between mt-3">
           <div>
             <p className="text-sm text-gray-900 font-semibold">
-              UGX {discountedPrice.toLocaleString()}
+              {formatPrice(discountedPrice)}
             </p>
             {shouldShowMOQ(settings) && (
               <p className="text-[11px] text-gray-500">1 item (MOQ)</p>
@@ -155,7 +157,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
 
           <div className="mt-2">
             <p className={`text-sm text-gray-900 font-semibold ${largeDesktop ? 'md:text-xl' : ''}`}>
-              UGX {discountedPrice.toLocaleString()}
+              {formatPrice(discountedPrice)}
             </p>
             <p className={`text-xs text-gray-500 ${largeDesktop ? 'md:text-base' : ''}`}>1 item (MOQ)</p>
           </div>
@@ -199,7 +201,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
             </p>
           )}
           <p className="text-lg text-gray-900 font-bold">
-            UGX {discountedPrice.toLocaleString()}
+            {formatPrice(discountedPrice)}
           </p>
         </div>
       </div>
@@ -238,7 +240,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
             </p>
           )}
           <p className="text-sm text-gray-900 font-bold mt-2">
-            UGX {discountedPrice.toLocaleString()}
+            {formatPrice(discountedPrice)}
           </p>
         </div>
       </div>
@@ -253,7 +255,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       <h2 className="hidden md:block text-base font-semibold">{formatProductName(product.name, settings)}</h2>
       <p className="text-[7px] text-gray-400 italic mb-1">CODE: {productCodeText}</p>
       <p className="text-gray-500 text-sm mt-1 line-clamp-3">{product.description}</p>
-      <p className="text-blue-600 font-bold mt-2 text-sm">UGX {discountedPrice.toLocaleString()}</p>
+      <p className="text-blue-600 font-bold mt-2 text-sm">{formatPrice(discountedPrice)}</p>
     </div>
   );
 
@@ -305,7 +307,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
               </p>
 
               <p className="text-sm text-gray-900 font-semibold mb-0.5">
-                UGX {discountedPrice.toLocaleString()}
+                {formatPrice(discountedPrice)}
               </p>
               {shouldShowMOQ(settings) && (
                 <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
@@ -346,7 +348,7 @@ const ProductCard = ({ badge, product, variant = 'default', isFirst = false, lar
       </div>
                                                                                                                <div className="px-0 text-center">
                              <p className="text-sm font-medium text-gray-800 truncate mb-0.5 pt-2" title={formatProductName(product.name, settings)}>{formatProductName(product.name, settings)}</p>
-            <p className="text-sm text-gray-900 font-semibold mb-0.5">UGX {discountedPrice.toLocaleString()}</p>
+            <p className="text-sm text-gray-900 font-semibold mb-0.5">{formatPrice(discountedPrice)}</p>
             {shouldShowMOQ(settings) && (
               <p className="text-xs text-gray-500 mb-0.5">1 item (MOQ)</p>
             )}

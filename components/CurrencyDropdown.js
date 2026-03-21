@@ -29,8 +29,6 @@ export default function CurrencyDropdown() {
   const handleCurrencyChange = (newCurrency) => {
     setCurrency(newCurrency);
     setIsOpen(false);
-    // Save preference to localStorage
-    localStorage.setItem('preferredCurrency', newCurrency);
   };
 
   const currentCurrency = currencies.find(c => c.code === currency) || currencies[0];

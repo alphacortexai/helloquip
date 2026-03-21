@@ -1,100 +1,164 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
 
 const CurrencyContext = createContext();
+const LOCAL_STORAGE_KEY = 'preferredCurrency';
+const EXCHANGE_RATE_KEY = 'usdToUgxRate';
+const EXCHANGE_RATE_TIMESTAMP_KEY = 'exchangeRateTimestamp';
+const DEFAULT_CURRENCY = 'UGX';
+const FALLBACK_USD_TO_UGX_RATE = 3700;
+
+const readStoredCurrency = () => {
+  if (typeof window === 'undefined') return DEFAULT_CURRENCY;
+  return localStorage.getItem(LOCAL_STORAGE_KEY) || DEFAULT_CURRENCY;
+};
 
 export function CurrencyProvider({ children }) {
-  // Restore currency preference from localStorage
-  const [currency, setCurrency] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('preferredCurrency');
-      return saved || 'UGX';
-    }
-    return 'UGX';
-  });
+  const [currency, setCurrencyState] = useState(DEFAULT_CURRENCY);
   const [exchangeRate, setExchangeRate] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [preferenceReady, setPreferenceReady] = useState(false);
 
-  // Fetch USD exchange rate (UGX to USD)
+  const persistCurrency = useCallback(async (nextCurrency, userId = auth.currentUser?.uid) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_KEY, nextCurrency);
+    }
+
+    if (!userId) return;
+
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        preferredCurrency: nextCurrency,
+      }, { merge: true });
+    } catch (error) {
+      console.warn('Failed to persist currency preference:', error);
+    }
+  }, []);
+
+  const setCurrency = useCallback(async (nextCurrency) => {
+    setCurrencyState(nextCurrency);
+    await persistCurrency(nextCurrency);
+  }, [persistCurrency]);
+
+  useEffect(() => {
+    const localCurrency = readStoredCurrency();
+    setCurrencyState(localCurrency);
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setCurrencyState(readStoredCurrency());
+        setPreferenceReady(true);
+        return;
+      }
+
+      try {
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const userCurrency = userSnap.exists() ? userSnap.data()?.preferredCurrency : null;
+        const resolvedCurrency = userCurrency || localCurrency || DEFAULT_CURRENCY;
+
+        setCurrencyState(resolvedCurrency);
+        if (!userCurrency) {
+          await persistCurrency(resolvedCurrency, user.uid);
+        } else if (typeof window !== 'undefined') {
+          localStorage.setItem(LOCAL_STORAGE_KEY, userCurrency);
+        }
+      } catch (error) {
+        console.warn('Failed to load stored currency preference:', error);
+        setCurrencyState(localCurrency);
+      } finally {
+        setPreferenceReady(true);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [persistCurrency]);
+
   useEffect(() => {
     const fetchExchangeRate = async () => {
       setLoading(true);
       try {
-        // Try to get from a free exchange rate API
-        // Using exchangerate-api.com (free tier allows 1,500 requests/month)
         const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await response.json();
-        
-        // Get UGX rate (1 USD = X UGX)
         const ugxRate = data.rates?.UGX;
+
         if (ugxRate) {
-          // Store as USD to UGX rate (for conversion: UGX / rate = USD)
           setExchangeRate(ugxRate);
-          // Cache in localStorage
-          localStorage.setItem('usdToUgxRate', ugxRate.toString());
-          localStorage.setItem('exchangeRateTimestamp', Date.now().toString());
+          localStorage.setItem(EXCHANGE_RATE_KEY, ugxRate.toString());
+          localStorage.setItem(EXCHANGE_RATE_TIMESTAMP_KEY, Date.now().toString());
+          return;
         }
+
+        throw new Error('UGX exchange rate missing in API response');
       } catch (error) {
         console.warn('Failed to fetch exchange rate, using cached or default:', error);
-        // Try to use cached rate if available (valid for 24 hours)
-        const cachedRate = localStorage.getItem('usdToUgxRate');
-        const cachedTimestamp = localStorage.getItem('exchangeRateTimestamp');
-        
+        const cachedRate = localStorage.getItem(EXCHANGE_RATE_KEY);
+        const cachedTimestamp = localStorage.getItem(EXCHANGE_RATE_TIMESTAMP_KEY);
+
         if (cachedRate && cachedTimestamp) {
-          const age = Date.now() - parseInt(cachedTimestamp);
-          // Use cached rate if less than 24 hours old
+          const age = Date.now() - Number.parseInt(cachedTimestamp, 10);
           if (age < 24 * 60 * 60 * 1000) {
-            setExchangeRate(parseFloat(cachedRate));
+            setExchangeRate(Number.parseFloat(cachedRate));
           } else {
-            // Default fallback rate (approximate)
-            setExchangeRate(3700); // 1 USD ≈ 3700 UGX
+            setExchangeRate(FALLBACK_USD_TO_UGX_RATE);
           }
         } else {
-          // Default fallback rate
-          setExchangeRate(3700);
+          setExchangeRate(FALLBACK_USD_TO_UGX_RATE);
         }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExchangeRate();
+    if (typeof window !== 'undefined') {
+      fetchExchangeRate();
+    }
   }, []);
 
-  const convertPrice = (priceInUgx, targetCurrency = currency) => {
-    if (!priceInUgx || priceInUgx === 0) return 0;
-    
-    if (targetCurrency === 'UGX') {
-      return priceInUgx;
-    }
-    
-    if (targetCurrency === 'USD' && exchangeRate) {
-      return priceInUgx / exchangeRate;
-    }
-    
-    return priceInUgx;
-  };
+  const convertPrice = useCallback((priceInUgx, targetCurrency = currency) => {
+    const numericPrice = Number(priceInUgx || 0);
+    if (!numericPrice) return 0;
+    if (targetCurrency === 'UGX') return numericPrice;
+    if (targetCurrency === 'USD' && exchangeRate) return numericPrice / exchangeRate;
+    return numericPrice;
+  }, [currency, exchangeRate]);
 
-  const formatPrice = (priceInUgx, targetCurrency = currency) => {
+  const formatPrice = useCallback((priceInUgx, targetCurrency = currency, options = {}) => {
     const convertedPrice = convertPrice(priceInUgx, targetCurrency);
-    
+    const { maximumFractionDigits, minimumFractionDigits, fallback = 'N/A' } = options;
+
+    if (!Number.isFinite(convertedPrice)) return fallback;
+
     if (targetCurrency === 'USD') {
-      return `$${convertedPrice.toFixed(2)}`;
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: minimumFractionDigits ?? 2,
+        maximumFractionDigits: maximumFractionDigits ?? 2,
+      }).format(convertedPrice);
     }
-    
-    return `UGX ${convertedPrice.toLocaleString()}`;
-  };
+
+    return `UGX ${new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: minimumFractionDigits ?? 0,
+      maximumFractionDigits: maximumFractionDigits ?? 0,
+    }).format(convertedPrice)}`;
+  }, [convertPrice, currency]);
+
+  const value = useMemo(() => ({
+    currency,
+    setCurrency,
+    exchangeRate,
+    loading,
+    preferenceReady,
+    convertPrice,
+    formatPrice,
+  }), [currency, setCurrency, exchangeRate, loading, preferenceReady, convertPrice, formatPrice]);
 
   return (
-    <CurrencyContext.Provider value={{
-      currency,
-      setCurrency,
-      exchangeRate,
-      loading,
-      convertPrice,
-      formatPrice
-    }}>
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );
@@ -107,4 +171,3 @@ export function useCurrency() {
   }
   return context;
 }
-

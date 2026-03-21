@@ -13,7 +13,6 @@ import RelatedProducts from "@/components/RelatedProducts";
 import ContactButtons from "@/components/ContactButtons";
 import WishlistButton from "@/components/WishlistButton";
 import ProductComparisonButton from "@/components/ProductComparisonButton";
-import CurrencyDropdown from "@/components/CurrencyDropdown";
 import { CustomerExperienceService } from "@/lib/customerExperienceService";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useCart } from "@/components/CartContext";
@@ -24,7 +23,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { formatPrice, currency } = useCurrency();
+  const { formatPrice } = useCurrency();
   const { addToCart, isInCart } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -287,7 +286,6 @@ export default function ProductDetail() {
                           {`${product.discount}%`}
                         </span>
                       )}
-                      <CurrencyDropdown />
                     </div>
                   </div>
                 </div>
