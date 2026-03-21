@@ -1,0 +1,37 @@
+<svg width="1240" height="1754" viewBox="0 0 1240 1754" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1240" height="1754" fill="white"/>
+  <rect width="1240" height="24" fill="#5D95D3"/>
+  <path d="M0 0H420L360 24H0V0Z" fill="#3568B8"/>
+  <path d="M0 24H280L230 46H0V24Z" fill="#CFDCF4"/>
+  <path d="M665 1714H835L785 1754H615L665 1714Z" fill="#CFDCF4"/>
+  <rect y="1714" width="1240" height="40" fill="#5D95D3"/>
+  <path d="M780 1714H1240V1754H850L780 1714Z" fill="#3568B8"/>
+
+  <g transform="translate(95 105)">
+    <path d="M25 65C45 5 205 -5 335 30C405 48 435 83 432 116C430 150 394 177 330 190" stroke="#2F5AA7" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M362 194H432" stroke="#2F5AA7" stroke-width="14" stroke-linecap="square"/>
+    <path d="M60 82C32 120 42 158 96 184C132 201 184 208 250 205C120 204 47 168 34 123C28 102 34 79 52 58" fill="white"/>
+    <text x="58" y="123" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="700" fill="#2F5AA7">HeloQuip</text>
+  </g>
+
+  <g font-family="Arial, Helvetica, sans-serif" fill="#2F5AA7" font-weight="700" font-size="23">
+    <text x="925" y="126">☎</text>
+    <text x="967" y="128">+256 774 660089</text>
+    <text x="925" y="168">◔</text>
+    <text x="967" y="170">+256 706 801778</text>
+    <text x="925" y="210">✉</text>
+    <text x="967" y="212">hello@heloquip.com</text>
+    <text x="925" y="252">◎</text>
+    <text x="967" y="254">www.heloquip.com</text>
+  </g>
+
+  <line x1="70" y1="265" x2="1170" y2="265" stroke="#2F5AA7" stroke-width="3"/>
+
+  <g opacity="0.12" transform="translate(285 790)">
+    <ellipse cx="330" cy="100" rx="330" ry="95" stroke="#B7C8EC" stroke-width="12" fill="none"/>
+    <line x1="395" y1="182" x2="485" y2="182" stroke="#B7C8EC" stroke-width="14"/>
+    <text x="72" y="145" font-family="Arial, Helvetica, sans-serif" font-size="108" font-weight="700" fill="#B7C8EC">HeloQuip</text>
+  </g>
+
+  <text x="110" y="1680" font-family="Arial, Helvetica, sans-serif" font-size="18" font-style="italic" font-weight="700" fill="#2F5AA7">“Healthcare commodities at your fingertips”</text>
+</svg>

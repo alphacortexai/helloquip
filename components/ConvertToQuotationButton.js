@@ -79,7 +79,7 @@
 //       await addDoc(collection(db, "quotations"), quotationData);
 
 //       // Generate and download PDF
-//       generatePDF(quotationData);
+//       await generatePDF(quotationData);
 //     } catch (err) {
 //       setError(err.message || "Failed to create quotation");
 //     } finally {
@@ -140,36 +140,75 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
     };
   };
 
-  const generatePDF = (quotationData) => {
-    const doc = new jsPDF();
+  const loadLetterheadImage = async () => {
+    const response = await fetch("/heloquip-letterhead.svg");
+    const svgMarkup = await response.text();
+    const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = blobUrl;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext("2d");
+      context.drawImage(image, 0, 0);
+
+      return canvas.toDataURL("image/png");
+    } finally {
+      URL.revokeObjectURL(blobUrl);
+    }
+  };
+
+  const generatePDF = async (quotationData) => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const topMargin = 50;
+    const bottomMargin = 20;
+    const sideMargin = 14;
+    const letterheadImage = await loadLetterheadImage();
+
+    const addLetterheadBackground = () => {
+      doc.addImage(letterheadImage, "PNG", 0, 0, pageWidth, pageHeight);
+    };
+
+    addLetterheadBackground();
 
     // Header
-    doc.setFontSize(22);
+    doc.setFontSize(20);
     doc.setTextColor("#1F2A40");
-    doc.text("HeloQuip Auto Quotation", 14, 20);
+    doc.text("Quotation", sideMargin, topMargin + 2);
 
     // Company Info & Quote Meta
-    doc.setFontSize(11);
-    doc.setTextColor("#444");
-    doc.text("www.helloquip.com", 14, 28);
-    doc.text(`Quote No: 000${Math.floor(Math.random() * 1000)}`, 150, 20);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 28);
+    doc.setFontSize(10);
+    doc.setTextColor("#444444");
+    doc.text("www.heloquip.com", sideMargin, topMargin + 9);
+    doc.text("hello@heloquip.com", sideMargin, topMargin + 15);
+    doc.text(`Quote No: 000${Math.floor(Math.random() * 1000)}`, 150, topMargin + 2);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, topMargin + 9);
 
     // Address Section
     const addr = quotationData.address || {};
     doc.setFont(undefined, "bold");
-    doc.text("QUOTE TO:", 14, 40);
+    doc.text("QUOTE TO:", sideMargin, topMargin + 26);
     doc.setFont(undefined, "normal");
     const recipient = getRecipientDetails(addr);
-    doc.text(recipient.primaryName, 14, 46);
+    doc.text(recipient.primaryName, sideMargin, topMargin + 32);
     if (recipient.secondaryName) {
-      doc.text(recipient.secondaryName, 14, 52);
+      doc.text(recipient.secondaryName, sideMargin, topMargin + 38);
     }
 
-    const locationY = recipient.secondaryName ? 58 : 52;
-    const phoneY = recipient.secondaryName ? 64 : 58;
-    doc.text(`${addr.city || ""}, ${addr.area || ""}`, 14, locationY);
-    doc.text(`Phone: ${addr.phoneNumber || "N/A"}`, 14, phoneY);
+    const locationY = recipient.secondaryName ? topMargin + 44 : topMargin + 38;
+    const phoneY = recipient.secondaryName ? topMargin + 50 : topMargin + 44;
+    doc.text(`${addr.city || ""}, ${addr.area || ""}`, sideMargin, locationY);
+    doc.text(`Phone: ${addr.phoneNumber || "N/A"}`, sideMargin, phoneY);
 
     // Item Table
     const tableData = quotationData.items.map((item) => [
@@ -180,11 +219,17 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
     ]);
 
     autoTable(doc, {
-      startY: 70,
+      startY: topMargin + 58,
+      margin: { top: topMargin, bottom: bottomMargin, left: sideMargin, right: sideMargin },
       head: [["DESCRIPTION", "PRICE", "QTY", "TOTAL"]],
       body: tableData,
       theme: "grid",
       headStyles: { fillColor: [31, 42, 64] },
+      didDrawPage: ({ pageNumber }) => {
+        if (pageNumber > 1) {
+          addLetterheadBackground();
+        }
+      },
     });
 
     // Totals
@@ -192,7 +237,7 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
     const tax = Math.round(subtotal * 0.1); // 10% Tax
     const grandTotal = subtotal + tax;
 
-    let finalY = doc.lastAutoTable.finalY + 10;
+    let finalY = Math.min(doc.lastAutoTable.finalY + 10, pageHeight - bottomMargin - 24);
     doc.setFont(undefined, "bold");
     doc.text(`SUBTOTAL: ${formatPrice(subtotal)}`, 140, finalY);
     finalY += 7;
@@ -202,17 +247,16 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
 
     // Footer
     doc.setFontSize(9);
-    finalY += 20;
+    finalY = Math.min(finalY + 16, pageHeight - bottomMargin - 8);
     doc.setFont(undefined, "bold");
-    doc.text("Terms and Conditions", 14, finalY);
+    doc.text("Terms and Conditions", sideMargin, finalY);
     doc.setFont(undefined, "normal");
     doc.text(
-      "Payment due within 30 days. Please contact support@helloquip.com for questions.",
-      14,
+      "Payment due within 30 days. Please contact hello@heloquip.com for questions.",
+      sideMargin,
       finalY + 6
     );
 
-    // Save PDF
     doc.save("quotation.pdf");
   };
 
@@ -252,7 +296,7 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
       };
 
       await addDoc(collection(db, "quotations"), quotationData);
-      generatePDF(quotationData);
+      await generatePDF(quotationData);
     } catch (err) {
       setError(err.message || "Failed to create quotation");
     } finally {
