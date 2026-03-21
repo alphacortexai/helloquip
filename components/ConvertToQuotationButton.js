@@ -141,29 +141,15 @@ export default function ConvertToQuotationButton({ cartItems, address, userId })
   };
 
   const loadLetterheadImage = async () => {
-    const response = await fetch("/heloquip-letterhead.svg");
-    const svgMarkup = await response.text();
-    const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
-    const blobUrl = URL.createObjectURL(blob);
+    const response = await fetch("/heloquip-letterhead.png");
+    const blob = await response.blob();
 
-    try {
-      const image = await new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = blobUrl;
-      });
-
-      const canvas = document.createElement("canvas");
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const context = canvas.getContext("2d");
-      context.drawImage(image, 0, 0);
-
-      return canvas.toDataURL("image/png");
-    } finally {
-      URL.revokeObjectURL(blobUrl);
-    }
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   };
 
   const generatePDF = async (quotationData) => {
