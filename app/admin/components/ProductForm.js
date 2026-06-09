@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { db, storage } from "@/lib/firebase";
 import {
   collection,
@@ -349,12 +350,12 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
       .map(([key]) => key);
     
     if (missingFields.length > 0) {
-      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
     }
     
     if (!existingProduct && !image) {
-      alert('Please select a main image for the product');
+      toast.error('Please select a main image for the product');
       return;
     }
     
@@ -435,17 +436,19 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         console.log("🔄 Updating existing product:", existingProduct.id);
         await updateDoc(doc(db, "products", existingProduct.id), productData);
         console.log("✅ Product updated successfully");
+        toast.success("Product updated successfully");
       } else {
         console.log("🆕 Creating new product");
         await addDoc(collection(db, "products"), productData);
         console.log("✅ Product created successfully");
+        toast.success("Product created successfully");
       }
 
       console.log("🎉 Form submission completed successfully");
       onSuccess();
     } catch (error) {
       console.error("❌ Error saving product:", error);
-      alert(`Error saving product: ${error.message}`);
+      toast.error(`Error saving product: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -454,7 +457,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const handleExtraImagesChange = (e) => {
     const files = Array.from(e.target.files);
     if (extraImages.length + files.length > MAX_EXTRA_IMAGES) {
-      alert(`You can only upload up to ${MAX_EXTRA_IMAGES} extra images.`);
+      toast.error(`You can only upload up to ${MAX_EXTRA_IMAGES} extra images.`);
       return;
     }
     setExtraImages([...extraImages, ...files]);
