@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db, storage } from "@/lib/firebase";
 import {
   collection,
@@ -51,6 +51,23 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
   const [creatingSubCat, setCreatingSubCat] = useState(false);
   const [newSubCatName, setNewSubCatName] = useState("");
   const [subCatSaving, setSubCatSaving] = useState(false);
+  const [saveDialog, setSaveDialog] = useState({ status: "idle", message: "" });
+  const saveDialogTimeoutRef = useRef(null);
+
+  const isSavingProduct = saveDialog.status === "saving";
+
+  const closeSaveDialog = () => {
+    if (saveDialog.status === "saving") return;
+    setSaveDialog({ status: "idle", message: "" });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (saveDialogTimeoutRef.current) {
+        clearTimeout(saveDialogTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Helper function to get preferred image URL
   const getPreferredImageUrl = (imageUrl) => {
@@ -359,6 +376,10 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     }
     
     setLoading(true);
+    setSaveDialog({
+      status: "saving",
+      message: existingProduct ? "UPDATING PRODUCT DETAILS..." : "CREATING PRODUCT AND UPLOADING IMAGES..."
+    });
 
     console.log("🚀 Form submission started");
     console.log("📝 Existing product:", existingProduct);
@@ -442,10 +463,20 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
       }
 
       console.log("🎉 Form submission completed successfully");
-      onSuccess();
+      setSaveDialog({
+        status: "success",
+        message: existingProduct ? "Product updated successfully." : "Product created successfully."
+      });
+      saveDialogTimeoutRef.current = setTimeout(() => {
+        setSaveDialog({ status: "idle", message: "" });
+        onSuccess();
+      }, 1500);
     } catch (error) {
       console.error("❌ Error saving product:", error);
-      alert(`Error saving product: ${error.message}`);
+      setSaveDialog({
+        status: "error",
+        message: error.message || "Something went wrong while saving this product."
+      });
     } finally {
       setLoading(false);
     }
@@ -470,6 +501,67 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {saveDialog.status !== "idle" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="product-save-dialog-title"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100">
+            <div className="flex items-start gap-4">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                saveDialog.status === "success"
+                  ? "bg-green-100 text-green-600"
+                  : saveDialog.status === "error"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-blue-100 text-blue-600"
+              }`}>
+                {saveDialog.status === "saving" && (
+                  <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                )}
+                {saveDialog.status === "success" && (
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {saveDialog.status === "error" && (
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="product-save-dialog-title" className="text-base font-semibold text-gray-900">
+                  {saveDialog.status === "saving"
+                    ? "SAVING PRODUCT"
+                    : saveDialog.status === "success"
+                      ? "Product saved"
+                      : "Product save failed"}
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">{saveDialog.message}</p>
+                {saveDialog.status === "saving" && (
+                  <p className="mt-3 text-xs text-blue-600">PLEASE KEEP THIS PAGE OPEN WHILE WE FINISH SAVING.</p>
+                )}
+                {saveDialog.status === "error" && (
+                  <div className="mt-5 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={closeSaveDialog}
+                      className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Shop Selection - Prominent at the top */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center space-x-3 mb-3">
@@ -1000,16 +1092,24 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
         <button
           type="button"
           onClick={() => onSuccess()}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={isSavingProduct}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          disabled={isSavingProduct}
+          aria-busy={isSavingProduct}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Saving..." : (existingProduct ? "Update Product" : "Create Product")}
+          {loading && (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          )}
+          {loading ? "SAVING..." : (existingProduct ? "Update Product" : "Create Product")}
         </button>
       </div>
     </form>
