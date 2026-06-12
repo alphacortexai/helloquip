@@ -537,14 +537,14 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
               <div className="min-w-0 flex-1">
                 <h3 id="product-save-dialog-title" className="text-base font-semibold text-gray-900">
                   {saveDialog.status === "saving"
-                    ? "Saving product"
+                    ? "SAVING PRODUCT"
                     : saveDialog.status === "success"
                       ? "Product saved"
                       : "Product save failed"}
                 </h3>
                 <p className="mt-1 text-sm text-gray-600">{saveDialog.message}</p>
                 {saveDialog.status === "saving" && (
-                  <p className="mt-3 text-xs text-blue-600">Please keep this page open while we finish saving.</p>
+                  <p className="mt-3 text-xs text-blue-600">PLEASE KEEP THIS PAGE OPEN WHILE WE FINISH SAVING.</p>
                 )}
                 {saveDialog.status === "error" && (
                   <div className="mt-5 flex justify-end">
@@ -1109,7 +1109,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
             </svg>
           )}
-          {loading ? "Saving..." : (existingProduct ? "Update Product" : "Create Product")}
+          {loading ? "SAVING..." : (existingProduct ? "Update Product" : "Create Product")}
         </button>
       </div>
     </form>
