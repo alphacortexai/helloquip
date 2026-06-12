@@ -378,7 +378,7 @@ export default function ProductForm({ existingProduct = null, onSuccess = () => 
     setLoading(true);
     setSaveDialog({
       status: "saving",
-      message: existingProduct ? "UPDATING PRODUCT DETAILS..." : "CREATING PRODUCT AND UPLOADING IMAGES..."
+      message: existingProduct ? "Updating product details..." : "Creating product and uploading images..."
     });
 
     console.log("🚀 Form submission started");
