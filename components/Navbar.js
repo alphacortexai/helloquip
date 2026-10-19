@@ -163,13 +163,13 @@ export default function Navbar() {
   return (
     <>
       <header className="bg-white fixed top-0 left-0 right-0 z-[100] border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex items-center justify-between gap-2">
-            {/* Logo */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2">
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            {/* Logo — wide wordmark yields space on small screens so Sign In stays intact */}
+            <div className="flex items-center gap-1 min-w-0 shrink">
               <CachedLogo
                 variant="default"
-                className="h-12 md:h-14 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                className="h-10 sm:h-12 md:h-14 w-auto max-w-[42vw] sm:max-w-none object-contain cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => router.push("/")}
                 priority={true}
               />
@@ -183,7 +183,7 @@ export default function Navbar() {
             )}
 
             {/* User Actions */}
-            <div className="flex items-center gap-2 relative" ref={dropdownRef}>
+            <div className="flex items-center gap-1.5 sm:gap-2 relative shrink-0" ref={dropdownRef}>
               <CurrencyDropdown />
               {/* Notifications - only when logged in */}
               {user && (
@@ -261,7 +261,7 @@ export default function Navbar() {
                 <>
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
-                    className="flex items-center gap-2 p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors"
+                    className="flex items-center gap-2 p-2 hover:bg-[#e5f3fa] rounded-lg transition-colors shrink-0"
                   >
                     <img
                       src={user.photoURL || "/default-avatar.png"}
@@ -361,7 +361,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => router.push("/register")}
-                  className="bg-[#0865ff] text-white hover:bg-[#075ae6] transition-colors px-4 py-2 text-sm rounded-full font-medium"
+                  className="shrink-0 whitespace-nowrap bg-[#0865ff] text-white hover:bg-[#075ae6] transition-colors px-3.5 py-2 sm:px-4 text-sm rounded-full font-medium"
                 >
                   Sign In
                 </button>
