@@ -37,7 +37,7 @@ export default function CurrencyDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 min-w-[100px]"
+        className="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 shrink-0 whitespace-nowrap sm:min-w-[100px]"
         aria-label="Select currency"
       >
         <span>{currentCurrency.symbol}</span>
