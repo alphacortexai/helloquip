@@ -10,7 +10,8 @@ const CachedLogo = ({
   priority = false,
   width,
   height,
-  forceRefresh = false // Add this prop to force refresh the logo
+  forceRefresh = false, // Add this prop to force refresh the logo
+  style
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -47,7 +48,9 @@ const CachedLogo = ({
         style={{ 
           width: dimensions.width, 
           height: dimensions.height,
-          objectFit: 'contain'
+          objectFit: 'contain',
+          maxWidth: '100%',
+          ...style
         }}
       />
     );
@@ -69,8 +72,9 @@ const CachedLogo = ({
       // Add cache headers via Next.js Image optimization
       style={{
         objectFit: 'contain',
-        imageRendering: 'crisp-edges',
-        imageRendering: '-webkit-optimize-contrast'
+        imageRendering: '-webkit-optimize-contrast',
+        maxWidth: '100%',
+        ...style
       }}
     />
   );
