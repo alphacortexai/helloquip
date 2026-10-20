@@ -165,11 +165,14 @@ export default function Navbar() {
       <header className="bg-white fixed top-0 left-0 right-0 z-[100] border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2">
           <div className="flex items-center justify-between gap-2 min-w-0">
-            {/* Logo — wide wordmark yields space on small screens so Sign In stays intact */}
-            <div className="flex items-center gap-1 min-w-0 shrink">
+            {/* Fixed box so the wide logo cannot grow and crush Sign In once it loads */}
+            <div className="h-10 w-[150px] max-w-[42vw] shrink-0 overflow-hidden sm:h-12 sm:w-[180px] sm:max-w-[180px] md:h-14 md:w-[210px] md:max-w-[210px]">
               <CachedLogo
                 variant="default"
-                className="h-10 sm:h-12 md:h-14 w-auto max-w-[42vw] sm:max-w-none object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                width={450}
+                height={120}
+                className="block h-full w-full object-contain object-left cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ width: "100%", height: "100%", maxWidth: "100%", maxHeight: "100%" }}
                 onClick={() => router.push("/")}
                 priority={true}
               />
